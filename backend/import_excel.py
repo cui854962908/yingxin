@@ -3,7 +3,8 @@
 """
 import sys
 import openpyxl
-from app.core.students import batch_import
+from app.core.database import SessionLocal
+from app.crud.student import batch_import_students
 
 COL_MAP = {
     "姓名": "name", "学号": "student_id", "身份证号": "id_number",
@@ -35,8 +36,12 @@ def main(path: str):
             rows.append(row_data)
     wb.close()
 
-    result = batch_import(rows)
-    print(f"导入完成：成功 {result['imported']} 人，跳过 {result['skipped']} 人（学号已存在）")
+    db = SessionLocal()
+    try:
+        result = batch_import_students(db, rows)
+        print(f"导入完成：成功 {result['imported']} 人，跳过 {result['skipped']} 人（学号已存在）")
+    finally:
+        db.close()
 
 
 if __name__ == "__main__":

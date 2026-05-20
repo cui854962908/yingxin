@@ -217,4 +217,9 @@ async function handleSubmit() {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@media(max-width:480px){
+  .field-input{height:48px;font-size:1rem}
+  .btn{height:50px;font-size:1rem}
+}
 </style>

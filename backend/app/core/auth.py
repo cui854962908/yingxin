@@ -1,6 +1,5 @@
 """JWT 认证工具"""
 
-import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -8,22 +7,20 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 
-SECRET_KEY = os.environ.get("JWT_SECRET", "yingxin-dev-secret-key-change-in-production")
-ALGORITHM = "HS256"
-TOKEN_EXPIRE_HOURS = 24
+from app.core.config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRE_HOURS
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def create_token(data: dict[str, Any]) -> str:
     payload = data.copy()
-    payload["exp"] = datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRE_HOURS)
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    payload["exp"] = datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRE_HOURS)
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
 def decode_token(token: str) -> dict[str, Any] | None:
     try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     except JWTError:
         return None
 
