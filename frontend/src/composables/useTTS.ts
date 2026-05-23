@@ -3,7 +3,6 @@ import { ref } from 'vue'
 export function useTTS() {
   const autoSpeak = ref(localStorage.getItem('xin-auto-speak') !== 'false')
   const isSpeaking = ref(false)
-  let welcomeSpoken = false
   let audioEl: HTMLAudioElement | null = null
 
   async function speak(text: string) {
@@ -36,5 +35,5 @@ export function useTTS() {
     if (!autoSpeak.value) stopSpeak()
   }
 
-  return { autoSpeak, isSpeaking, welcomeSpoken, speak, stopSpeak, toggleSpeak }
+  return { autoSpeak, isSpeaking, speak, stopSpeak, toggleSpeak }
 }
