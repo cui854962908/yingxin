@@ -3,75 +3,20 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import lottie from 'lottie-web'
 import XinAvatar from './XinAvatar.vue'
+import XinQuickTags from './XinQuickTags.vue'
+import XinChatBubble from './XinChatBubble.vue'
+import type { Msg } from './XinChatBubble.vue'
+import { useTTS } from '../composables/useTTS'
+import { useDrag } from '../composables/useDrag'
 
-// ── 语音朗读（Edge-TTS 晓伊） ──
-const autoSpeak = ref(localStorage.getItem('xin-auto-speak') !== 'false')
-const isSpeaking = ref(false)
-let welcomeSpoken = false
-let audioEl: HTMLAudioElement | null = null
-
-async function speak(text: string) {
-  stopSpeak()
-  try {
-    const resp = await fetch('/api/tts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    })
-    if (!resp.ok) return
-    const blob = await resp.blob()
-    const url = URL.createObjectURL(blob)
-    audioEl = new Audio(url)
-    isSpeaking.value = true
-    audioEl.onended = () => { isSpeaking.value = false; URL.revokeObjectURL(url) }
-    audioEl.onerror = () => { isSpeaking.value = false }
-    audioEl.play()
-  } catch { isSpeaking.value = false }
-}
-
-function stopSpeak() {
-  if (audioEl) { audioEl.pause(); audioEl = null }
-  isSpeaking.value = false
-}
-
-function toggleSpeak() {
-  autoSpeak.value = !autoSpeak.value
-  localStorage.setItem('xin-auto-speak', String(autoSpeak.value))
-  if (!autoSpeak.value) stopSpeak()
-}
-
-const lottieRef = ref<HTMLElement | null>(null)
-const x = ref(window.innerWidth - 220)
-const y = ref(window.innerHeight - 280)
-const dragging = ref(false)
-const dragStart = ref({ x: 0, y: 0, bx: 0, by: 0 })
-const isMobile = ref(false)
-let dragMoved = false
-
-function checkMobile() { isMobile.value = window.innerWidth < 768 }
-onMounted(() => { checkMobile(); window.addEventListener('resize', checkMobile) })
-onUnmounted(() => { window.removeEventListener('resize', checkMobile) })
-
-function onPointerDown(e: PointerEvent) {
-  dragging.value = true; dragMoved = false
-  dragStart.value = { x: e.clientX, y: e.clientY, bx: x.value, by: y.value };
-  (e.target as HTMLElement).setPointerCapture(e.pointerId)
-}
-function onPointerMove(e: PointerEvent) {
-  if (!dragging.value) return
-  const dx = e.clientX - dragStart.value.x; const dy = e.clientY - dragStart.value.y
-  if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragMoved = true
-  x.value = Math.max(10, Math.min(window.innerWidth - 10, dragStart.value.bx + dx))
-  y.value = Math.max(10, Math.min(window.innerHeight - 10, dragStart.value.by + dy))
-}
-function onPointerUp() { dragging.value = false }
-function onClickXin() { if (!dragMoved) { open.value = true; nextTick(() => ensureWelcome()) } }
+const { autoSpeak, isSpeaking, welcomeSpoken, speak, stopSpeak, toggleSpeak } = useTTS()
 
 // ===== 聊天状态 =====
 const open = ref(false)
 const router = useRouter()
 
-interface Msg { role: 'user' | 'xin'; text: string; time: string; displayText: string; done: boolean; links?: { label: string; to: string }[] }
+const { lottieRef, x, y, dragging, isMobile, onPointerDown, onClickXin } = useDrag(open, () => { nextTick(() => ensureWelcome()) })
+
 interface AgentResponse { success: boolean; message?: string; data?: { reply: string; intent?: string; source?: string; matched_title?: string | null } }
 const messages = ref<Msg[]>([])
 const input = ref('')
@@ -388,14 +333,10 @@ onMounted(() => {
       path: '/animation/Live chatbot.json',
     })
   }
-  document.addEventListener('pointermove', onPointerMove)
-  document.addEventListener('pointerup', onPointerUp)
   document.addEventListener('keyup', onKeyup)
 })
 onUnmounted(() => {
   anim?.destroy()
-  document.removeEventListener('pointermove', onPointerMove)
-  document.removeEventListener('pointerup', onPointerUp)
   document.removeEventListener('keyup', onKeyup)
 })
 
@@ -459,25 +400,12 @@ function closeChat() { open.value = false; stopSpeak() }
 
       <!-- 消息区 -->
       <div ref="chatBody" class="panel-body">
-        <!-- 空态欢迎 -->
-        <div v-for="(m, i) in messages" :key="i" :class="['msg-row', m.role]">
-          <div v-if="m.role === 'xin'" class="msg-avatar">
-            <XinAvatar :size="26" />
-          </div>
-          <div :class="['msg-bubble', m.role]">
-            <span class="msg-text" v-html="(m.role === 'xin' ? (m.displayText || '') : m.text).replace(/\n/g, '<br>')" />
-            <span v-if="m.role === 'xin' && !m.done" class="msg-cursor">|</span>
-            <span class="msg-time">{{ m.time }}</span>
-            <!-- 跳转链接按钮 -->
-            <div v-if="m.role === 'xin' && m.links && m.links.length > 0 && m.done" class="msg-links">
-              <button v-for="(l, li) in m.links" :key="li" class="msg-link-btn" @click="navigateTo(l.to)">{{ l.label }}</button>
-            </div>
-          </div>
-          <!-- 朗读按钮 — 气泡外侧右侧 -->
-          <button v-if="m.role === 'xin' && m.done" class="msg-speak-btn" @click.stop="speak(m.text)" title="朗读">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8.5v7a4.5 4.5 0 0 0 2.5-3.5z"/></svg>
-          </button>
-        </div>
+        <XinChatBubble
+          v-for="(m, i) in messages" :key="i"
+          :msg="m"
+          @speak="speak"
+          @navigate="navigateTo"
+        />
         <!-- 正在输入 -->
         <div v-if="sending" class="msg-row xin">
           <div class="msg-avatar">
@@ -495,10 +423,7 @@ function closeChat() { open.value = false; stopSpeak() }
       </div>
 
       <!-- 快捷标签 -->
-      <div class="quick-tags">
-        <button v-for="(t, idx) in quickList" :key="idx"
-          class="quick-tag" @click="input = t.text; send()">{{ t.label }}</button>
-      </div>
+      <XinQuickTags :quickList="quickList" @select="(t: string) => { input = t; send() }" />
 
       <!-- 输入区 -->
       <div class="panel-footer">
@@ -697,41 +622,6 @@ function closeChat() { open.value = false; stopSpeak() }
   border-bottom-left-radius: 4px;
   border: 1px solid rgba(64,158,255,.1);
 }
-.msg-text { font-size: .95rem; line-height: 1.7; display: inline; }
-.msg-bubble.xin .msg-text { font-size: .95rem; }
-.msg-cursor { display: inline; color: #409eff; font-weight: 700; animation: blink .8s step-end infinite; }
-@keyframes blink { 50% { opacity: 0 } }
-.msg-time {
-  font-size: .6rem; opacity: .3; display: block; margin-top: 5px;
-  font-family: 'Courier New', monospace;
-}
-.msg-row.user .msg-time { text-align: right; }
-.msg-row.xin .msg-time { text-align: left; }
-
-/* 单条朗读按钮 — 气泡外侧 */
-.msg-speak-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: 50%; border: none;
-  background: transparent; color: rgba(64,158,255,.15);
-  cursor: pointer; flex-shrink: 0; align-self: flex-end; margin-bottom: 2px;
-  transition: all .15s;
-}
-.msg-speak-btn:hover { background: rgba(64,158,255,.1); color: #409eff; }
-
-/* 跳转链接按钮 */
-.msg-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.msg-link-btn {
-  padding: 6px 14px; border-radius: 8px;
-  border: 1px solid rgba(64,158,255,.3);
-  background: rgba(64,158,255,.08); color: #409eff;
-  font-size: .78rem; cursor: pointer; font-family: inherit;
-  transition: all .2s;
-}
-.msg-link-btn:hover {
-  background: rgba(64,158,255,.18);
-  border-color: #409eff;
-  box-shadow: 0 0 12px rgba(64,158,255,.15);
-}
 
 /* 正在输入 */
 .typing-bubble { display: flex; align-items: center; gap: 5px; padding: 16px 18px; }
@@ -757,25 +647,6 @@ function closeChat() { open.value = false; stopSpeak() }
 @keyframes dataPulse {
   0%, 100% { background: rgba(64,158,255,.1); }
   50% { background: rgba(64,158,255,.4); }
-}
-
-/* ===== 快捷标签 ===== */
-.quick-tags {
-  display: flex; gap: 6px; padding: 10px 16px;
-  overflow-x: auto; flex-shrink: 0;
-}
-.quick-tag {
-  flex-shrink: 0; padding: 6px 14px;
-  border-radius: 6px;
-  border: 1px solid rgba(64,158,255,.15);
-  background: rgba(64,158,255,.04); color: #7aa8e0; font-size: .74rem;
-  cursor: pointer; white-space: nowrap;
-  transition: all .2s; font-family: inherit;
-}
-.quick-tag:hover {
-  border-color: #409eff; color: #409eff;
-  background: rgba(64,158,255,.1);
-  box-shadow: 0 0 12px rgba(64,158,255,.15);
 }
 
 /* ===== 输入区 ===== */
