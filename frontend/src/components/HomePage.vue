@@ -3,17 +3,18 @@ import { ref, inject, computed, type Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ProfileCard from './ProfileCard.vue'
 
-interface Student {
-  name: string; student_id: string; photo: string
-  class_name: string; dormitory: string; role: string
-  advisor: { name: string; phone: string }
-  class_teacher: { name: string; phone: string }
-  assistants: { name: string; phone: string; class_name: string }[]
-}
+import type { Student } from '../types/student'
 
-const studentRef = inject<Ref<Student>>('student')!
+const studentRef = inject<Ref<Student>>('student')
+if (!studentRef) {
+  console.error('[HomePage] student 未通过 provide 注入，请检查父组件')
+  throw new Error('学生登录信息未初始化，请重新登录')
+}
 const student = computed(() => studentRef.value)
-const logout = inject<() => void>('logout')!
+const logout = inject<() => void>('logout')
+if (!logout) {
+  throw new Error('[HomePage] logout 未通过 provide 注入，请检查父组件')
+}
 const route = useRoute()
 const isAdmin = computed(() => student.value.role === 'admin')
 const mobileNavOpen = ref(false)

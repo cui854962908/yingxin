@@ -2,6 +2,43 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import lottie from 'lottie-web'
+import XinAvatar from './XinAvatar.vue'
+
+// ── 语音朗读（Edge-TTS 晓伊） ──
+const autoSpeak = ref(localStorage.getItem('xin-auto-speak') !== 'false')
+const isSpeaking = ref(false)
+let welcomeSpoken = false
+let audioEl: HTMLAudioElement | null = null
+
+async function speak(text: string) {
+  stopSpeak()
+  try {
+    const resp = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    })
+    if (!resp.ok) return
+    const blob = await resp.blob()
+    const url = URL.createObjectURL(blob)
+    audioEl = new Audio(url)
+    isSpeaking.value = true
+    audioEl.onended = () => { isSpeaking.value = false; URL.revokeObjectURL(url) }
+    audioEl.onerror = () => { isSpeaking.value = false }
+    audioEl.play()
+  } catch { isSpeaking.value = false }
+}
+
+function stopSpeak() {
+  if (audioEl) { audioEl.pause(); audioEl = null }
+  isSpeaking.value = false
+}
+
+function toggleSpeak() {
+  autoSpeak.value = !autoSpeak.value
+  localStorage.setItem('xin-auto-speak', String(autoSpeak.value))
+  if (!autoSpeak.value) stopSpeak()
+}
 
 const lottieRef = ref<HTMLElement | null>(null)
 const x = ref(window.innerWidth - 220)
@@ -35,6 +72,7 @@ const open = ref(false)
 const router = useRouter()
 
 interface Msg { role: 'user' | 'xin'; text: string; time: string; displayText: string; done: boolean; links?: { label: string; to: string }[] }
+interface AgentResponse { success: boolean; message?: string; data?: { reply: string; intent?: string; source?: string; matched_title?: string | null } }
 const messages = ref<Msg[]>([])
 const input = ref('')
 const sending = ref(false)
@@ -46,6 +84,11 @@ function now() { return new Date().toLocaleTimeString('zh-CN', { hour: '2-digit'
 function ensureWelcome() {
   if (messages.value.length === 0) {
     pushXinMsg('你好！我是来自河南牧业经济学院信息工程学院的小信，有什么不懂的请尽管问我吧。')
+    // 强制朗读自我介绍，仅一次
+    if (!welcomeSpoken) {
+      welcomeSpoken = true
+      setTimeout(() => speak('你好！我是来自河南牧业经济学院信息工程学院的小信，有什么不懂的请尽管问我吧。'), 800)
+    }
   }
 }
 
@@ -57,9 +100,13 @@ function pushXinMsg(text: string) {
 }
 
 function scheduleNextChar(idx: number, i: number) {
-  const msg = messages.value[idx]  // ← 从 reactive 数组取值，确保响应式
+  const msg = messages.value[idx]
   if (!msg || i >= msg.text.length) {
-    if (msg) msg.done = true
+    if (msg) {
+      msg.done = true
+      // 消息写完 → 朗读（非首条，受开关控制）
+      if (msg.role === 'xin' && messages.value.length > 1 && autoSpeak.value) speak(msg.text)
+    }
     return
   }
   msg.displayText = msg.text.slice(0, i + 1)
@@ -89,7 +136,51 @@ const quickList = [
 ]
 const faqData = ref<{ q: string; a: string }[]>([])
 const announceData = ref<{ title: string; content: string }[]>([])
-const useLLM = ref(true)  // 后端 /chat 可用时走 LLM，不可用自动回退
+const useLLM = ref(true)  // Agent 不可用时回退 SSE，再不可用走本地
+
+function authToken(): string | null {
+  return localStorage.getItem('token')
+}
+
+// ── 链路 A：Agent（优先）──
+async function tryAgentChat(q: string): Promise<boolean> {
+  const token = authToken()
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  let resp: Response
+  try {
+    resp = await fetch('/api/agent/chat', {
+      method: 'POST', headers,
+      body: JSON.stringify({ message: q }),
+      signal: AbortSignal.timeout(15000),
+    })
+  } catch { return false }
+
+  if (!resp.ok) return false
+
+  let data: AgentResponse
+  try { data = await resp.json() } catch { return false }
+  if (!data?.success || !data?.data?.reply) return false
+
+  const reply: string = data.data.reply
+  const source: string = data.data.source || ''
+
+  // 复用 pushXinMsg 打字机逐字展示
+  pushXinMsg(reply)
+
+  // 根据 source 决定是否追加链接
+  const showLinks = ['faq', 'xiaoxin_kb', 'personal'].includes(source)
+  if (showLinks) {
+    setTimeout(() => pushLinkMsg([
+      { label: '📋 查看问题答疑', to: '/faq' },
+      { label: '📢 查看校园公告', to: '/announcements' },
+    ]), 600)
+  }
+
+  sending.value = false
+  return true
+}
 
 async function send() {
   const q = input.value.trim()
@@ -100,75 +191,98 @@ async function send() {
   sending.value = true
   await nextTick(); scrollBottom()
 
-  // 优先尝试 /api/chat SSE 流
+  // 第一优先：Agent /api/agent/chat（JSON 单行 + 安全 + 个人化）
+  if (useLLM.value) {
+    const ok = await tryAgentChat(q)
+    if (ok) return
+  }
+
+  // 第二优先：小信 /api/chat（SSE 流式兜底）
   if (useLLM.value) {
     const ok = await tryChatStream(q)
     if (ok) return
-    useLLM.value = false  // 失败了下次直接走兜底
   }
 
-  // 兜底：原有 FAQ/公告匹配
+  // 第三兜底：本地 FAQ/公告/关键词匹配
+  useLLM.value = false
   await fallbackReply(q)
 }
 
 async function tryChatStream(q: string): Promise<boolean> {
+  let resp: Response
   try {
-    const resp = await fetch('/api/chat', {
+    resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question: q }),
       signal: AbortSignal.timeout(15000),
     })
     if (!resp.ok || !resp.body) return false
+  } catch { return false }
 
-    const msg: Msg = { role: 'xin', text: '', time: now(), displayText: '', done: false }
-    messages.value.push(msg)
-    scrollBottom()
+  messages.value.push({ role: 'xin', text: '', time: now(), displayText: '', done: false })
+  const idx = messages.value.length - 1
+  scrollBottom()
 
-    const reader = resp.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
+  const tokenBuffer: string[] = []
+  let streamDone = false
+  let doneLinks: { label: string; to: string }[] | undefined
 
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
-
-      // 解析 SSE: "data: {...}\n\n"
-      const lines = buffer.split('\n\n')
-      buffer = lines.pop() || ''
-
-      for (const block of lines) {
-        const dataLine = block.split('\n').find(l => l.startsWith('data: '))
-        if (!dataLine) continue
-        try {
-          const json = JSON.parse(dataLine.slice(6))
-          if (json.token) {
-            msg.text += json.token
-            msg.displayText = msg.text
-          }
-          if (json.done) {
-            msg.done = true
-            sending.value = false
-            if (json.links?.length) pushLinkMsg(json.links)
-            return true
-          }
-          if (json.error) {
-            // 后端明确返回错误，回退
-            messages.value.pop()
-            return false
-          }
-        } catch { /* broken JSON, skip */ }
+  // 后台读 SSE 流，token 全部进缓冲
+  async function readSSE() {
+    try {
+      const reader = resp.body!.getReader()
+      const decoder = new TextDecoder()
+      let buf = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += decoder.decode(value, { stream: true })
+        const blocks = buf.split('\n\n')
+        buf = blocks.pop() || ''
+        for (const block of blocks) {
+          const dataLine = block.split('\n').find(l => l.startsWith('data: '))
+          if (!dataLine) continue
+          try {
+            const json = JSON.parse(dataLine.slice(6))
+            if (json.token) tokenBuffer.push(json.token)
+            if (json.done) { streamDone = true; doneLinks = json.links }
+            if (json.error) { streamDone = true }
+          } catch { /* */ }
+        }
       }
-      scrollBottom()
-    }
-
-    msg.done = true
-    sending.value = false
-    return true
-  } catch {
-    return false
+    } catch { streamDone = true }
   }
+
+  readSSE()  // 不 await，边读边打字
+
+  // 用原版打字机节奏从缓冲逐字取出
+  return new Promise((resolve) => {
+    function drain() {
+      if (tokenBuffer.length === 0) {
+        if (streamDone) {
+          messages.value[idx].done = true
+          if (doneLinks?.length) pushLinkMsg(doneLinks)
+          if (autoSpeak.value) speak(messages.value[idx].text)
+          resolve(true)
+          return
+        }
+        setTimeout(drain, 30)
+        return
+      }
+
+      if (sending.value) sending.value = false  // 第一个字开始打，关掉加载动画
+
+      const ch = tokenBuffer.shift()!
+      messages.value[idx].text += ch
+      messages.value[idx].displayText = messages.value[idx].text
+      scrollBottom()
+
+      const delay = '，。！？、；：\n'.includes(ch) ? 120 + Math.random() * 130 : 25 + Math.random() * 20
+      setTimeout(drain, delay)
+    }
+    drain()
+  })
 }
 
 async function fallbackReply(q: string) {
@@ -243,11 +357,10 @@ function findAnswer(q: string): { answer: string; links?: { label: string; to: s
 }
 
 function pushLinkMsg(links: { label: string; to: string }[]) {
-  const labels = links.map(l => l.label).join('  ')
   messages.value.push({
     role: 'xin', time: now(),
-    text: `需要我帮你跳转到相关页面查看详细信息吗？\n\n${labels}`,
-    displayText: `需要我帮你跳转到相关页面查看详细信息吗？\n\n${labels}`,
+    text: '需要我帮你跳转到相关页面查看详细信息吗？',
+    displayText: '需要我帮你跳转到相关页面查看详细信息吗？',
     done: true, links,
   })
   nextTick(() => scrollBottom())
@@ -286,7 +399,7 @@ onUnmounted(() => {
   document.removeEventListener('keyup', onKeyup)
 })
 
-function closeChat() { open.value = false }
+function closeChat() { open.value = false; stopSpeak() }
 </script>
 
 <template>
@@ -326,31 +439,7 @@ function closeChat() { open.value = false }
         </button>
         <!-- 机器人头像 -->
         <div class="robot-avatar">
-          <svg viewBox="0 0 48 48" fill="none">
-            <!-- 天线 -->
-            <line x1="24" y1="6" x2="24" y2="2" stroke="#409eff" stroke-width="2" stroke-linecap="round"/>
-            <circle cx="24" cy="1.5" r="1.5" fill="#409eff">
-              <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
-            </circle>
-            <!-- 头部 -->
-            <rect x="8" y="8" width="32" height="28" rx="6" fill="#15202b" stroke="#409eff" stroke-width="1.5"/>
-            <!-- 耳轴 -->
-            <rect x="4" y="18" width="4" height="8" rx="2" fill="#1a3050" stroke="#409eff" stroke-width="1"/>
-            <rect x="40" y="18" width="4" height="8" rx="2" fill="#1a3050" stroke="#409eff" stroke-width="1"/>
-            <!-- 眼睛 -->
-            <circle cx="18" cy="19" r="3.5" fill="#409eff">
-              <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/>
-            </circle>
-            <circle cx="30" cy="19" r="3.5" fill="#409eff">
-              <animate attributeName="opacity" values="1;0.5;1" dur="2s" begin="0.3s" repeatCount="indefinite"/>
-            </circle>
-            <!-- 嘴 -->
-            <rect x="17" y="27" width="14" height="3" rx="1.5" fill="#409eff" opacity="0.6"/>
-            <!-- 额头指示灯 -->
-            <rect x="21" y="10" width="6" height="2" rx="1" fill="#409eff" opacity="0.4">
-              <animate attributeName="opacity" values="0.4;0.9;0.4" dur="2.5s" repeatCount="indefinite"/>
-            </rect>
-          </svg>
+          <XinAvatar :size="40" :animated="true" />
         </div>
         <div class="panel-header-text">
           <span class="panel-title">小信</span>
@@ -358,6 +447,11 @@ function closeChat() { open.value = false }
             <span class="online-dot" />在线 · AI 引擎 v2.0
           </span>
         </div>
+        <!-- 语音开关 -->
+        <button class="speak-toggle" :class="{ on: autoSpeak, speaking: isSpeaking }" @click="toggleSpeak" title="语音播报开关">
+          <svg v-if="autoSpeak" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8.5v7a4.5 4.5 0 0 0 2.5-3.5zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z"/></svg>
+          <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8.5v7a4.5 4.5 0 0 0 2.5-3.5zM9 6.8v10.4L6.5 15H4V9h2.5L9 6.8z"/><line x1="23" y1="2" x2="1" y2="22" stroke="currentColor" stroke-width="2"/></svg>
+        </button>
         <button v-if="!isMobile" class="panel-close" @click="closeChat">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
@@ -368,15 +462,7 @@ function closeChat() { open.value = false }
         <!-- 空态欢迎 -->
         <div v-for="(m, i) in messages" :key="i" :class="['msg-row', m.role]">
           <div v-if="m.role === 'xin'" class="msg-avatar">
-            <!-- 小机器人头像 -->
-            <svg viewBox="0 0 32 32" fill="none">
-              <rect x="5" y="6" width="22" height="19" rx="5" fill="#15202b" stroke="#409eff" stroke-width="1.2"/>
-              <line x1="16" y1="4" x2="16" y2="1.5" stroke="#409eff" stroke-width="1.5" stroke-linecap="round"/>
-              <circle cx="16" cy="1" r="1.5" fill="#409eff"/>
-              <circle cx="12" cy="13.5" r="2.5" fill="#409eff"/>
-              <circle cx="20" cy="13.5" r="2.5" fill="#409eff"/>
-              <rect x="10.5" y="19" width="11" height="2" rx="1" fill="#409eff" opacity="0.5"/>
-            </svg>
+            <XinAvatar :size="26" />
           </div>
           <div :class="['msg-bubble', m.role]">
             <span class="msg-text" v-html="(m.role === 'xin' ? (m.displayText || '') : m.text).replace(/\n/g, '<br>')" />
@@ -387,18 +473,15 @@ function closeChat() { open.value = false }
               <button v-for="(l, li) in m.links" :key="li" class="msg-link-btn" @click="navigateTo(l.to)">{{ l.label }}</button>
             </div>
           </div>
+          <!-- 朗读按钮 — 气泡外侧右侧 -->
+          <button v-if="m.role === 'xin' && m.done" class="msg-speak-btn" @click.stop="speak(m.text)" title="朗读">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8.5v7a4.5 4.5 0 0 0 2.5-3.5z"/></svg>
+          </button>
         </div>
         <!-- 正在输入 -->
         <div v-if="sending" class="msg-row xin">
           <div class="msg-avatar">
-            <svg viewBox="0 0 32 32" fill="none">
-              <rect x="5" y="6" width="22" height="19" rx="5" fill="#15202b" stroke="#409eff" stroke-width="1.2"/>
-              <line x1="16" y1="4" x2="16" y2="1.5" stroke="#409eff" stroke-width="1.5" stroke-linecap="round"/>
-              <circle cx="16" cy="1" r="1.5" fill="#409eff"/>
-              <circle cx="12" cy="13.5" r="2.5" fill="#409eff"/>
-              <circle cx="20" cy="13.5" r="2.5" fill="#409eff"/>
-              <rect x="10.5" y="19" width="11" height="2" rx="1" fill="#409eff" opacity="0.5"/>
-            </svg>
+            <XinAvatar :size="26" />
           </div>
           <div class="msg-bubble xin typing-bubble">
             <span class="typing-dot" /><span class="typing-dot" /><span class="typing-dot" />
@@ -558,6 +641,21 @@ function closeChat() { open.value = false }
 }
 .panel-close:hover { background: rgba(64,158,255,.2); color: #fff; transform: rotate(90deg); }
 
+/* 语音开关 */
+.speak-toggle {
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.35);
+  width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s; flex-shrink: 0; position: relative; z-index: 1;
+}
+.speak-toggle.on { color: #4effa0; border-color: rgba(78,255,160,.3); background: rgba(78,255,160,.1); }
+.speak-toggle.speaking { animation: speakPulse .6s ease-in-out infinite; }
+.speak-toggle:hover { background: rgba(255,255,255,.1); }
+@keyframes speakPulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(78,255,160,0); }
+  50% { box-shadow: 0 0 12px rgba(78,255,160,.4); }
+}
+
 /* ===== 消息区 ===== */
 .panel-body {
   flex: 1; overflow-y: auto;
@@ -574,6 +672,7 @@ function closeChat() { open.value = false }
 .panel-body::-webkit-scrollbar-track { background: transparent; }
 
 .msg-row { display: flex; align-items: flex-end; gap: 8px; }
+.msg-row.xin { align-items: flex-start; }
 .msg-row.user { justify-content: flex-end; }
 
 .msg-avatar {
@@ -608,6 +707,16 @@ function closeChat() { open.value = false }
 }
 .msg-row.user .msg-time { text-align: right; }
 .msg-row.xin .msg-time { text-align: left; }
+
+/* 单条朗读按钮 — 气泡外侧 */
+.msg-speak-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 50%; border: none;
+  background: transparent; color: rgba(64,158,255,.15);
+  cursor: pointer; flex-shrink: 0; align-self: flex-end; margin-bottom: 2px;
+  transition: all .15s;
+}
+.msg-speak-btn:hover { background: rgba(64,158,255,.1); color: #409eff; }
 
 /* 跳转链接按钮 */
 .msg-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }

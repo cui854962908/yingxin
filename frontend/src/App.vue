@@ -3,13 +3,7 @@ import { ref, onMounted, provide } from 'vue'
 import LoginPage from './components/LoginPage.vue'
 import XiaoXinAssistant from './components/XiaoXinAssistant.vue'
 
-interface Student {
-  name: string; student_id: string; photo: string; class_name: string
-  dormitory: string; role: string
-  advisor: { name: string; phone: string }
-  class_teacher: { name: string; phone: string }
-  assistants: { name: string; phone: string; class_name: string }[]
-}
+import type { Student } from './types/student'
 
 const student = ref<Student | null>(null)
 const loading = ref(true)
@@ -25,8 +19,9 @@ onMounted(async () => {
       })
       const d = await res.json()
       if (d.success) {
-        const saved = localStorage.getItem('student')
-        if (saved) student.value = JSON.parse(saved)
+        // 优先用服务端最新数据，覆盖 localStorage 旧缓存
+        const fresh = onLoginSuccess(d.data, token)
+        student.value = fresh
         loading.value = false
         return
       }
@@ -61,6 +56,7 @@ function onLoginSuccess(s: Record<string, any>, token: string) {
   student.value = safe
   localStorage.setItem('token', token)
   localStorage.setItem('student', JSON.stringify(safe))
+  return safe
 }
 
 function clearAuth() {
