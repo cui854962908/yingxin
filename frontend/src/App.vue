@@ -25,7 +25,7 @@ onMounted(async () => {
         loading.value = false
         return
       }
-    } catch { /* */ }
+    } catch { console.warn('自动登录验证失败，退回登录页') }
     clearAuth()
   }
   // 无 token，播放欢迎动画 → 登录页

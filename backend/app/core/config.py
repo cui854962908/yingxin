@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_HOURS: int = 24
+    #: SHA-256 加盐哈希的盐值，用于存储身份证号哈希（三要素验证的第三个因子）
+    ID_NUMBER_SALT: str = "yingxin-default-salt-change-in-production"
     # 若为 false（默认）：不挂载 /docs、/redoc、/openapi.json，避免匿名浏览完整 API 定义
     EXPOSE_API_DOCS: bool = False
     BACKEND_CORS_ORIGINS: str = "http://localhost:5173"

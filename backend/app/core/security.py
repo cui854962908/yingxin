@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime, timedelta, timezone
 import time
 from typing import Any, Dict, Optional
@@ -7,6 +8,13 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
 from app.core.config import settings
+
+
+def hash_id_number(id_number: str) -> str:
+    """对身份证号做 SHA-256 加盐哈希，不可逆。"""
+    raw = id_number.strip()
+    salt = settings.ID_NUMBER_SALT.encode("utf-8")
+    return hashlib.sha256(raw.encode("utf-8") + salt).hexdigest()
 
 http_bearer = HTTPBearer(auto_error=False)
 optional_http_bearer = HTTPBearer(auto_error=False)

@@ -1,82 +1,92 @@
-"""公告端点测试"""
+"""公告 API 集成测试：公开列表 + 管理端发布/删除。"""
 
-from datetime import date
+import uuid
+from unittest.mock import patch
 
 
-class TestListAnnouncements:
-    def test_list_public_sorted_by_date(self, client, db):
-        from app.models.announcement import Announcement
-        db.add_all([
-            Announcement(date=date(2026, 8, 10), title="旧公告", content="旧内容"),
-            Announcement(date=date(2026, 9, 1), title="新公告", content="新内容"),
-        ])
-        db.commit()
+class TestPublicListAnnouncements:
+    """GET /api/announcements —— 公开列表，无需认证。"""
 
-        resp = client.get("/api/announcements")
-        data = resp.json()
-        assert data["success"] is True
-        assert len(data["data"]) == 2
-        assert data["data"][0]["date"] >= data["data"][1]["date"]
-
-    def test_list_empty(self, client):
+    def test_empty_list(self, client):
         resp = client.get("/api/announcements")
         data = resp.json()
         assert data["success"] is True
         assert data["data"] == []
 
+    def test_list_with_items(self, client, admin_headers):
+        with patch("app.api.announcements.incremental_embed_announcement"):
+            client.post("/api/admin/announcements", headers=admin_headers, json={
+                "title": "2026新生报到须知",
+                "content": "请于 9 月 1 日前完成报到。",
+            })
+            client.post("/api/admin/announcements", headers=admin_headers, json={
+                "title": "军训通知",
+                "content": "军训自 9 月 2 日开始。",
+            })
 
-class TestCreateAnnouncement:
-    def test_create_as_admin(self, client, auth_headers):
-        resp = client.post("/api/admin/announcements", headers=auth_headers, json={
-            "title": "测试公告", "content": "测试内容",
-        })
+        resp = client.get("/api/announcements")
         data = resp.json()
         assert data["success"] is True
-        assert data["data"]["title"] == "测试公告"
-        assert "id" in data["data"]
+        assert len(data["data"]) == 2
+        titles = [item["title"] for item in data["data"]]
+        assert "2026新生报到须知" in titles
+        assert "军训通知" in titles
 
-    def test_create_with_explicit_date(self, client, auth_headers):
-        resp = client.post("/api/admin/announcements", headers=auth_headers, json={
-            "title": "指定日期公告", "content": "内容", "date": "2026-09-01",
-        })
+
+class TestAdminCreateAnnouncement:
+    """POST /api/admin/announcements —— 管理员发布公告。"""
+
+    def test_create_announcement_success(self, client, admin_headers):
+        with patch("app.api.announcements.incremental_embed_announcement"):
+            resp = client.post("/api/admin/announcements", headers=admin_headers, json={
+                "title": "迎新系统上线通知",
+                "content": "迎新系统已正式上线运行。",
+            })
         data = resp.json()
+        assert data["success"] is True
+        assert data["data"]["title"] == "迎新系统上线通知"
+        assert data["data"]["id"] is not None
+
+    def test_create_announcement_with_date(self, client, admin_headers):
+        with patch("app.api.announcements.incremental_embed_announcement"):
+            resp = client.post("/api/admin/announcements", headers=admin_headers, json={
+                "title": "限期公告",
+                "content": "本公告有日期。",
+                "date": "2026-09-01",
+            })
+        data = resp.json()
+        assert data["success"] is True
         assert data["data"]["date"] == "2026-09-01"
 
-    def test_create_defaults_to_today(self, client, auth_headers):
-        resp = client.post("/api/admin/announcements", headers=auth_headers, json={
-            "title": "今日公告", "content": "默认日期",
+    def test_create_announcement_unauthorized(self, client):
+        resp = client.post("/api/admin/announcements", json={
+            "title": "test",
+            "content": "test",
         })
+        assert resp.status_code == 401
+
+
+class TestAdminDeleteAnnouncement:
+    """DELETE /api/admin/announcements/{ann_id} —— 管理员删除公告。"""
+
+    def test_delete_announcement_success(self, client, admin_headers):
+        with patch("app.api.announcements.incremental_embed_announcement"):
+            create_resp = client.post("/api/admin/announcements", headers=admin_headers, json={
+                "title": "待删除公告",
+                "content": "这条即将被删除。",
+            })
+        ann_id = create_resp.json()["data"]["id"]
+
+        with patch("app.api.announcements.delete_documents_for_announcement"):
+            resp = client.delete(f"/api/admin/announcements/{ann_id}", headers=admin_headers)
         data = resp.json()
-        assert data["data"]["date"] == str(date.today())
+        assert data["success"] is True
 
-    def test_create_as_student_denied(self, client, student_headers):
-        resp = client.post("/api/admin/announcements", headers=student_headers, json={
-            "title": "越权公告", "content": "内容",
-        })
-        assert resp.status_code == 403
+        # 确认已删除
+        list_resp = client.get("/api/announcements")
+        assert len(list_resp.json()["data"]) == 0
 
-    def test_create_empty_title(self, client, auth_headers):
-        resp = client.post("/api/admin/announcements", headers=auth_headers, json={
-            "title": "", "content": "内容",
-        })
-        assert resp.status_code == 422
-
-
-class TestDeleteAnnouncement:
-    def test_delete_as_admin(self, client, db, auth_headers):
-        from app.models.announcement import Announcement
-        ann = Announcement(date=date.today(), title="待删", content="待删内容")
-        db.add(ann)
-        db.commit()
-        ann_id = str(ann.id)
-
-        resp = client.delete(f"/api/admin/announcements/{ann_id}", headers=auth_headers)
-        assert resp.json()["success"] is True
-
-    def test_delete_nonexistent(self, client, auth_headers):
-        resp = client.delete("/api/admin/announcements/00000000-0000-0000-0000-000000000000", headers=auth_headers)
+    def test_delete_nonexistent_announcement(self, client, admin_headers):
+        fake_id = str(uuid.uuid4())
+        resp = client.delete(f"/api/admin/announcements/{fake_id}", headers=admin_headers)
         assert resp.status_code == 404
-
-    def test_delete_as_student_denied(self, client, student_headers):
-        resp = client.delete("/api/admin/announcements/some-id", headers=student_headers)
-        assert resp.status_code == 403

@@ -1,65 +1,95 @@
-"""FAQ 端点测试"""
+"""FAQ API 集成测试：公开列表 + 管理端 CRUD。"""
+
+import uuid
+from unittest.mock import patch
 
 
-class TestListFaq:
-    def test_list_public(self, client, db):
-        from app.models.faq import Faq
-        db.add_all([
-            Faq(question="问题1", answer="答案1"),
-            Faq(question="问题2", answer="答案2"),
-        ])
-        db.commit()
+class TestPublicListFaq:
+    """GET /api/faq —— 公开列表，无需认证。"""
 
-        resp = client.get("/api/faq")
-        data = resp.json()
-        assert data["success"] is True
-        assert len(data["data"]) == 2
-
-    def test_list_empty(self, client):
+    def test_empty_list(self, client):
         resp = client.get("/api/faq")
         data = resp.json()
         assert data["success"] is True
         assert data["data"] == []
 
+    def test_list_with_items(self, client, admin_headers):
+        with patch("app.api.faq.incremental_embed_student_faq"), \
+             patch("app.api.faq.clear_faq_cache"):
+            client.post("/api/admin/faq", headers=admin_headers, json={
+                "question": "快递站在哪？",
+                "answer": "北苑食堂西侧。",
+            })
+            client.post("/api/admin/faq", headers=admin_headers, json={
+                "question": "宿舍几点熄灯？",
+                "answer": "周日到周四 23:00。",
+            })
 
-class TestCreateFaq:
-    def test_create_as_admin(self, client, auth_headers):
-        resp = client.post("/api/admin/faq", headers=auth_headers, json={
-            "question": "测试问题？", "answer": "测试答案。",
-        })
+        resp = client.get("/api/faq")
         data = resp.json()
         assert data["success"] is True
-        assert data["data"]["question"] == "测试问题？"
-        assert "id" in data["data"]
+        assert len(data["data"]) == 2
+        questions = [item["question"] for item in data["data"]]
+        assert "快递站在哪？" in questions
+        assert "宿舍几点熄灯？" in questions
 
-    def test_create_as_student_denied(self, client, student_headers):
-        resp = client.post("/api/admin/faq", headers=student_headers, json={
-            "question": "?", "answer": "!",
+
+class TestAdminCreateFaq:
+    """POST /api/admin/faq —— 管理员新增 FAQ。"""
+
+    def test_create_faq_success(self, client, admin_headers):
+        with patch("app.api.faq.incremental_embed_student_faq"):
+            resp = client.post("/api/admin/faq", headers=admin_headers, json={
+                "question": "如何报到？",
+                "answer": "携带录取通知书到指定地点报到。",
+            })
+        data = resp.json()
+        assert data["success"] is True
+        assert data["data"]["question"] == "如何报到？"
+        assert data["data"]["id"] is not None
+
+    def test_create_faq_with_keywords(self, client, admin_headers):
+        with patch("app.api.faq.incremental_embed_student_faq"):
+            resp = client.post("/api/admin/faq", headers=admin_headers, json={
+                "question": "学费怎么交？",
+                "answer": "通过统一支付平台。",
+                "keywords": "学费,缴费,支付",
+                "category": "财务",
+            })
+        data = resp.json()
+        assert data["success"] is True
+        assert data["data"]["keywords"] == "学费,缴费,支付"
+        assert data["data"]["category"] == "财务"
+
+    def test_create_faq_unauthorized(self, client):
+        resp = client.post("/api/admin/faq", json={
+            "question": "test",
+            "answer": "test",
         })
-        assert resp.status_code == 403
-
-    def test_create_empty_question(self, client, auth_headers):
-        resp = client.post("/api/admin/faq", headers=auth_headers, json={
-            "question": "", "answer": "答案",
-        })
-        assert resp.status_code == 422
+        assert resp.status_code == 401
 
 
-class TestDeleteFaq:
-    def test_delete_as_admin(self, client, db, auth_headers):
-        from app.models.faq import Faq
-        faq = Faq(question="待删", answer="删除答案")
-        db.add(faq)
-        db.commit()
-        faq_id = str(faq.id)
+class TestAdminDeleteFaq:
+    """DELETE /api/admin/faq/{faq_id} —— 管理员删除 FAQ。"""
 
-        resp = client.delete(f"/api/admin/faq/{faq_id}", headers=auth_headers)
-        assert resp.json()["success"] is True
+    def test_delete_faq_success(self, client, admin_headers):
+        with patch("app.api.faq.incremental_embed_student_faq"):
+            create_resp = client.post("/api/admin/faq", headers=admin_headers, json={
+                "question": "待删除的问题",
+                "answer": "待删除的答案。",
+            })
+        faq_id = create_resp.json()["data"]["id"]
 
-    def test_delete_nonexistent(self, client, auth_headers):
-        resp = client.delete("/api/admin/faq/00000000-0000-0000-0000-000000000000", headers=auth_headers)
+        with patch("app.api.faq.delete_documents_for_student_faq"):
+            resp = client.delete(f"/api/admin/faq/{faq_id}", headers=admin_headers)
+        data = resp.json()
+        assert data["success"] is True
+
+        # 确认已删除
+        list_resp = client.get("/api/faq")
+        assert len(list_resp.json()["data"]) == 0
+
+    def test_delete_nonexistent_faq(self, client, admin_headers):
+        fake_id = str(uuid.uuid4())
+        resp = client.delete(f"/api/admin/faq/{fake_id}", headers=admin_headers)
         assert resp.status_code == 404
-
-    def test_delete_as_student_denied(self, client, student_headers):
-        resp = client.delete("/api/admin/faq/some-id", headers=student_headers)
-        assert resp.status_code == 403

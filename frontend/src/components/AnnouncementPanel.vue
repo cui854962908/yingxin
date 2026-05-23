@@ -19,14 +19,14 @@ async function load() {
     const res = await fetch('/api/announcements')
     const d = await res.json()
     if (d.success) items.value = d.data
-  } catch { /* */ }
+  } catch { console.warn('加载公告列表失败') }
 }
 
 async function handleDelete(id: string) {
   try {
     await fetch(`/api/admin/announcements/${id}`, { method: 'DELETE', headers: authHeaders() })
     await load()
-  } catch { /* */ }
+  } catch { console.warn('删除公告请求失败') }
 }
 
 onMounted(load)

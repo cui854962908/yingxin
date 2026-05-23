@@ -175,7 +175,7 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
               if (json.token) tokenBuffer.push(json.token)
               if (json.done) { streamDone = true; doneLinks = json.links }
               if (json.error) { streamDone = true }
-            } catch { /* */ }
+            } catch { /* SSE token JSON 解析失败，跳过 */ }
           }
         }
       } catch { streamDone = true }
@@ -224,26 +224,6 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
       links: [{ label: '📢 查看校园公告', to: '/announcements' }],
     }
 
-    const kw: Record<string, string> = {
-      '快递': '快递站位于北苑食堂西侧，凭取件码和校园卡取件。\n\n① 收到短信后查看取件码\n② 按货架号找到包裹\n③ 出示校园卡核验\n④ 核验通过取走包裹',
-      '宿舍': '周日到周四 23:00 熄灯，周五周六 23:30 熄灯。\n\n门禁每晚 22:30 只进不出，23:00 锁门。',
-      '食堂': '学校有北苑食堂、南苑食堂、西区美食广场三个食堂，均支持校园卡和手机支付。',
-      '军训': '军训为期两周，9月进行。服装在体育馆一楼领取，带录取通知书即可。',
-      '学费': '通过学校统一支付平台缴费，支持微信/支付宝/银联。每学期开学两周内缴清，可申请助学贷款。',
-      '图书馆': '图书馆位于校园中心，7:00-22:00 开放，凭校园卡入馆。期末周延长至 23:00。',
-      '选课': '选课通过教务系统，开学前一周开放。热门课程拼手速！',
-      '校园卡': '入学时统一发放。补办：行政楼一楼卡务中心，带身份证+学生证，工本费 20 元，立等可取。',
-    }
-    for (const [k, v] of Object.entries(kw)) {
-      if (q.includes(k)) return {
-        answer: v,
-        links: [
-          { label: '📋 查看问题答疑', to: '/faq' },
-          { label: '📢 查看校园公告', to: '/announcements' },
-        ],
-      }
-    }
-
     return {
       answer: `这个问题小信目前还不知道 🥲\n\n关于「${q.slice(0, 15)}」，建议你：\n• 查看校园公告了解最新动态\n• 在问题答疑页面搜索 FAQ\n• 联系辅导员获取一对一帮助\n\n还有其他问题吗？😊`,
       links: [
@@ -264,7 +244,7 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
         const annJson = await annRes.json()
         if (faqJson.success) faqData.value = faqJson.data.map((x: any) => ({ q: x.question, a: x.answer }))
         if (annJson.success) announceData.value = annJson.data.map((x: any) => ({ title: x.title, content: x.content }))
-      } catch { /* */ }
+      } catch { /* 加载FAQ/公告数据失败，继续使用本地兜底 */ }
     }
 
     const { answer, links } = findAnswer(q)

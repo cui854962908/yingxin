@@ -20,6 +20,15 @@ const searchQ = ref('')
 const searchResult = ref<Student[]>([])
 const searchNotFound = ref(false)
 
+// Toast 提示
+const toast = ref<{ text: string; type: 'success' | 'error' } | null>(null)
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+function showToast(text: string, type: 'success' | 'error') {
+  if (toastTimer) clearTimeout(toastTimer)
+  toast.value = { text, type }
+  toastTimer = setTimeout(() => { toast.value = null }, 3000)
+}
+
 // 表单状态
 const showForm = ref(false)
 const editingId = ref<string | null>(null)
@@ -43,7 +52,7 @@ async function loadData() {
         name, students, expanded: false,
       }))
     }
-  } catch { /* */ }
+  } catch { showToast('加载学生数据失败，请检查网络连接', 'error') }
 }
 
 async function doSearch() {
@@ -54,7 +63,7 @@ async function doSearch() {
     const d = await res.json()
     if (d.success && d.data?.length) { searchResult.value = d.data; searchNotFound.value = false }
     else { searchResult.value = []; searchNotFound.value = true }
-  } catch { searchResult.value = [] }
+  } catch { searchResult.value = []; showToast('搜索失败，请稍后重试', 'error') }
 }
 
 function toggleGroup(g: ClassGroup) { g.expanded = !g.expanded }
@@ -102,19 +111,25 @@ async function saveForm() {
     : '/api/admin/students'
   const method = editingId.value ? 'PUT' : 'POST'
   try {
-    await fetch(url, { method, headers: authHeaders(), body })
+    const res = await fetch(url, { method, headers: authHeaders(), body })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
     showForm.value = false
+    showToast(editingId.value ? '学生信息已更新' : '学生已新增', 'success')
     await loadData()
-  } catch { /* */ }
+  } catch { showToast('保存失败，请检查网络连接', 'error') }
   formSaving.value = false
 }
 
 async function doDelete() {
   if (!deleteTarget.value) return
-  await fetch(`/api/admin/students/${deleteTarget.value}`, { method: 'DELETE', headers: authHeaders() })
-  deleteTarget.value = null
-  searchResult.value = []
-  await loadData()
+  try {
+    const res = await fetch(`/api/admin/students/${deleteTarget.value}`, { method: 'DELETE', headers: authHeaders() })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    deleteTarget.value = null
+    searchResult.value = []
+    showToast('学生已删除', 'success')
+    await loadData()
+  } catch { showToast('删除失败，请稍后重试', 'error') }
 }
 
 onMounted(loadData)
@@ -122,6 +137,10 @@ onMounted(loadData)
 
 <template>
   <div class="ap">
+    <!-- Toast 提示 -->
+    <Transition name="toast">
+      <div v-if="toast" :class="['ap-toast', `ap-toast--${toast.type}`]">{{ toast.text }}</div>
+    </Transition>
     <!-- 搜索栏 -->
     <div class="ap-toolbar">
       <div class="ap-search">
@@ -241,7 +260,22 @@ onMounted(loadData)
 </template>
 
 <style scoped>
-.ap{display:flex;flex-direction:column;gap:16px}
+.ap{display:flex;flex-direction:column;gap:16px;position:relative}
+
+/* Toast */
+.ap-toast {
+  position: fixed; top: 20px; right: 20px; z-index: 200;
+  padding: 12px 24px; border-radius: 10px;
+  font-size: .84rem; font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,.12);
+  pointer-events: none;
+}
+.ap-toast--success { background: #eaf7ea; color: #2d6a2d; border: 1px solid #c3e6c3; }
+.ap-toast--error { background: #fef5f5; color: #b5343a; border: 1px solid #fce4e4; }
+.toast-enter-active { animation: toastIn .3s cubic-bezier(.16,1,.3,1); }
+.toast-leave-active { animation: toastOut .25s ease-in; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(-8px); } }
 .ap-toolbar{display:flex;gap:12px;align-items:flex-start}
 .ap-search{flex:1;position:relative}
 .ap-search-input{width:100%;height:38px;padding:0 14px;border:1.5px solid #e5dbcc;border-radius:8px;font-size:.84rem;color:#3c3028;background:#fefcf9;outline:none;font-family:inherit;transition:border-color .2s}

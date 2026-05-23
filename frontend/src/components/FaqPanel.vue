@@ -29,7 +29,7 @@ async function loadFaq() {
     const res = await fetch('/api/faq')
     const d = await res.json()
     if (d.success) allItems.value = d.data
-  } catch { /* */ }
+  } catch { console.warn('加载FAQ列表失败') }
 }
 
 function toggleExpand(id: string) { expanded[id] = !expanded[id] }
@@ -38,7 +38,7 @@ async function handleDelete(id: string) {
   try {
     await fetch(`/api/admin/faq/${id}`, { method: 'DELETE', headers: authHeaders() })
     await loadFaq()
-  } catch { /* */ }
+  } catch { console.warn('删除FAQ请求失败') }
 }
 
 onMounted(loadFaq)

@@ -24,7 +24,7 @@ async function handleSubmit() {
       body: JSON.stringify({ question: question.value.trim(), answer: answer.value.trim() }),
     })
     goBack()
-  } catch { /* */ }
+  } catch { console.warn('发布FAQ请求失败') }
   saving.value = false
 }
 </script>

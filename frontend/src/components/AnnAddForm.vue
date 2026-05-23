@@ -24,7 +24,7 @@ async function handleSubmit() {
       body: JSON.stringify({ title: title.value.trim(), content: content.value.trim() }),
     })
     goBack()
-  } catch { /* */ }
+  } catch { console.warn('发布公告请求失败') }
   saving.value = false
 }
 </script>
