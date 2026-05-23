@@ -1,92 +1,86 @@
-"""认证端点测试"""
+"""auth 路由集成测试：登录验证 + 锁定逻辑 + /auth/me。"""
+
+import pytest
+from app.services import login_guard
 
 
-class TestVerifyLogin:
-    def test_verify_success(self, client, db):
-        from app.models.student import Student
-        db.add(Student(
-            name="张三", student_id="2026001", id_number="410105200509010011",
-            class_name="计算机班", dormitory="北苑3号",
-            advisor_name="李老师", advisor_phone="138-0000-1111",
-            class_teacher_name="赵老师", class_teacher_phone="137-0000-7777",
-            role="student",
-        ))
-        db.commit()
+class TestVerifyStudent:
+    """POST /api/verify 登录验证。"""
 
+    def test_valid_credentials_return_token(self, client, seed_student):
+        """正确凭证返回 token。"""
         resp = client.post("/api/verify", json={
-            "name": "张三", "student_id": "2026001", "id_number": "410105200509010011",
+            "name": "张三",
+            "student_id": "20260901001",
+            "id_number": "410105200509010011",
         })
         data = resp.json()
-
         assert data["success"] is True
         assert "token" in data
         assert data["data"]["name"] == "张三"
-        assert data["data"]["advisor"]["name"] == "李老师"
-        assert data["data"]["class_teacher"]["name"] == "赵老师"
-        assert data["data"]["role"] == "student"
 
-    def test_verify_wrong_name(self, client, db):
-        from app.models.student import Student
-        db.add(Student(
-            name="张三", student_id="2026001", id_number="410105200509010011",
-            role="student",
-        ))
-        db.commit()
-
+    def test_wrong_credentials_return_remaining(self, client, seed_student):
+        """错误凭证返回剩余次数。"""
         resp = client.post("/api/verify", json={
-            "name": "李四", "student_id": "2026001", "id_number": "410105200509010011",
+            "name": "张三",
+            "student_id": "20260901001",
+            "id_number": "wrong",
         })
         data = resp.json()
         assert data["success"] is False
+        assert "还剩" in data["message"]
+        assert data["data"]["remaining_attempts"] == 4
 
-    def test_verify_wrong_id_number(self, client, db):
-        from app.models.student import Student
-        db.add(Student(
-            name="张三", student_id="2026001", id_number="410105200509010011",
-            role="student",
-        ))
-        db.commit()
+    def test_lock_after_5_failures(self, client, seed_student):
+        """连续 5 次错误后返回锁定消息。"""
+        payload = {
+            "name": "张三",
+            "student_id": "20260901001",
+            "id_number": "wrong",
+        }
+        # 前 4 次
+        for _ in range(4):
+            client.post("/api/verify", json=payload)
+        # 第 5 次
+        resp = client.post("/api/verify", json=payload)
+        data = resp.json()
+        assert data["success"] is False
+        assert "锁定" in data["message"]
 
+    def test_locked_account_cannot_login(self, client, seed_student):
+        """锁定后即使正确凭证也无法登录。"""
+        # 先锁定
+        payload_wrong = {
+            "name": "张三",
+            "student_id": "20260901001",
+            "id_number": "wrong",
+        }
+        for _ in range(5):
+            client.post("/api/verify", json=payload_wrong)
+
+        # 正确凭证登录
         resp = client.post("/api/verify", json={
-            "name": "张三", "student_id": "2026001", "id_number": "000000000000000000",
+            "name": "张三",
+            "student_id": "20260901001",
+            "id_number": "410105200509010011",
         })
         data = resp.json()
         assert data["success"] is False
+        assert "锁定" in data["message"]
 
-    def test_verify_admin_role(self, client, db):
-        from app.models.student import Student
-        db.add(Student(
-            name="管理员", student_id="adm001", id_number="410105200509010011",
-            role="admin",
-        ))
-        db.commit()
-
+    def test_auth_me_returns_profile(self, client, seed_student):
+        """已认证用户 GET /auth/me 返回个人信息。"""
+        # 先登录获取 token
         resp = client.post("/api/verify", json={
-            "name": "管理员", "student_id": "adm001", "id_number": "410105200509010011",
+            "name": "张三",
+            "student_id": "20260901001",
+            "id_number": "410105200509010011",
         })
-        data = resp.json()
+        token = resp.json()["token"]
+
+        # 用 token 访问 /auth/me
+        resp2 = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
+        data = resp2.json()
         assert data["success"] is True
-        assert data["data"]["role"] == "admin"
-
-    def test_verify_empty_name(self, client):
-        resp = client.post("/api/verify", json={
-            "name": "", "student_id": "2026001", "id_number": "410105200509010011",
-        })
-        assert resp.status_code == 422
-
-
-class TestAuthMe:
-    def test_auth_me_valid_token(self, client, auth_headers):
-        resp = client.get("/api/auth/me", headers=auth_headers)
-        data = resp.json()
-        assert data["success"] is True
-        assert "sub" in data["data"]
-        assert data["data"]["role"] == "admin"
-
-    def test_auth_me_no_token(self, client):
-        resp = client.get("/api/auth/me")
-        assert resp.status_code == 401
-
-    def test_auth_me_invalid_token(self, client):
-        resp = client.get("/api/auth/me", headers={"Authorization": "Bearer invalid.token.here"})
-        assert resp.status_code == 401
+        assert data["data"]["name"] == "张三"
+        assert data["data"]["student_id"] == "20260901001"

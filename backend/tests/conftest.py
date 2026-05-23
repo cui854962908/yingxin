@@ -1,110 +1,70 @@
-"""测试 fixtures：TestClient + 数据库事务回滚"""
-
-import os
-os.environ["TESTING"] = "true"
-
 import pytest
-from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
+from fastapi.testclient import TestClient
 
-from app.core.config import DATABASE_URL
+from app.db.database import Base, get_db
+from app.models.student import Student
 
-from app.main import app
-from app.core.database import Base, get_db
-from app.models.student import Student, Assistant
-
-
-engine = create_engine(DATABASE_URL)
-TestingSessionLocal = sessionmaker(bind=engine)
+# SQLite 内存库（不依赖 PostgreSQL）
+TEST_DATABASE_URL = "sqlite:///:memory:"
+_test_engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_test_engine, class_=Session)
 
 
-@pytest.fixture(scope="function", autouse=True)
-def clean_db():
-    """每个测试前重建干净的数据库。"""
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
+@pytest.fixture(autouse=True)
+def _create_tables():
+    """每个测试前重建 Student 表。"""
+    Student.__table__.create(bind=_test_engine, checkfirst=True)
     yield
+    Student.__table__.drop(bind=_test_engine, checkfirst=True)
 
 
-@pytest.fixture(scope="function")
-def db():
-    connection = engine.connect()
-    transaction = connection.begin()
-    session = TestingSessionLocal(bind=connection)
-    try:
-        yield session
-    finally:
-        session.close()
-        transaction.rollback()
-        connection.close()
+@pytest.fixture(autouse=True)
+def _clear_login_guard():
+    """每个测试后清除 login_guard 内存状态，避免测试间锁定传递。"""
+    yield
+    from app.services.login_guard import _store
+    _store.clear()
 
 
 @pytest.fixture
-def client(db):
-    def override_get_db():
-        yield db
-    app.dependency_overrides[get_db] = override_get_db
+def db() -> Session:
+    session = TestSessionLocal()
+    try:
+        yield session
+    finally:
+        session.rollback()
+        session.close()
+
+
+@pytest.fixture
+def client(db: Session) -> TestClient:
+    from app.main import app
+
+    def _override_get_db():
+        try:
+            yield db
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = _override_get_db
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
 
 
 @pytest.fixture
-def admin_token(client, db):
-    admin = Student(
-        name="管理员",
-        student_id="admin001",
-        id_number="410105200509010099",
-        class_name="管理班",
-        dormitory="办公室",
-        advisor_name="导师",
-        advisor_phone="138-0000-0000",
-        class_teacher_name="班主任",
-        class_teacher_phone="137-0000-0000",
-        role="admin",
-    )
-    db.add(admin)
-    db.commit()
-
-    resp = client.post("/api/verify", json={
-        "name": "管理员",
-        "student_id": "admin001",
-        "id_number": "410105200509010099",
-    })
-    return resp.json()["token"]
-
-
-@pytest.fixture
-def student_token(client, db):
-    student = Student(
-        name="测试学生",
-        student_id="test001",
-        id_number="410105200509010001",
-        class_name="测试班",
-        dormitory="测试宿舍",
-        advisor_name="测试导师",
-        advisor_phone="138-0000-1111",
-        class_teacher_name="测试班主任",
-        class_teacher_phone="137-0000-2222",
+def seed_student(db: Session) -> Student:
+    """写入一个测试学生，返回 ORM 对象。"""
+    s = Student(
+        name="张三",
+        student_id="20260901001",
+        id_number="410105200509010011",
+        class_name="计算机科学2026-1班",
         role="student",
     )
-    db.add(student)
+    db.add(s)
     db.commit()
-
-    resp = client.post("/api/verify", json={
-        "name": "测试学生",
-        "student_id": "test001",
-        "id_number": "410105200509010001",
-    })
-    return resp.json()["token"]
-
-
-@pytest.fixture
-def auth_headers(admin_token):
-    return {"Authorization": f"Bearer {admin_token}"}
-
-
-@pytest.fixture
-def student_headers(student_token):
-    return {"Authorization": f"Bearer {student_token}"}
+    db.refresh(s)
+    return s

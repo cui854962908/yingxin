@@ -28,7 +28,7 @@ const emit = defineEmits<{
     <div :class="['msg-bubble', props.msg.role]">
       <span
         class="msg-text"
-        v-html="(props.msg.role === 'xin' ? (props.msg.displayText || '') : props.msg.text).replace(/\n/g, '<br>')"
+        v-text="props.msg.role === 'xin' ? (props.msg.displayText || '') : props.msg.text"
       />
       <span v-if="props.msg.role === 'xin' && !props.msg.done" class="msg-cursor">|</span>
       <span class="msg-time">{{ props.msg.time }}</span>
@@ -71,7 +71,7 @@ const emit = defineEmits<{
   border-bottom-left-radius: 4px;
   border: 1px solid rgba(64,158,255,.1);
 }
-.msg-text { font-size: .95rem; line-height: 1.7; display: inline; }
+.msg-text { font-size: .95rem; line-height: 1.7; display: inline; white-space: pre-line; }
 .msg-bubble.xin .msg-text { font-size: .95rem; }
 .msg-cursor { display: inline; color: #409eff; font-weight: 700; animation: blink .8s step-end infinite; }
 @keyframes blink { 50% { opacity: 0 } }
