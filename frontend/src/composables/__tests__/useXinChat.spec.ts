@@ -21,7 +21,7 @@ describe('useXinChat', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     localStorage.clear()
-    autoSpeak = ref(false)
+    autoSpeak = ref(true)
     speak = vi.fn<(text: string) => void>()
   })
 
@@ -54,25 +54,21 @@ describe('useXinChat', () => {
     })
 
     it('首次调用后自动朗读（延迟）', async () => {
-      vi.useFakeTimers()
       const { ensureWelcome } = createChat()
       ensureWelcome()
-      vi.advanceTimersByTime(800)
+      await new Promise(r => setTimeout(r, 1000))
       expect(speak).toHaveBeenCalledWith(expect.stringContaining('河南牧业经济学院'))
-      vi.useRealTimers()
     })
 
     it('第二次调用不再朗读', async () => {
-      vi.useFakeTimers()
       const { ensureWelcome } = createChat()
       ensureWelcome()
-      vi.advanceTimersByTime(800)
+      await new Promise(r => setTimeout(r, 1000))
       speak.mockClear()
 
       ensureWelcome()
-      vi.advanceTimersByTime(800)
+      await new Promise(r => setTimeout(r, 100))
       expect(speak).not.toHaveBeenCalled()
-      vi.useRealTimers()
     })
   })
 
@@ -191,6 +187,10 @@ describe('useXinChat', () => {
           json: () => Promise.resolve({ success: true, data: [{ question: '快递在哪', answer: '菜鸟驿站' }] }),
         } as Response)
         .mockResolvedValueOnce({ // announcements fetch
+          ok: true,
+          json: () => Promise.resolve({ success: true, data: [] }),
+        } as Response)
+        .mockResolvedValueOnce({ // clubs fetch
           ok: true,
           json: () => Promise.resolve({ success: true, data: [] }),
         } as Response)

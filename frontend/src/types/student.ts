@@ -1,4 +1,11 @@
+export interface Assistant {
+  name: string
+  phone: string
+  class_name: string
+}
+
 export interface Student {
+  id?: number
   name: string
   student_id: string
   photo: string
@@ -7,5 +14,5 @@ export interface Student {
   role: string
   advisor: { name: string; phone: string }
   class_teacher: { name: string; phone: string }
-  assistants: { name: string; phone: string; class_name: string }[]
+  assistants: Assistant[]
 }

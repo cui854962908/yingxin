@@ -1,4 +1,4 @@
-"""统一校园关键词表，供 agent_domain 与 llm 模块共用。"""
+"""统一校园关键词表，供 agent 路由与 llm 模块共用。"""
 
 SCHOOL_KEYWORDS = (
     "迎新",

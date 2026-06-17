@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, nextTick } from 'vue'
-import lottie from 'lottie-web'
+import { ref, onMounted, onUnmounted, nextTick, watch, inject, computed, type Ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { registerMobileChatOpen } from '../router/index'
+import lottie, { type AnimationItem } from 'lottie-web'
 import XinAvatar from './XinAvatar.vue'
 import XinQuickTags from './XinQuickTags.vue'
 import XinChatBubble from './XinChatBubble.vue'
@@ -10,59 +12,118 @@ import { useXinChat } from '../composables/useXinChat'
 
 const { autoSpeak, isSpeaking, speak, stopSpeak, toggleSpeak } = useTTS()
 
+const route = useRoute()
+const injectedOpen = inject<Ref<boolean>>('xinOpen')
+const sidebarOpen = inject<Ref<boolean>>('sidebarOpen', ref(false))
+
 const {
   open, messages, input, sending, chatBody, quickList,
   send, onKeydown, closeChat, navigateTo, ensureWelcome,
-} = useXinChat(autoSpeak, speak)
+} = useXinChat(autoSpeak, speak, injectedOpen)
 
-const { lottieRef, x, y, dragging, isMobile, onPointerDown, onClickXin } = useDrag(
+const { lottieRef, x, y, dragging, isMobile, onPointerDown, reclampPosition } = useDrag(
   open,
   () => { nextTick(() => ensureWelcome()) },
 )
 
-function onKeyup(e: KeyboardEvent) { if (e.key === 'Escape') open.value = false }
-function closeChatAndStop() { closeChat(); stopSpeak() }
+// 校园地图页 / 手机端侧边栏打开时隐藏悬浮球
+const hideOnCampus = computed(() => route.path === '/campus')
+const hideBySidebar = computed(() => isMobile.value && sidebarOpen.value)
 
-// ===== Lottie =====
-let anim: any = null
-onMounted(() => {
+function onKeyup(e: KeyboardEvent) { if (e.key === 'Escape') closeChatAndStop() }
+
+// 手机端：系统返回键先关闭聊天层，而不是逐页回退
+let chatHistoryPushed = false
+let suppressChatPopstate = false
+
+function closeChatAndStop() {
+  const syncHistory = chatHistoryPushed && isMobile.value
+  closeChat()
+  stopSpeak()
+  if (syncHistory) {
+    chatHistoryPushed = false
+    suppressChatPopstate = true
+    history.back()
+  }
+}
+
+function onChatPopstate() {
+  if (suppressChatPopstate) {
+    suppressChatPopstate = false
+    return
+  }
+  if (open.value && isMobile.value) {
+    closeChat()
+    stopSpeak()
+    chatHistoryPushed = false
+  }
+}
+
+// 打开聊天 → 确保欢迎语（悬浮球/服务卡片/外部触发均覆盖）
+// 关闭聊天 → 手机端悬浮球回到可视区域内
+watch(open, (val) => {
+  if (val) {
+    nextTick(() => ensureWelcome())
+    if (isMobile.value && !chatHistoryPushed) {
+      history.pushState({ xinChat: 1 }, '')
+      chatHistoryPushed = true
+    }
+  } else if (isMobile.value) {
+    nextTick(() => reclampPosition())
+  }
+})
+
+// Lottie 悬浮形象（移动端/桌面统一；文件缺失时保留光晕轨道）
+const lottieReady = ref(false)
+let anim: AnimationItem | null = null
+onMounted(async () => {
   if (lottieRef.value) {
-    anim = lottie.loadAnimation({
-      container: lottieRef.value, renderer: 'svg', loop: true, autoplay: true,
-      path: '/animation/Live chatbot.json',
-    })
+    try {
+      const res = await fetch('/animation/Live chatbot.json', { method: 'HEAD' })
+      if (res.ok) {
+        anim = lottie.loadAnimation({
+          container: lottieRef.value, renderer: 'svg', loop: true, autoplay: true,
+          path: '/animation/Live chatbot.json',
+        })
+        lottieReady.value = true
+      }
+    } catch {
+      /* 无 Lottie 资源时由 CSS 光晕 + 轨道环展示 */
+    }
   }
   document.addEventListener('keyup', onKeyup)
+  window.addEventListener('popstate', onChatPopstate)
+  registerMobileChatOpen(() => open.value)
 })
 onUnmounted(() => {
   anim?.destroy()
   document.removeEventListener('keyup', onKeyup)
+  window.removeEventListener('popstate', onChatPopstate)
+  registerMobileChatOpen(() => false)
 })
 </script>
 
 <template>
-  <!-- ========== 小信悬浮角色 ========== -->
-  <div
-    class="xin-character"
-    :style="{ left: x + 'px', top: y + 'px' }"
-    :class="{ dragging }"
-    @pointerdown.prevent="onPointerDown"
-    @click="onClickXin"
-  >
-    <div ref="lottieRef" class="xin-lottie" />
-    <div class="xin-glow" />
-    <!-- 科技粒子环 -->
-    <div class="xin-orbit" />
-  </div>
+  <!-- Teleport 到 body：避免 App 过渡 transform 导致 iOS 上 fixed 定位失效 -->
+  <Teleport to="body">
+    <div
+      class="xin-character"
+      :style="{ left: x + 'px', top: y + 'px' }"
+      :class="{ 'xin-character--hide': hideOnCampus || (open && isMobile) || hideBySidebar, dragging }"
+      @pointerdown.prevent="onPointerDown"
+    >
+      <div ref="lottieRef" class="xin-lottie" :class="{ 'xin-lottie--ready': lottieReady, 'xin-lottie--fallback': !lottieReady }" />
+      <div class="xin-glow" />
+      <div class="xin-orbit" />
+      <div v-if="!lottieReady" class="xin-core" aria-hidden="true" />
+    </div>
 
-  <!-- 桌面遮罩 -->
-  <Transition name="overlay">
-    <div v-if="open && !isMobile" class="xin-overlay" @click="closeChatAndStop" />
-  </Transition>
+    <Transition name="overlay">
+      <div v-if="open && !isMobile && !hideOnCampus" class="xin-overlay" @click="closeChatAndStop" />
+    </Transition>
 
-  <!-- ========== 聊天面板 ========== -->
-  <Transition :name="isMobile ? 'chat-mobile' : 'chat-desktop'">
-    <div v-if="open" :class="['xin-panel', { mobile: isMobile }]">
+    <Transition :name="isMobile ? 'chat-mobile' : 'chat-desktop'">
+      <div v-if="open && !hideOnCampus" :class="['xin-panel', { mobile: isMobile }]">
       <!-- 科技角标装饰 -->
       <div class="tech-corners">
         <span class="tc tl" /><span class="tc tr" /><span class="tc bl" /><span class="tc br" />
@@ -133,7 +194,8 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
-  </Transition>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -147,10 +209,25 @@ onUnmounted(() => {
   transition: transform .2s cubic-bezier(.33,1,.68,1), filter .3s;
   -webkit-tap-highlight-color: transparent;
 }
+.xin-character--hide { display: none; }
 .xin-character:hover { transform: scale(1.1); filter: drop-shadow(0 0 36px rgba(64,158,255,.5)); }
 .xin-character.dragging { cursor: grabbing; transform: scale(1.05); }
-.xin-lottie { width: 170px; height: 170px; pointer-events: none; }
+.xin-avatar-wrap {
+  position: absolute; inset: 0; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.xin-lottie { width: 170px; height: 170px; pointer-events: none; position: relative; z-index: 2; }
+.xin-lottie--fallback { opacity: 0; pointer-events: none; }
+.xin-lottie--ready { opacity: 1; }
 .xin-lottie :deep(svg) { width: 100% !important; height: 100% !important; }
+/* 无 Lottie 时的能量核心（替代方块 SVG 头像，接近原版光球形象） */
+.xin-core {
+  position: absolute; z-index: 1; width: 52px; height: 52px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #b8dcff 0%, #409eff 45%, #1a5fb4 100%);
+  box-shadow: 0 0 28px rgba(64,158,255,.65), 0 0 56px rgba(64,158,255,.25);
+  pointer-events: none;
+}
 .xin-glow {
   position: absolute; inset: -20px; border-radius: 50%;
   background: radial-gradient(circle, rgba(64,158,255,.22) 0%, transparent 65%);
@@ -280,7 +357,7 @@ onUnmounted(() => {
 
 /* ===== 消息区 ===== */
 .panel-body {
-  flex: 1; overflow-y: auto;
+  flex: 1; overflow-y: auto; overflow-x: hidden;
   padding: 20px 16px;
   background:
     radial-gradient(ellipse at 50% 0%, rgba(64,158,255,.04) 0%, transparent 50%),
@@ -288,10 +365,9 @@ onUnmounted(() => {
     #0c1a2d;
   display: flex; flex-direction: column; gap: 16px;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
-.panel-body::-webkit-scrollbar { width: 3px; }
-.panel-body::-webkit-scrollbar-thumb { background: rgba(64,158,255,.2); border-radius: 2px; }
-.panel-body::-webkit-scrollbar-track { background: transparent; }
+.panel-body::-webkit-scrollbar { display: none; }
 
 .msg-row { display: flex; align-items: flex-end; gap: 8px; }
 .msg-row.xin { align-items: flex-start; }
@@ -376,4 +452,29 @@ onUnmounted(() => {
 .send-btn:disabled { opacity: .25; box-shadow: none; cursor: default; }
 .send-btn:not(:disabled):hover { background: #5aaeff; box-shadow: 0 0 24px rgba(64,158,255,.5); transform: scale(1.05); }
 .send-btn:not(:disabled):active { transform: scale(.94); }
+
+@media(max-width: 768px) {
+  .xin-character { width: 96px; height: 96px; }
+  .xin-lottie { width: 88px; height: 88px; }
+  .xin-core { width: 36px; height: 36px; box-shadow: 0 0 20px rgba(64,158,255,.7), 0 0 40px rgba(64,158,255,.3); }
+  .xin-glow {
+    inset: -12px;
+    background: radial-gradient(circle, rgba(64,158,255,.42) 0%, rgba(64,158,255,.12) 55%, transparent 72%);
+  }
+  .xin-orbit { inset: -6px; border-width: 2px; border-color: rgba(64,158,255,.45); }
+  .xin-panel.mobile { height: 100dvh; height: calc(var(--vh, 1vh) * 100); }
+  .xin-panel.mobile .panel-header {
+    padding-top: calc(14px + env(safe-area-inset-top, 0px));
+  }
+  .xin-panel.mobile .panel-footer {
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+  .chat-input { font-size: 16px; }
+  .online-dot { animation: none }
+  .speak-toggle.speaking { animation: none }
+  .xin-overlay { backdrop-filter: none; background: rgba(5,12,30,.65) }
+  .data-stream { display: none }
+  /* 用静态发光代替动画 */
+  .xin-character { filter: drop-shadow(0 0 16px rgba(64,158,255,.2)) }
+}
 </style>

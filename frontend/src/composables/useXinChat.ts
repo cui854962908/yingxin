@@ -1,6 +1,11 @@
 import { ref, nextTick, type Ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useAppNavigate } from './useAppNavigate'
+import { usePreload } from './usePreload'
 import type { Msg } from '../components/XinChatBubble.vue'
+
+interface FaqItem { question: string; answer: string }
+interface AnnounceItem { title: string; content: string }
+interface ClubItem { id: string; name: string; intro: string }
 
 interface AgentResponse {
   success: boolean
@@ -13,9 +18,9 @@ interface AgentResponse {
   }
 }
 
-export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => void) {
-  const open = ref(false)
-  const router = useRouter()
+export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => void, externalOpen?: Ref<boolean>) {
+  const open = externalOpen ?? ref(false)
+  const { appNavigate } = useAppNavigate()
   const messages = ref<Msg[]>([])
   const input = ref('')
   const sending = ref(false)
@@ -27,11 +32,25 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
     { label: '📦 快递在哪', text: '快递在哪' },
     { label: '🏠 熄灯时间', text: '宿舍几点熄灯' },
     { label: '💰 学费', text: '学费怎么交' },
-    { label: '🪪 校园卡', text: '校园卡补办' },
+    { label: '🎭 有街舞社吗', text: '有没有街舞社' },
   ]
   const faqData = ref<{ q: string; a: string }[]>([])
   const announceData = ref<{ title: string; content: string }[]>([])
+  const clubData = ref<ClubItem[]>([])
   const useLLM = ref(true)
+  const { faqItems, announcements, clubs } = usePreload()
+
+  function syncFallbackFromCache() {
+    if (faqData.value.length === 0 && faqItems.value.length > 0) {
+      faqData.value = faqItems.value.map(x => ({ q: x.question, a: x.answer }))
+    }
+    if (announceData.value.length === 0 && announcements.value.length > 0) {
+      announceData.value = announcements.value.map(x => ({ title: x.title, content: x.content }))
+    }
+    if (clubData.value.length === 0 && clubs.value.length > 0) {
+      clubData.value = clubs.value.map((c: ClubItem) => ({ id: c.id, name: c.name, intro: c.intro }))
+    }
+  }
 
   function now() {
     return new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
@@ -62,9 +81,9 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
     }
     msg.displayText = msg.text.slice(0, i + 1)
     nextTick(() => scrollBottom())
-    let delay = 25 + Math.random() * 20
+    let delay = 10 + Math.random() * 10
     const ch = msg.text[i]
-    if ('，。！？、；：\n'.includes(ch)) delay = 120 + Math.random() * 130
+    if ('，。！？、；：\n'.includes(ch)) delay = 40 + Math.random() * 50
     const timer = setTimeout(() => scheduleNextChar(idx, i + 1), delay)
     typeQueue.push({ idx, timer })
   }
@@ -78,8 +97,8 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
     typeQueue = []
   }
 
-  function pushXinMsg(text: string) {
-    messages.value.push({ role: 'xin', text, time: now(), displayText: '', done: false })
+  function pushXinMsg(text: string, source?: string) {
+    messages.value.push({ role: 'xin', text, time: now(), displayText: '', done: false, source })
     const idx = messages.value.length - 1
     nextTick(() => scrollBottom())
     scheduleNextChar(idx, 0)
@@ -88,7 +107,7 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
   function ensureWelcome() {
     if (messages.value.length === 0) {
       pushXinMsg('你好！我是来自河南牧业经济学院信息工程学院的小信，有什么不懂的请尽管问我吧。')
-      if (!welcomeSpoken) {
+      if (!welcomeSpoken && autoSpeak.value) {
         welcomeSpoken = true
         setTimeout(() => speak('你好！我是来自河南牧业经济学院信息工程学院的小信，有什么不懂的请尽管问我吧。'), 800)
       }
@@ -120,16 +139,16 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
     if (!data?.success || !data?.data?.reply) return false
 
     const reply: string = data.data.reply
-    const source: string = data.data.source || ''
+    const source: string = data.data.source || 'agent'
 
-    pushXinMsg(reply)
+    pushXinMsg(reply, source)
 
     const showLinks = ['faq', 'xiaoxin_kb', 'personal'].includes(source)
     if (showLinks) {
       setTimeout(() => pushLinkMsg([
         { label: '📋 查看问题答疑', to: '/faq' },
         { label: '📢 查看校园公告', to: '/announcements' },
-      ]), 600)
+      ]), 300)
     }
 
     sending.value = false
@@ -148,7 +167,7 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
       if (!resp.ok || !resp.body) return false
     } catch { return false }
 
-    messages.value.push({ role: 'xin', text: '', time: now(), displayText: '', done: false })
+    messages.value.push({ role: 'xin', text: '', time: now(), displayText: '', done: false, source: 'sse' })
     const idx = messages.value.length - 1
     scrollBottom()
 
@@ -204,7 +223,7 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
         messages.value[idx].displayText = messages.value[idx].text
         scrollBottom()
 
-        const delay = '，。！？、；：\n'.includes(ch) ? 120 + Math.random() * 130 : 25 + Math.random() * 20
+        const delay = '，。！？、；：\n'.includes(ch) ? 40 + Math.random() * 50 : 10 + Math.random() * 10
         setTimeout(drain, delay)
       }
       drain()
@@ -224,6 +243,29 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
       links: [{ label: '📢 查看校园公告', to: '/announcements' }],
     }
 
+    // 社团搜索
+    const clubKeywords = ['社', '社团', '俱乐部', '协会']
+    const isClubQuery = clubKeywords.some(k => q.includes(k))
+    if (isClubQuery && clubData.value.length > 0) {
+      const cleanQ = q.replace(/有没有|有没有什么|有.*吗|在哪|在哪里/g, '')
+      const clubMatch = clubData.value.find(c =>
+        c.name.includes(cleanQ) || cleanQ.includes(c.name.slice(0, 3)),
+      )
+      if (clubMatch) {
+        return {
+          answer: `${clubMatch.name}：${clubMatch.intro}\n\n想了解更多详情吗？`,
+          links: [{ label: `查看${clubMatch.name}详情`, to: `/clubs/${clubMatch.id}` }],
+        }
+      }
+      const allMatches = clubData.value.filter(c => c.name.includes(cleanQ) || cleanQ.includes(c.name.charAt(0)))
+      if (allMatches.length > 1) {
+        return {
+          answer: `我找到了 ${allMatches.length} 个相关社团：${allMatches.map(c => c.name).join('、')}`,
+          links: allMatches.slice(0, 3).map(c => ({ label: c.name, to: `/clubs/${c.id}` })),
+        }
+      }
+    }
+
     return {
       answer: `这个问题小信目前还不知道 🥲\n\n关于「${q.slice(0, 15)}」，建议你：\n• 查看校园公告了解最新动态\n• 在问题答疑页面搜索 FAQ\n• 联系辅导员获取一对一帮助\n\n还有其他问题吗？😊`,
       links: [
@@ -234,27 +276,31 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
   }
 
   async function fallbackReply(q: string) {
+    syncFallbackFromCache()
     if (faqData.value.length === 0) {
       try {
-        const [faqRes, annRes] = await Promise.all([
+        const [faqRes, annRes, clubsRes] = await Promise.all([
           fetch('/api/faq'),
           fetch('/api/announcements'),
+          fetch('/api/clubs'),
         ])
         const faqJson = await faqRes.json()
         const annJson = await annRes.json()
-        if (faqJson.success) faqData.value = faqJson.data.map((x: any) => ({ q: x.question, a: x.answer }))
-        if (annJson.success) announceData.value = annJson.data.map((x: any) => ({ title: x.title, content: x.content }))
-      } catch { /* 加载FAQ/公告数据失败，继续使用本地兜底 */ }
+        const clubsJson = await clubsRes.json()
+        if (faqJson.success) faqData.value = faqJson.data.map((x: FaqItem) => ({ q: x.question, a: x.answer }))
+        if (annJson.success) announceData.value = annJson.data.map((x: AnnounceItem) => ({ title: x.title, content: x.content }))
+        if (clubsJson.success) clubData.value = clubsJson.data.map((c: ClubItem) => ({ id: c.id, name: c.name, intro: c.intro }))
+      } catch { /* 加载数据失败，继续使用本地兜底 */ }
     }
 
     const { answer, links } = findAnswer(q)
     setTimeout(() => {
       sending.value = false
-      pushXinMsg(answer)
+      pushXinMsg(answer, 'local')
       if (links && links.length > 0) {
-        setTimeout(() => pushLinkMsg(links), 600)
+        setTimeout(() => pushLinkMsg(links), 300)
       }
-    }, 400)
+    }, 300)
   }
 
   async function send() {
@@ -286,7 +332,7 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
 
   function navigateTo(to: string) {
     open.value = false
-    router.push(to)
+    appNavigate(to)
   }
 
   function closeChat() { open.value = false }

@@ -15,7 +15,23 @@ dist/
 # IDE
 .vscode/
 .idea/
+.claude/
+
+# Vite cache
+.vite/
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs & backups
+backend/logs/
+backend/*backup*.sql
+backend/agent_data_only.sql
+frontend/test-results/
+
+# Uploaded media (user-generated, not source code)
+backend/static/uploads/
+
+# Sensitive data (student records, dorm info)
+xinxi/

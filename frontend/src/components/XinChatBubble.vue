@@ -8,6 +8,7 @@ export interface Msg {
   displayText: string
   done: boolean
   links?: { label: string; to: string }[]
+  source?: string  // 'agent' | 'sse' | 'local' — 降级时提示用户当前路径
 }
 
 const props = defineProps<{
@@ -18,6 +19,14 @@ const emit = defineEmits<{
   speak: [text: string]
   navigate: [to: string]
 }>()
+
+function sourceLabel(s: string): string {
+  const map: Record<string, string> = {
+    sse: 'AI 回答',
+    local: '本地匹配',
+  }
+  return map[s] || s
+}
 </script>
 
 <template>
@@ -31,7 +40,13 @@ const emit = defineEmits<{
         v-text="props.msg.role === 'xin' ? (props.msg.displayText || '') : props.msg.text"
       />
       <span v-if="props.msg.role === 'xin' && !props.msg.done" class="msg-cursor">|</span>
-      <span class="msg-time">{{ props.msg.time }}</span>
+      <span class="msg-time">
+        {{ props.msg.time }}
+        <span
+          v-if="props.msg.role === 'xin' && props.msg.done && props.msg.source && props.msg.source !== 'agent'"
+          class="msg-source" :title="sourceLabel(props.msg.source)"
+        >· {{ sourceLabel(props.msg.source) }}</span>
+      </span>
       <div v-if="props.msg.role === 'xin' && props.msg.links && props.msg.links.length > 0 && props.msg.done" class="msg-links">
         <button v-for="(l, li) in props.msg.links" :key="li" class="msg-link-btn" @click="emit('navigate', l.to)">{{ l.label }}</button>
       </div>
@@ -103,5 +118,10 @@ const emit = defineEmits<{
   background: rgba(64,158,255,.18);
   border-color: #409eff;
   box-shadow: 0 0 12px rgba(64,158,255,.15);
+}
+
+.msg-source {
+  font-size: .6rem; opacity: .35; margin-left: 6px;
+  cursor: default; user-select: none;
 }
 </style>

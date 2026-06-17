@@ -1,27 +1,54 @@
-"""公告 Pydantic Schemas"""
+from __future__ import annotations
 
-from datetime import date as date_type
+import datetime
+import uuid
 
 from pydantic import BaseModel, Field, field_validator
 
 
-class AnnouncementCreate(BaseModel):
-    title: str = Field(..., min_length=1, max_length=500)
-    content: str = Field(..., min_length=1)
-    date: str = ""
+def _clean_category(value: str | None) -> str | None:
+    if value is None:
+        return None
+    cleaned = value.strip()
+    return cleaned or None
 
 
-class AnnouncementOut(BaseModel):
-    id: str
-    date: str
+class AnnouncementItem(BaseModel):
+    id: uuid.UUID
+    date: datetime.date | None = None
     title: str
     content: str
+    category: str | None = None
+
+    @field_validator("category", mode="before")
+    @classmethod
+    def default_category(cls, value: str | None) -> str:
+        return _clean_category(value) or "campus"
 
     model_config = {"from_attributes": True}
 
-    @field_validator("id", "date", mode="before")
+
+class AnnouncementCreate(BaseModel):
+    title: str = Field(..., min_length=1)
+    content: str = Field(..., min_length=1)
+    date: datetime.date | None = None
+    category: str | None = Field(default=None, max_length=50)
+
+    @field_validator("category", mode="before")
     @classmethod
-    def coerce_str(cls, v: object) -> str:
-        if hasattr(v, "isoformat"):
-            return v.isoformat()  # type: ignore[union-attr]
-        return str(v) if v is not None else ""
+    def clean_category(cls, value: str | None) -> str | None:
+        return _clean_category(value)
+
+
+class AnnouncementUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1)
+    content: str | None = Field(default=None, min_length=1)
+    date: datetime.date | None = None
+    category: str | None = Field(default=None, max_length=50)
+
+    @field_validator("category", mode="before")
+    @classmethod
+    def clean_category(cls, value: str | None) -> str | None:
+        return _clean_category(value)
+
+

@@ -11,7 +11,7 @@ class TestPublicListFaq:
         resp = client.get("/api/faq")
         data = resp.json()
         assert data["success"] is True
-        assert data["data"] == []
+        assert data["data"]["items"] == []
 
     def test_list_with_items(self, client, admin_headers):
         with patch("app.api.faq.incremental_embed_student_faq"), \
@@ -28,8 +28,8 @@ class TestPublicListFaq:
         resp = client.get("/api/faq")
         data = resp.json()
         assert data["success"] is True
-        assert len(data["data"]) == 2
-        questions = [item["question"] for item in data["data"]]
+        assert len(data["data"]["items"]) == 2
+        questions = [item["question"] for item in data["data"]["items"]]
         assert "快递站在哪？" in questions
         assert "宿舍几点熄灯？" in questions
 
@@ -87,9 +87,32 @@ class TestAdminDeleteFaq:
 
         # 确认已删除
         list_resp = client.get("/api/faq")
-        assert len(list_resp.json()["data"]) == 0
+        assert len(list_resp.json()["data"]["items"]) == 0
 
     def test_delete_nonexistent_faq(self, client, admin_headers):
         fake_id = str(uuid.uuid4())
         resp = client.delete(f"/api/admin/faq/{fake_id}", headers=admin_headers)
         assert resp.status_code == 404
+
+
+class TestAdminUpdateFaq:
+    def test_update_can_clear_keywords_and_category(self, client, admin_headers):
+        with patch("app.api.faq.incremental_embed_student_faq"), \
+             patch("app.api.faq.clear_faq_cache"):
+            create_resp = client.post("/api/admin/faq", headers=admin_headers, json={
+                "question": "清空字段问题",
+                "answer": "清空字段答案",
+                "keywords": "关键词",
+                "category": "分类",
+            })
+        faq_id = create_resp.json()["data"]["id"]
+
+        with patch("app.api.faq.clear_faq_cache"):
+            resp = client.patch(f"/api/admin/faq/{faq_id}", headers=admin_headers, json={
+                "keywords": "",
+                "category": "   ",
+            })
+        data = resp.json()
+        assert data["success"] is True
+        assert data["data"]["keywords"] is None
+        assert data["data"]["category"] is None

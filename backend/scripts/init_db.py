@@ -10,6 +10,7 @@ from app.db.database import SessionLocal
 from app.models.announcement import Announcement
 from app.models.faq import FAQ
 from app.models.student import Student
+from app.core.security import hash_id_number
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 ADMIN = {
     "name": "崔志远",
     "student_id": "admin",
-    "id_number": "000000000000000000",
+    "id_number_hash": hash_id_number("000000000000000000"),
     "class_name": "系统管理",
     "role": "admin",
 }
@@ -27,7 +28,7 @@ DEMO_STUDENTS = [
     {
         "name": "张三",
         "student_id": "20260901001",
-        "id_number": "410105200509010011",
+        "id_number_hash": hash_id_number("410105200509010011"),
         "class_name": "计算机科学与技术2026-1班",
         "dormitory": "北苑3号楼412室",
         "advisor_name": "李明辉",
@@ -42,7 +43,7 @@ DEMO_STUDENTS = [
     {
         "name": "李思雨",
         "student_id": "20260902001",
-        "id_number": "410105200510150022",
+        "id_number_hash": hash_id_number("410105200510150022"),
         "class_name": "软件工程2026-2班",
         "dormitory": "南苑5号楼608室",
         "advisor_name": "陈雅婷",
@@ -57,7 +58,7 @@ DEMO_STUDENTS = [
     {
         "name": "王浩然",
         "student_id": "20260903001",
-        "id_number": "410105200508200033",
+        "id_number_hash": hash_id_number("410105200508200033"),
         "class_name": "数据科学与大数据2026-1班",
         "dormitory": "西苑2号楼315室",
         "advisor_name": "张丽",
@@ -72,7 +73,7 @@ DEMO_STUDENTS = [
     {
         "name": "刘子涵",
         "student_id": "20260904001",
-        "id_number": "410105200509050044",
+        "id_number_hash": hash_id_number("410105200509050044"),
         "class_name": "物联网工程2026-6班",
         "dormitory": "北苑12号楼419室",
         "advisor_name": "王子钰",
@@ -308,15 +309,5 @@ def main() -> None:
             print("  向量库：已构建")
         except Exception:
             logger.warning(
-                "向量库构建未完成（Ollama 未就绪），启动后可手动执行 rebuild_documents_best_effort",
-                exc_info=True,
-            )
-    except Exception:
-        db.rollback()
-        raise
-    finally:
-        db.close()
-
-
-if __name__ == "__main__":
-    main()
+                "向量库构建未完成（DeepSeek API 不可用），启动后可手动执行 rebuild_documents_best_effort",
+                exc_info=

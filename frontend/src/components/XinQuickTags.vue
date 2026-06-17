@@ -21,9 +21,11 @@ const emit = defineEmits<{
 .quick-tags {
   display: flex; gap: 6px; padding: 10px 16px;
   overflow-x: auto; flex-shrink: 0;
+  scrollbar-width: none;
 }
+.quick-tags::-webkit-scrollbar { display: none; }
 .quick-tag {
-  flex-shrink: 0; padding: 6px 14px;
+  flex-shrink: 0; padding: 8px 14px; min-height: 36px;
   border-radius: 6px;
   border: 1px solid rgba(64,158,255,.15);
   background: rgba(64,158,255,.04); color: #7aa8e0; font-size: .74rem;

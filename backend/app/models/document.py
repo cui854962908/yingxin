@@ -12,6 +12,7 @@ from app.db.database import Base
 
 DOCUMENT_SOURCE_STUDENT_FAQ = "student_faq"
 DOCUMENT_SOURCE_ANNOUNCEMENT = "announcement"
+DOCUMENT_SOURCE_CLUB = "club"
 
 
 class Document(Base):
@@ -38,6 +39,12 @@ class Document(Base):
     source_announcement_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid,
         ForeignKey("announcements.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    source_club_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("clubs.id", ondelete="CASCADE"),
         nullable=True,
         index=True,
     )

@@ -2,12 +2,18 @@
 import { ref, onMounted, provide } from 'vue'
 import LoginPage from './components/LoginPage.vue'
 import XiaoXinAssistant from './components/XiaoXinAssistant.vue'
+import AppSpinner from './components/AppSpinner.vue'
+import { usePreload } from './composables/usePreload'
 
 import type { Student } from './types/student'
+
+const { preload } = usePreload()
 
 const student = ref<Student | null>(null)
 const loading = ref(true)
 const showWelcome = ref(false)
+const xinOpen = ref(false)
+const sidebarOpen = ref(typeof window !== 'undefined' ? window.innerWidth > 768 : true)
 
 // 自动登录（有 token 则跳过欢迎动画）
 onMounted(async () => {
@@ -23,6 +29,7 @@ onMounted(async () => {
         const fresh = onLoginSuccess(d.data, token)
         student.value = fresh
         loading.value = false
+        preload()
         return
       }
     } catch { console.warn('自动登录验证失败，退回登录页') }
@@ -37,6 +44,7 @@ onMounted(async () => {
 function onLoginSuccess(s: Record<string, any>, token: string) {
   // 防御后端返回字段缺失/为 null，兼容嵌套和扁平两种格式
   const safe: Student = {
+    id: typeof s.id === 'number' ? s.id : undefined,
     name: s.name || '',
     student_id: s.student_id || '',
     photo: s.photo || '',
@@ -50,12 +58,13 @@ function onLoginSuccess(s: Record<string, any>, token: string) {
       ? { name: s.class_teacher.name || '', phone: s.class_teacher.phone || '' }
       : { name: s.class_teacher_name || '', phone: s.class_teacher_phone || '' },
     assistants: Array.isArray(s.assistants) && s.assistants.length
-      ? s.assistants.map((a: any) => ({ name: a.name || '', phone: a.phone || '', class_name: a.class_name || '' }))
+      ? s.assistants.map((a: { name?: string; phone?: string; class_name?: string }) => ({ name: a.name || '', phone: a.phone || '', class_name: a.class_name || '' }))
       : (s.assistant_name ? [{ name: s.assistant_name || '', phone: s.assistant_phone || '', class_name: s.assistant_class_name || '' }] : []),
   }
   student.value = safe
   localStorage.setItem('token', token)
   localStorage.setItem('student', JSON.stringify(safe))
+  preload()
   return safe
 }
 
@@ -71,6 +80,8 @@ function onLogout() {
 
 provide('student', student)
 provide('logout', onLogout)
+provide('xinOpen', xinOpen)
+provide('sidebarOpen', sidebarOpen)
 </script>
 
 <template>
@@ -88,7 +99,7 @@ provide('logout', onLogout)
   </Transition>
 
   <div v-if="loading" class="loading">
-    <span class="loading-spinner" />
+    <AppSpinner />
   </div>
 
   <Transition v-else name="login" mode="out-in">
@@ -105,17 +116,24 @@ provide('logout', onLogout)
 </template>
 
 <style>
-.app-main { width: 100%; min-height: 100vh }
+/* 全局滚动条 —— 统一 Windows Chrome 默认粗滚动条 */
+html { scrollbar-width: thin; scrollbar-color: #d4c8b0 transparent }
+::-webkit-scrollbar { width: 6px; height: 6px }
+::-webkit-scrollbar-track { background: transparent }
+::-webkit-scrollbar-thumb { background: #d4c8b0; border-radius: 3px }
+::-webkit-scrollbar-thumb:hover { background: #b0a090 }
+
+/* iOS：输入框字号 < 16px 会触发自动缩放，真机与 DevTools 表现不一致 */
+@media (max-width: 768px) {
+  input, textarea, select { font-size: 16px; }
+}
+
+.app-main { width: 100%; min-height: 100vh; min-height: calc(var(--vh, 1vh) * 100) }
 
 .loading {
-  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; min-height: calc(var(--vh, 1vh) * 100); display: flex; align-items: center; justify-content: center;
   background: #fefcf9;
 }
-.loading-spinner {
-  width: 28px; height: 28px; border: 2.5px solid #e5dbcc;
-  border-top-color: #b5343a; border-radius: 50%; animation: spin .6s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg) } }
 
 /* ===== 欢迎开场动画 ===== */
 .welcome-overlay {

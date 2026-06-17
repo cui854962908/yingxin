@@ -72,8 +72,8 @@ const avatarChar = computed(() => student.value?.name?.charAt(0) || '')
 .card {
   height: 100%; background: #fff; border-radius: 16px;
   box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 6px 20px rgba(0,0,0,.05);
-  padding: 28px 32px; display: flex; flex-direction: column;
-  justify-content: center; position: relative; overflow: hidden;
+  padding: 22px 32px 28px; display: flex; flex-direction: column;
+  justify-content: flex-start; position: relative; overflow: hidden;
 }
 .card::after {
   content: ''; position: absolute; top: 0; right: 0; width: 120px; height: 120px;
@@ -84,7 +84,7 @@ const avatarChar = computed(() => student.value?.name?.charAt(0) || '')
 /* 顶部行：头像 + 姓名 */
 .top-row { display: flex; align-items: center; gap: 18px }
 .avatar-ring {
-  width: 72px; height: 72px; border-radius: 50%; padding: 3px; flex-shrink: 0;
+  width: 60px; height: 60px; border-radius: 50%; padding: 3px; flex-shrink: 0;
   background: linear-gradient(135deg, #c9a96e, #e8d5a8, #c9a96e);
   box-shadow: 0 2px 14px rgba(181,52,58,.1);
 }
@@ -103,21 +103,21 @@ const avatarChar = computed(() => student.value?.name?.charAt(0) || '')
   border-radius: 10px; letter-spacing: .1em; white-space: nowrap;
 }
 
-.klass { font-size: .88rem; color: #8b7b65; margin-top: 10px; margin-left: 90px }
+.klass { font-size: .84rem; color: #8b7b65; margin-top: 6px; margin-left: 78px }
 
-.meta { display: flex; gap: 32px; margin-top: 14px; margin-left: 90px }
+.meta { display: flex; gap: 28px; margin-top: 10px; margin-left: 78px }
 .meta-item { display: flex; flex-direction: column; gap: 2px }
 .meta-label { font-size: .7rem; color: #b0a090; letter-spacing: .04em }
 .meta-val { font-size: .92rem; color: #3c3028; font-weight: 500 }
 
 .divider {
   height: 1px; background: linear-gradient(90deg, #e5dbcc 0%, #e5dbcc 70%, transparent 100%);
-  margin: 16px 0 14px;
+  margin: 10px 0 10px;
 }
 
-.contacts { display: flex; flex-direction: column; gap: 8px }
+.contacts { display: flex; flex-direction: column; gap: 5px }
 .ctc {
-  display: flex; align-items: center; gap: 12px; padding: 8px 14px;
+  display: flex; align-items: center; gap: 10px; padding: 6px 14px;
   border-radius: 8px; background: #fdfaf6; border: 1px solid #f2ebe0;
 }
 .ctc-role { font-size: .7rem; color: #b0a090; font-weight: 500; min-width: 42px; text-align: center; letter-spacing: .04em }

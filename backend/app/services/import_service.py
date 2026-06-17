@@ -65,6 +65,94 @@ class ImportResult:
     errors: List[Dict[str, Any]] = field(default_factory=list)
 
 
+def _skip_row(result: ImportResult, row_num: int, reason: str) -> None:
+    result.skipped += 1
+    result.errors.append({"row": row_num, "reason": reason})
+
+
+def _build_student_payload(row_list: List[Any], hmap: Dict[str, int]) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "name": _cell(row_list, hmap, "姓名"),
+        "id_number_hash": hash_id_number(_cell(row_list, hmap, "身份证号")),
+        "class_name": _cell(row_list, hmap, "班级"),
+        "dormitory": _empty_to_none(_cell(row_list, hmap, "宿舍")),
+        "advisor_name": _empty_to_none(_cell(row_list, hmap, "辅导员")),
+        "advisor_phone": _empty_to_none(_cell(row_list, hmap, "辅导员电话")),
+        "class_teacher_name": _empty_to_none(_cell(row_list, hmap, "班主任")),
+        "class_teacher_phone": _empty_to_none(_cell(row_list, hmap, "班主任电话")),
+        "assistant_name": _empty_to_none(_cell(row_list, hmap, "代班")),
+        "assistant_phone": _empty_to_none(_cell(row_list, hmap, "代班电话")),
+        "assistant_class_name": _empty_to_none(_cell(row_list, hmap, "代班班级")),
+        "role": "student",
+    }
+    if "照片" in hmap:
+        payload["photo"] = _empty_to_none(_cell(row_list, hmap, "照片"))
+    return payload
+
+
+def _validate_data_row(
+    row_list: List[Any],
+    hmap: Dict[str, int],
+    row_num: int,
+    result: ImportResult,
+) -> tuple[str, dict[str, Any]] | None:
+    name = _cell(row_list, hmap, "姓名")
+    sid = _cell(row_list, hmap, "学号")
+    id_number = _cell(row_list, hmap, "身份证号")
+
+    if not sid and not name and not id_number:
+        _skip_row(result, row_num, "空行，已跳过")
+        return None
+    if not name:
+        _skip_row(result, row_num, "姓名为空")
+        return None
+    if not sid:
+        _skip_row(result, row_num, "学号为空")
+        return None
+    if not id_number:
+        _skip_row(result, row_num, "身份证号为空")
+        return None
+    if not _cell(row_list, hmap, "班级"):
+        _skip_row(result, row_num, "班级为空（必填）")
+        return None
+
+    return sid, _build_student_payload(row_list, hmap)
+
+
+def _upsert_student_row(
+    db: Session,
+    sid: str,
+    payload: dict[str, Any],
+    result: ImportResult,
+    row_num: int,
+) -> None:
+    existing = db.scalars(select(Student).where(Student.student_id == sid)).first()
+    if existing and (existing.role or "").strip().lower() == "admin":
+        _skip_row(result, row_num, "该行学号为系统管理员账号，已跳过")
+        return
+    if existing:
+        for key, val in payload.items():
+            setattr(existing, key, val)
+        result.updated += 1
+    else:
+        db.add(Student(student_id=sid, **payload))
+        result.imported += 1
+
+
+def _process_import_row(
+    db: Session,
+    row_list: List[Any],
+    hmap: Dict[str, int],
+    row_num: int,
+    result: ImportResult,
+) -> None:
+    parsed = _validate_data_row(row_list, hmap, row_num, result)
+    if not parsed:
+        return
+    sid, payload = parsed
+    _upsert_student_row(db, sid, payload, result, row_num)
+
+
 def import_students_xlsx(db: Session, file_bytes: bytes) -> ImportResult:
     result = ImportResult()
     wb = load_workbook(filename=BytesIO(file_bytes), read_only=True, data_only=True)
@@ -92,73 +180,7 @@ def import_students_xlsx(db: Session, file_bytes: bytes) -> ImportResult:
             row_num += 1
             if row is None:
                 continue
-            row_list = list(row)
-
-            name = _cell(row_list, hmap, "姓名")
-            sid = _cell(row_list, hmap, "学号")
-            id_number = _cell(row_list, hmap, "身份证号")
-
-            if not sid and not name and not id_number:
-                result.skipped += 1
-                result.errors.append({"row": row_num, "reason": "空行，已跳过"})
-                continue
-
-            if not name:
-                result.skipped += 1
-                result.errors.append({"row": row_num, "reason": "姓名为空"})
-                continue
-            if not sid:
-                result.skipped += 1
-                result.errors.append({"row": row_num, "reason": "学号为空"})
-                continue
-            if not id_number:
-                result.skipped += 1
-                result.errors.append({"row": row_num, "reason": "身份证号为空"})
-                continue
-
-            class_name = _cell(row_list, hmap, "班级")
-            if not class_name:
-                result.skipped += 1
-                result.errors.append({"row": row_num, "reason": "班级为空（必填）"})
-                continue
-
-            existing = db.scalars(select(Student).where(Student.student_id == sid)).first()
-            if existing and (existing.role or "").strip().lower() == "admin":
-                result.skipped += 1
-                result.errors.append(
-                    {"row": row_num, "reason": "该行学号为系统管理员账号，已跳过"}
-                )
-                continue
-
-            photo_val: str | None = None
-            if "照片" in hmap:
-                p = _cell(row_list, hmap, "照片")
-                photo_val = _empty_to_none(p)
-
-            payload = {
-                "name": name,
-                "id_number_hash": hash_id_number(id_number),
-                "class_name": class_name,
-                "dormitory": _empty_to_none(_cell(row_list, hmap, "宿舍")),
-                "advisor_name": _empty_to_none(_cell(row_list, hmap, "辅导员")),
-                "advisor_phone": _empty_to_none(_cell(row_list, hmap, "辅导员电话")),
-                "class_teacher_name": _empty_to_none(_cell(row_list, hmap, "班主任")),
-                "class_teacher_phone": _empty_to_none(_cell(row_list, hmap, "班主任电话")),
-                "assistant_name": _empty_to_none(_cell(row_list, hmap, "代班")),
-                "assistant_phone": _empty_to_none(_cell(row_list, hmap, "代班电话")),
-                "assistant_class_name": _empty_to_none(_cell(row_list, hmap, "代班班级")),
-                "role": "student",
-            }
-            if "照片" in hmap:
-                payload["photo"] = photo_val
-
-            if existing:
-                for k, v in payload.items():
-                    setattr(existing, k, v)
-                result.updated += 1
-            else:
-                db.add(Student(student_id=sid, **payload))
-                result.imported += 1
+            _process_import_row(db, list(row), hmap, row_num, result)
 
         db.commit()
     finally:

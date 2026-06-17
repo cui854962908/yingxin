@@ -2,8 +2,22 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light only" />
     <title>河南牧业经济学院 · 迎新系统</title>
+    <script>
+      function setVH() {
+        var h = window.visualViewport ? window.visualViewport.height : window.innerHeight
+        document.documentElement.style.setProperty('--vh', h * 0.01 + 'px')
+      }
+      setVH()
+      window.addEventListener('resize', setVH)
+      window.addEventListener('orientationchange', function () { setTimeout(setVH, 100) })
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', setVH)
+        window.visualViewport.addEventListener('scroll', setVH)
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>

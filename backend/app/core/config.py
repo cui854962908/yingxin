@@ -27,23 +27,26 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGIN_REGEX: Optional[str] = None
 
     # --- 智能助手（Agent）---
-    EMBEDDING_DIMENSION: int = 1536
-    EMBEDDING_PROVIDER: str = "none"
-    VECTOR_DISTANCE_THRESHOLD: float = 0.55
     FAQ_MATCH_MIN_SCORE: float = 8.0
     #: 为 true 时在请求结束后打印 [agent_perf]（仅 POST /api/agent/chat）
     AGENT_PERF_LOG: bool = False
 
-    # --- 小信 SSE：`POST /api/chat`（Ollama + documents 余弦检索）---
-    #: 若为 false，`POST /api/chat` 返回 503（便于未安装 Ollama 的环境）
+    # --- 小信 SSE：`POST /api/chat`（DeepSeek 对话 + Ollama 嵌入）---
+    #: 若为 false，`POST /api/chat` 返回 503
     XIAOXIN_CHAT_ENABLED: bool = True
+
+    # --- DeepSeek API（对话生成）---
+    DEEPSEEK_API_KEY: str = ""
+    DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
+    DEEPSEEK_CHAT_MODEL: str = "deepseek-v4-flash"
+    DEEPSEEK_CHAT_TIMEOUT_SECONDS: float = 120.0
+
+    # --- Ollama（仅嵌入，不跑对话）---
     OLLAMA_BASE_URL: str = "http://127.0.0.1:11434"
     OLLAMA_EMBED_MODEL: str = "bge-m3:latest"
-    OLLAMA_CHAT_MODEL: str = "qwen2.5:1.5b-instruct-q4_K_M"
-    #: 余弦相似度阈值（embedding 归一化后点积）；与计划中「最高分 > 0.6」一致
+
+    #: 余弦相似度阈值（embedding 归一化后点积）
     DOCUMENT_COSINE_THRESHOLD: float = 0.6
-    #: Ollama HTTP 超时（生成可能较慢）
-    OLLAMA_CHAT_TIMEOUT_SECONDS: float = 120.0
     #: Edge-TTS 普通话晓伊音色
     EDGE_TTS_VOICE: str = "zh-CN-XiaoyiNeural"
 

@@ -18,7 +18,7 @@ TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_test_en
 
 def _ensure_tables():
     """确保所有模型表已在测试引擎中创建（幂等）。"""
-    from app.models import Announcement, Document, FAQ, Student  # noqa: F401
+    from app.models import Announcement, Club, Document, FAQ, Student  # noqa: F401
     Base.metadata.create_all(bind=_test_engine)
 
 

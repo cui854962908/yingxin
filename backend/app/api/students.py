@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.response import fail_envelope, ok_envelope
-from app.core.security import hash_id_number, require_admin
+from app.core.security import hash_id_number, require_admin, require_any_admin
 from app.db.database import get_db
 from app.models.student import Student
 from app.schemas.student import StudentCreate, StudentUpdate
@@ -21,10 +21,23 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin", tags=["admin-students"])
 
 
+@router.get("/classes")
+def admin_list_classes(
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_any_admin),
+):
+    """返回已有班级名列表，供表单自动补全"""
+    from sqlalchemy import distinct, select as sa_select
+    rows = db.execute(
+        sa_select(distinct(Student.class_name)).where(Student.class_name.isnot(None)).order_by(Student.class_name)
+    ).scalars().all()
+    return ok_envelope(message="操作成功", data=rows)
+
+
 @router.get("/students")
 def admin_list_students_grouped(
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    _: dict = Depends(require_any_admin),
 ):
     data = group_students_by_class(db)
     return ok_envelope(message="操作成功", data=data)
@@ -34,7 +47,7 @@ def admin_list_students_grouped(
 def admin_search_students(
     q: str = "",
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    _: dict = Depends(require_any_admin),
 ):
     if not q.strip():
         return ok_envelope(message="请输入搜索内容", data=[])
@@ -117,6 +130,12 @@ def admin_update_student(
     if is_admin_record(st):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="不允许修改管理员账号行")
     patch = body.model_dump(exclude_unset=True)
+    # 记录需要同步到同班同学的辅导员/班主任字段
+    sync_fields = {}
+    teacher_keys = {'advisor_name', 'advisor_phone', 'class_teacher_name', 'class_teacher_phone'}
+    for k in list(patch.keys()):
+        if k in teacher_keys:
+            sync_fields[k] = patch[k]
     for k, v in patch.items():
         if k == "id_number":
             k = "id_number_hash"
@@ -124,6 +143,12 @@ def admin_update_student(
         elif isinstance(v, str):
             v = v.strip() if v else v
         setattr(st, k, v)
+    # 同班同步：修改辅导员/班主任时，同班其他同学一并更新
+    if sync_fields and st.class_name:
+        db.query(Student).filter(
+            Student.class_name == st.class_name,
+            Student.student_id != st.student_id,
+        ).update(sync_fields, synchronize_session=False)
     db.commit()
     db.refresh(st)
     return ok_envelope(message="更新成功", data=student_to_admin_detail(st))

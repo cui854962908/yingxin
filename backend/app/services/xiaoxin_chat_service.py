@@ -111,6 +111,8 @@ async def stream_xiaoxin_events(question: str) -> AsyncIterator[dict]:
                 if token is None:
                     break
                 yield {"token": token}
+                # 微小延迟，让前端打字效果可见（DeepSeek 推理模型输出极快）
+                await asyncio.sleep(0.03)
 
             links = _links_for_kb() if context else []
             yield {

@@ -10,16 +10,15 @@ ROLE_ADMIN = "admin"
 
 
 def admin_verify_display(s: Student) -> Dict[str, Any]:
-    """管理员经 /api/verify 登录时的 data（与旧 admin/login 风格一致）。"""
-    return {
-        "name": s.name,
-        "student_id": s.student_id,
-        "role": ROLE_ADMIN,
-    }
+    """管理员经 /api/verify 登录时的 data，返回完整学生信息供前端展示。"""
+    data = student_to_student_display(s)
+    data["role"] = ROLE_ADMIN
+    return data
 
 
 def _nested_from_student(s: Student, *, include_id_number: bool) -> Dict[str, Any]:
     base: Dict[str, Any] = {
+        "id": s.id,
         "name": s.name,
         "student_id": s.student_id,
         "photo": s.photo or "",

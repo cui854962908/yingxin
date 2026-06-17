@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { ref, inject, computed, type Ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, inject, computed, watch, nextTick, onMounted, onUnmounted, type Ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { useAppNavigate } from '../composables/useAppNavigate'
 import ProfileCard from './ProfileCard.vue'
+import AdminSidebar from './AdminSidebar.vue'
+import MobileBottomNav from './MobileBottomNav.vue'
 
 import type { Student } from '../types/student'
 
@@ -15,82 +18,131 @@ const logout = inject<() => void>('logout')
 if (!logout) {
   throw new Error('[HomePage] logout 未通过 provide 注入，请检查父组件')
 }
+
 const route = useRoute()
+const { appNavigate } = useAppNavigate()
 const isAdmin = computed(() => student.value.role === 'admin')
-const mobileNavOpen = ref(false)
+const isClubAdmin = computed(() => student.value.role === 'club_admin')
+// computed 改为 ref + watch + nextTick，避免布局类切换与 Vue Transition 动画同时触发导致组件被"淹没"
+const isClubRoute = ref(route.path.startsWith('/clubs'))
+watch(() => route.path, (path) => {
+  if (path.startsWith('/clubs')) {
+    // 切入社团路由：延迟一帧，让 Transition 入场动画先启动
+    nextTick(() => { isClubRoute.value = true })
+  } else {
+    // 切出社团路由：立即恢复，不延迟
+    isClubRoute.value = false
+  }
+})
 
-const navItems = [
-  { to: '/', label: '首页', key: 'home' },
-  { to: '/announcements', label: '校园公告', key: 'notices' },
-  { to: '/faq', label: '问题答疑', key: 'faq' },
-  ...(isAdmin ? [{ to: '/admin', label: '学生管理', key: 'admin' }] : []),
-]
+// 侧边栏显隐（桌面常驻，移动端 v-model 控制；状态提升至 App.vue 以供 XiaoXin 感知）
+const sidebarOpen = inject<Ref<boolean>>('sidebarOpen', ref(true))
 
-function isActive(to: string) {
-  if (to === '/') return route.path === '/'
-  return route.path.startsWith(to)
+// 根据当前路由反推侧边栏选中项
+const activeKey = computed(() => {
+  if (route.path === '/') return 'home'
+  if (route.path.startsWith('/announcements')) return 'announcements'
+  if (route.path.startsWith('/faq')) return 'faq'
+  if (route.path.startsWith('/clubs')) return 'clubs'
+  if (route.path.startsWith('/admin')) return 'admin'
+  return 'home'
+})
+
+// 用户角色文案
+const userRoleLabel = computed(() => {
+  if (isAdmin.value) return '管理员'
+  if (isClubAdmin.value) return '社团管理员'
+  return '2026 级新生'
+})
+
+const isNavigating = ref(false)
+function handleNavigate(key: string) {
+  if (isNavigating.value) return
+  const routeMap: Record<string, string> = {
+    home: '/',
+    announcements: '/announcements',
+    faq: '/faq',
+    clubs: '/clubs',
+    admin: '/admin',
+    campus: '/campus',
+  }
+  const target = routeMap[key]
+  if (!target || route.path === target) return // 同页不跳
+  isNavigating.value = true
+  appNavigate(target)
+  setTimeout(() => { isNavigating.value = false }, 500)
 }
 
-function closeNav() { mobileNavOpen.value = false }
+function handleLogout() {
+  logout!()
+}
+
+// 从手机端切回桌面端时自动恢复侧边栏
+function onResize() {
+  if (window.innerWidth > 768) sidebarOpen.value = true
+}
+
+// 左边缘右划呼出侧边栏（document 级跟踪，真机滑出边缘后仍跟手）
+const edgeSwipe = ref({ startX: 0, startY: 0, active: false, dx: 0, dy: 0 })
+let edgePointerId: number | null = null
+let edgeCaptureEl: HTMLElement | null = null
+
+function onEdgeDown(e: PointerEvent) {
+  if (window.innerWidth > 768) return
+  if (e.clientX > 30) return
+  edgeSwipe.value = { startX: e.clientX, startY: e.clientY, active: true, dx: 0, dy: 0 }
+  edgePointerId = e.pointerId
+  edgeCaptureEl = e.currentTarget as HTMLElement
+  edgeCaptureEl.setPointerCapture(e.pointerId)
+}
+
+function onEdgeMove(e: PointerEvent) {
+  if (!edgeSwipe.value.active || e.pointerId !== edgePointerId) return
+  edgeSwipe.value.dx = e.clientX - edgeSwipe.value.startX
+  edgeSwipe.value.dy = e.clientY - edgeSwipe.value.startY
+}
+
+function finishEdge(e: PointerEvent) {
+  if (!edgeSwipe.value.active || e.pointerId !== edgePointerId) return
+  edgeSwipe.value.active = false
+  if (edgeCaptureEl?.hasPointerCapture?.(e.pointerId)) {
+    edgeCaptureEl.releasePointerCapture(e.pointerId)
+  }
+  edgeCaptureEl = null
+  edgePointerId = null
+  if (edgeSwipe.value.dx > 50 && edgeSwipe.value.dx > Math.abs(edgeSwipe.value.dy)) {
+    sidebarOpen.value = true
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('resize', onResize)
+  document.addEventListener('pointermove', onEdgeMove)
+  document.addEventListener('pointerup', finishEdge)
+  document.addEventListener('pointercancel', finishEdge)
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', onResize)
+  document.removeEventListener('pointermove', onEdgeMove)
+  document.removeEventListener('pointerup', finishEdge)
+  document.removeEventListener('pointercancel', finishEdge)
+})
 </script>
 
 <template>
   <div class="dashboard">
-    <!-- 侧边栏 -->
-    <aside class="sidebar">
-      <div class="sidebar-top">
-        <div class="sb-logo-wrap">
-          <img src="/logo-1.png" alt="校徽" class="sb-logo" />
-        </div>
-        <p class="sb-school">河南牧业经济学院</p>
-        <div class="sb-rule" />
-        <div class="sb-avatar">{{ student.name.charAt(0) }}</div>
-        <p class="sb-name">{{ student.name }}</p>
-        <span class="sb-role" :class="{ 'sb-role--admin': isAdmin }">
-          {{ isAdmin ? '管理员' : '2026 级新生' }}
-        </span>
-      </div>
-
-      <!-- 桌面导航 -->
-      <nav class="sb-nav">
-        <router-link v-for="item in navItems" :key="item.key"
-          :to="item.to"
-          class="sb-nav-item" :class="[`sb-nav-${item.key}`, { active: isActive(item.to) }]"
-          @click="closeNav">
-          <span class="sb-nav-icon" />
-          <span>{{ item.label }}</span>
-        </router-link>
-      </nav>
-
-      <a class="sb-logout" @click="logout">退出登录</a>
-
-      <!-- 手机汉堡菜单 -->
-      <button class="sb-hamburger" @click="mobileNavOpen = !mobileNavOpen">
-        <span :class="{ 'sb-ham-bar--open': mobileNavOpen }" />
-      </button>
-    </aside>
-
-    <!-- 手机下拉导航 -->
-    <Transition name="mobile-nav">
-      <nav v-if="mobileNavOpen" class="sb-mobile-nav">
-        <router-link v-for="item in navItems" :key="item.key"
-          :to="item.to"
-          class="sb-nav-item" :class="[`sb-nav-${item.key}`, { active: isActive(item.to) }]"
-          @click="closeNav">
-          <span class="sb-nav-icon" />
-          <span>{{ item.label }}</span>
-        </router-link>
-        <a class="sb-nav-item sb-nav-logout-mobile" @click="logout">退出登录</a>
-      </nav>
-    </Transition>
-
-    <!-- 右侧内容 -->
-    <main class="main">
-      <section class="profile-section">
+    <!-- 左边缘右划呼出区域（仅移动端） -->
+    <div
+      class="edge-strip"
+      @pointerdown.prevent="onEdgeDown"
+    />
+    <!-- 主内容区 -->
+    <main class="main" :class="{ 'main--fixed': isClubRoute }">
+      <section class="profile-section" :class="{ 'profile-section--hide': isClubRoute }">
         <ProfileCard />
       </section>
 
-      <section class="bottom-section">
+      <section class="bottom-section" :class="{ 'bottom-section--full': isClubRoute }">
         <div class="section-card">
           <Transition name="module" mode="out-in">
             <router-view :key="route.fullPath" />
@@ -98,154 +150,159 @@ function closeNav() { mobileNavOpen.value = false }
         </div>
       </section>
     </main>
+
+    <!-- 侧边栏 -->
+    <AdminSidebar
+      v-model="sidebarOpen"
+      :user="{ name: student.name, role: userRoleLabel }"
+      :active-menu="activeKey"
+      @navigate="handleNavigate"
+      @logout="handleLogout"
+    />
+
+    <!-- 移动端底部导航栏 -->
+    <MobileBottomNav
+      @navigate="handleNavigate"
+      @open-menu="sidebarOpen = true"
+    />
   </div>
 </template>
 
 <style scoped>
-/* 布局 */
-.dashboard { display: flex; height: 100vh; background: #f5efe5 }
-
-/* 侧边栏 */
-.sidebar {
-  flex: 0 0 240px; height: 100vh; position: sticky; top: 0;
-  background: linear-gradient(170deg, #3d1114 0%, #591a1e 30%, #4a1519 60%, #361012 100%);
-  display: flex; flex-direction: column; align-items: flex-start;
-  padding: 32px 20px 20px; overflow: hidden;
+.dashboard {
+  min-height: 100vh; min-height: calc(var(--vh, 1vh) * 100); position: relative;
+  background-image: image-set(
+    url('/beijing2.webp') type('image/webp'),
+    url('/beijing2.png') type('image/png')
+  );
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
-.sidebar::after {
-  content: '欢迎'; position: absolute; font-size: 14rem; font-weight: 900;
-  color: rgba(255,255,255,.012); pointer-events: none; line-height: 1;
-  top: 50%; left: 50%; transform: translate(-50%,-50%); font-family: 'Noto Serif SC', serif;
+/* 建筑线稿水印 — 呼应登录页品牌感 */
+.dashboard::after {
+  content: ''; position: fixed; bottom: -40px; right: -20px; z-index: 0;
+  width: 380px; height: 180px; pointer-events: none;
+  background: url('/building-illustration.svg') no-repeat right bottom / contain;
+  opacity: .06;
 }
-.sidebar-top { text-align: left; position: relative; z-index: 1; width: 100% }
-.sb-logo-wrap {
-  width: 56px; height: 56px; border-radius: 50%; padding: 2px;
-  background: linear-gradient(135deg, #c9a96e, #e8d5a8, #c9a96e);
+
+/* ===== 主内容 ===== */
+.main {
+  min-height: 100vh; min-height: calc(var(--vh, 1vh) * 100);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 32px 20px;
+  gap: 18px;
+  transition: margin-left 0.35s cubic-bezier(0.33, 1, 0.68, 1);
 }
-.sb-logo { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: transparent; display: block }
-.sb-school { font-size: .75rem; color: rgba(242,230,208,.55); margin-top: 8px; letter-spacing: .03em }
-.sb-rule { width: 30px; height: 1px; background: linear-gradient(90deg, rgba(201,169,110,.3), transparent); margin: 14px 0 }
-.sb-avatar {
-  width: 56px; height: 56px; border-radius: 50%;
-  background: linear-gradient(135deg, #c9a96e, #d4b87a); color: #3d1114;
-  font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
-  font-family: 'Noto Serif SC', serif;
+.main--fixed {
+  height: 100vh; height: calc(var(--vh, 1vh) * 100);
+  overflow: hidden;
 }
-.sb-name { font-size: 1rem; color: #f2e6d0; font-weight: 600; margin-top: 8px; letter-spacing: .04em }
-.sb-role { display: inline-block; margin-top: 4px; font-size: .68rem; padding: 2px 12px; border-radius: 8px; color: #c4a87e; border: 1px solid rgba(201,169,110,.25) }
-.sb-role--admin { color: #e8d5a8; border-color: rgba(232,213,168,.4) }
 
-.sb-nav { flex: 1; width: 100%; margin-top: 28px; position: relative; z-index: 1 }
-.sb-nav-item {
-  display: flex; align-items: center; gap: 10px; padding: 10px 16px;
-  border-radius: 8px; font-size: .94rem; color: rgba(242,230,208,.5);
-  cursor: pointer; transition: all .2s; margin-bottom: 2px;
-  font-style: italic; font-family: 'Georgia', 'Noto Serif SC', 'KaiTi', serif;
-  text-decoration: none;
+/* 桌面端：为固定侧边栏留出空间 */
+@media (min-width: 769px) {
+  .main { margin-left: 260px }
 }
-.sb-nav-item:hover { color: rgba(242,230,208,.8); background: rgba(255,255,255,.04) }
-.sb-nav-item.active { color: #f2e6d0; background: rgba(255,255,255,.08); font-weight: 500 }
-.sb-nav-icon{width:6px;height:6px;border-radius:50%;display:block;flex-shrink:0;transition:all .25s}
-.sb-nav-home .sb-nav-icon{background:rgba(201,169,110,.5)}
-.sb-nav-home.active .sb-nav-icon{background:#e8d5a8;box-shadow:0 0 8px rgba(232,213,168,.5)}
-.sb-nav-notices .sb-nav-icon{background:rgba(180,160,140,.5)}
-.sb-nav-notices.active .sb-nav-icon{background:#d4c0a8;box-shadow:0 0 8px rgba(212,192,168,.5)}
-.sb-nav-faq .sb-nav-icon{background:rgba(160,180,190,.5)}
-.sb-nav-faq.active .sb-nav-icon{background:#c0d8e8;box-shadow:0 0 8px rgba(192,216,232,.5)}
-.sb-nav-admin .sb-nav-icon{background:rgba(170,150,180,.5)}
-.sb-nav-admin.active .sb-nav-icon{background:#d0c0e0;box-shadow:0 0 8px rgba(208,192,224,.5)}
-.sb-logout { position: relative; z-index: 1; font-size: .75rem; color: rgba(242,230,208,.3); cursor: pointer; transition: color .2s }
-.sb-logout:hover { color: rgba(242,230,208,.6) }
 
-/* 汉堡按钮 */
-.sb-hamburger{display:none;position:relative;z-index:60;width:32px;height:32px;background:none;border:none;cursor:pointer;flex-shrink:0;padding:0}
-.sb-hamburger span,.sb-hamburger span::before,.sb-hamburger span::after{display:block;position:absolute;left:4px;width:24px;height:2.5px;background:rgba(242,230,208,.6);border-radius:2px;transition:all .3s cubic-bezier(.16,1,.3,1)}
-.sb-hamburger span{top:50%;transform:translateY(-50%)}
-.sb-hamburger span::before,.sb-hamburger span::after{content:''}
-.sb-hamburger span::before{top:-8px}
-.sb-hamburger span::after{top:8px}
-.sb-hamburger span.sb-ham-bar--open{background:transparent}
-.sb-hamburger span.sb-ham-bar--open::before{top:0;transform:rotate(45deg)}
-.sb-hamburger span.sb-ham-bar--open::after{top:0;transform:rotate(-45deg)}
+@media (max-width: 768px) {
+  .dashboard {
+    background-attachment: scroll;
+  }
+  .dashboard::after {
+    display: none;
+  }
+  .main { margin-left: 0; padding: 8px 14px calc(68px + env(safe-area-inset-bottom, 0px)); gap: 10px }
+  .profile-section { flex: 0 0 auto }
+  .bottom-section { flex: 1; min-height: 0 }
+}
 
-/* 手机导航 */
-.sb-mobile-nav{display:none;position:fixed;top:0;left:0;bottom:0;width:260px;z-index:55;background:linear-gradient(170deg,#3d1114,#591a1e,#4a1519);padding:20px;flex-direction:column;gap:2px;box-shadow:4px 0 32px rgba(0,0,0,.3);overflow-y:auto}
-.sb-mobile-nav::after{content:'欢迎';position:absolute;font-size:12rem;font-weight:900;color:rgba(255,255,255,.015);pointer-events:none;bottom:0;right:0;font-family:'Noto Serif SC',serif}
-.sb-nav-logout-mobile{margin-top:auto;border-top:1px solid rgba(255,255,255,.08);padding-top:12px}
-.mobile-nav-enter-active{animation:mnavIn .3s cubic-bezier(.16,1,.3,1)}
-.mobile-nav-leave-active{animation:mnavOut .25s ease-in}
-@keyframes mnavIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
-@keyframes mnavOut{to{transform:translateX(-100%)}}
-
-/* 右侧 */
-.main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 24px 32px 32px; gap: 24px }
-.profile-section { flex: 0 0 42.8%; min-height: 0 }
-.bottom-section { flex: 1; min-height: 0 }
+/* ===== 内容区 ===== */
+.profile-section {
+  flex: 0 0 auto; min-height: 0; overflow: hidden;
+  max-height: 300px; opacity: 1; margin-bottom: 0;
+  transition: flex .45s cubic-bezier(.33,1,.68,1),
+              max-height .45s cubic-bezier(.33,1,.68,1),
+              opacity .35s cubic-bezier(.33,1,.68,1),
+              margin .45s cubic-bezier(.33,1,.68,1);
+}
+.profile-section--hide {
+  flex: 0 0 0; max-height: 0; opacity: 0; margin-bottom: -24px;
+  pointer-events: none;
+}
+.bottom-section { flex: 1; min-height: 0; transition: flex .45s cubic-bezier(.33,1,.68,1) }
+.bottom-section--full { flex: 1 }
 
 .section-card {
   height: 100%; background: #fff; border-radius: 16px;
   box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 6px 20px rgba(0,0,0,.05);
-  padding: 24px 28px; overflow-y: auto;
+  padding: 24px 28px; overflow-y: auto; overflow-x: hidden;
 }
+
 @media(max-width:768px){ .section-card { border-radius: 12px; padding: 14px } }
 @media(max-width:480px){ .section-card { border-radius: 10px; padding: 14px 12px } }
 
-/* 模块切换动画 */
-.module-enter-active{animation:velvetIn .7s cubic-bezier(.33,1,.68,1) both}
-.module-leave-active{animation:velvetOut .35s ease-in both}
-@keyframes velvetIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
-@keyframes velvetOut{to{opacity:0;transform:scale(1.02);filter:blur(2px)}}
+/* ===== 模块切换动画 ===== */
+.module-enter-active{animation:velvetIn .5s cubic-bezier(.33,1,.68,1) both}
+.module-leave-active{animation:velvetOut .15s ease-in both}
+@keyframes velvetIn{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:scale(1)}}
+@keyframes velvetOut{to{opacity:0}}
 
-.module-enter-active > :nth-child(1){animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;animation-delay:.1s}
-.module-enter-active > :nth-child(2){animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;animation-delay:.2s}
-.module-enter-active > :nth-child(3){animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;animation-delay:.3s}
-.module-enter-active > :nth-child(4){animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;animation-delay:.4s}
-.module-enter-active > :nth-child(5){animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;animation-delay:.5s}
+.module-enter-active > :nth-child(1){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.06s}
+.module-enter-active > :nth-child(2){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.11s}
+.module-enter-active > :nth-child(3){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.16s}
+.module-enter-active > :nth-child(4){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.20s}
+.module-enter-active > :nth-child(5){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.24s}
+.module-enter-active > :nth-child(6){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.28s}
+.module-enter-active > :nth-child(7){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.31s}
+.module-enter-active > :nth-child(8){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.34s}
+.module-enter-active > :nth-child(9){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.37s}
+.module-enter-active > :nth-child(10){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.40s}
+.module-enter-active > :nth-child(11){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.42s}
+.module-enter-active > :nth-child(12){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.44s}
+.module-enter-active > :nth-child(13){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.46s}
+.module-enter-active > :nth-child(14){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.48s}
+.module-enter-active > :nth-child(15){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.50s}
+.module-enter-active > :nth-child(n+16){animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.52s}
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 
-/* 入场动画 */
-.sidebar{animation:slideInLeft .6s cubic-bezier(.16,1,.3,1) both}
+/* ===== 入场动画 ===== */
 .profile-section{animation:fadeInUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.2s}
 .bottom-section{animation:fadeInUp .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.38s}
-@keyframes slideInLeft{from{transform:translateX(-100%);opacity:0}to{transform:translateX(0);opacity:1}}
 @keyframes fadeInUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 
-@media(max-width:1024px){
-  .sidebar{flex:0 0 200px}
-  .main{padding:20px 24px 24px}
-  .profile-section{flex:0 0 40%}
-}
+/* 移动端：模块切换直出，避免重型组件双渲染卡顿 */
 @media(max-width:768px){
-  .dashboard{flex-direction:column}
-  .sidebar{flex:0 0 auto;flex-direction:row;padding:10px 16px;align-items:center;gap:6px;height:auto;justify-content:space-between}
-  .sidebar::after{display:none}
-  .sidebar-top{display:flex;align-items:center;gap:10px;text-align:left}
-  .sb-logo-wrap{width:72px;height:72px;padding:3px;background:linear-gradient(135deg,#c9a96e,#e8d5a8,#c9a96e);border-radius:50%}
-  .sb-logo{border-radius:50%;object-fit:cover}
-  .sb-school,.sb-rule,.sb-nav,.sb-logout{display:none}
-  .sb-avatar{display:none}
-  .sb-name{font-size:1.1rem;margin-top:0}
-  .sb-role{font-size:.72rem}
-  .sb-hamburger{display:block;margin-left:auto}
-  .sb-mobile-nav{display:flex}
-  .main{padding:14px;gap:10px}
-  .profile-section{flex:0 0 auto}
-  .bottom-section{flex:1;min-height:0}
+  .module-enter-active,.module-leave-active{animation:none}
+  .module-enter-active > * {animation:none}
+  .profile-section,.bottom-section{animation:none}
+}
+
+@media(max-width:1024px){
+  .main{padding:20px 24px 24px}
+  .profile-section{flex:0 0 32%}
 }
 @media(max-width:480px){
-  .sidebar{padding:10px 12px;gap:6px}
-  .sb-logo-wrap{width:30px;height:30px}
-  .sb-avatar{width:30px;height:30px;font-size:.85rem}
-  .sb-name{font-size:.78rem}
-  .main{padding:12px;gap:12px}
+  .main{padding:12px 12px calc(68px + env(safe-area-inset-bottom, 0px));gap:12px}
 }
-</style>
 
-<style>
-/* 退出动画 */
-.login-leave-active .sidebar{animation:slideOutLeft .6s ease-in both;animation-delay:.38s}
-.login-leave-active .profile-section{animation:fadeOutDown .45s ease-in both;animation-delay:.18s}
-.login-leave-active .bottom-section{animation:fadeOutDown .45s ease-in both;animation-delay:0s}
-@keyframes slideOutLeft{to{transform:translateX(-100%);opacity:0}}
-@keyframes fadeOutDown{to{transform:translateY(16px);opacity:0}}
+/* ===== 左边缘右划呼出触发区 ===== */
+.edge-strip { display: none }
+
+@media (max-width: 768px) {
+  .edge-strip {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 22px;
+    height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
+    z-index: 1000;
+    touch-action: none;
+    pointer-events: auto;
+  }
+}
 </style>

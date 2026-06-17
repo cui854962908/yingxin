@@ -90,3 +90,50 @@ class TestAdminDeleteAnnouncement:
         fake_id = str(uuid.uuid4())
         resp = client.delete(f"/api/admin/announcements/{fake_id}", headers=admin_headers)
         assert resp.status_code == 404
+
+
+class TestAnnouncementCategory:
+    def test_create_announcement_with_campus_category(self, client, admin_headers):
+        with patch("app.api.announcements.incremental_embed_announcement"):
+            resp = client.post("/api/admin/announcements", headers=admin_headers, json={
+                "title": "校园公告分类",
+                "content": "分类应保存为 campus。",
+                "category": "campus",
+            })
+        data = resp.json()
+        assert data["success"] is True
+        assert data["data"]["category"] == "campus"
+
+    def test_empty_category_serializes_as_campus(self, client, admin_headers):
+        with patch("app.api.announcements.incremental_embed_announcement"):
+            resp = client.post("/api/admin/announcements", headers=admin_headers, json={
+                "title": "默认校园公告",
+                "content": "未传分类时展示为校园公告。",
+            })
+        data = resp.json()
+        assert data["success"] is True
+        assert data["data"]["category"] == "campus"
+
+        list_resp = client.get("/api/announcements?category=campus")
+        list_data = list_resp.json()
+        assert list_data["success"] is True
+        assert len(list_data["data"]) == 1
+        assert list_data["data"][0]["category"] == "campus"
+
+    def test_update_announcement_category(self, client, admin_headers):
+        with patch("app.api.announcements.incremental_embed_announcement"):
+            create_resp = client.post("/api/admin/announcements", headers=admin_headers, json={
+                "title": "分类更新公告",
+                "content": "分类将被更新。",
+                "category": "campus",
+            })
+        ann_id = create_resp.json()["data"]["id"]
+
+        resp = client.patch(f"/api/admin/announcements/{ann_id}", headers=admin_headers, json={"category": "guide"})
+        assert resp.json()["data"]["category"] == "guide"
+
+        resp = client.patch(f"/api/admin/announcements/{ann_id}", headers=admin_headers, json={"category": "tips"})
+        assert resp.json()["data"]["category"] == "tips"
+
+        resp = client.patch(f"/api/admin/announcements/{ann_id}", headers=admin_headers, json={"category": "campus"})
+        assert resp.json()["data"]["category"] == "campus"

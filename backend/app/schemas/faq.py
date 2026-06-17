@@ -1,21 +1,30 @@
-"""FAQ Pydantic Schemas"""
+import uuid
 
-from pydantic import BaseModel, Field, field_validator
-
-
-class FaqCreate(BaseModel):
-    question: str = Field(..., min_length=1, max_length=1000)
-    answer: str = Field(..., min_length=1)
+from pydantic import BaseModel, Field
 
 
-class FaqOut(BaseModel):
-    id: str
+class FAQItem(BaseModel):
+    id: uuid.UUID
     question: str
     answer: str
+    keywords: str | None = None
+    category: str | None = None
+    sort_order: int = 0
 
     model_config = {"from_attributes": True}
 
-    @field_validator("id", mode="before")
-    @classmethod
-    def coerce_id(cls, v: object) -> str:
-        return str(v) if v is not None else ""
+
+class FAQCreate(BaseModel):
+    question: str = Field(..., min_length=1)
+    answer: str = Field(..., min_length=1)
+    keywords: str | None = Field(default=None)
+    category: str | None = Field(default=None, max_length=128)
+    sort_order: int = Field(default=0, ge=0)
+
+
+class FAQUpdate(BaseModel):
+    question: str | None = Field(default=None, min_length=1)
+    answer: str | None = Field(default=None, min_length=1)
+    keywords: str | None = Field(default=None)
+    category: str | None = Field(default=None, max_length=128)
+    sort_order: int | None = Field(default=None, ge=0)

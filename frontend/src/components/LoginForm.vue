@@ -13,8 +13,8 @@ const loading = ref(false)
 
 async function handleSubmit() {
   errorMsg.value = ''
-  if (!name.value.trim() || !studentId.value.trim() || !idNumber.value.trim()) {
-    errorMsg.value = '请填写所有字段'
+  if (!name.value.trim() || !studentId.value.trim()) {
+    errorMsg.value = '请填写姓名和学号'
     return
   }
   loading.value = true
@@ -66,6 +66,7 @@ async function handleSubmit() {
         id="studentId"
         v-model="studentId"
         type="text"
+        inputmode="numeric"
         class="field-input"
         placeholder="请输入你的学号"
         autocomplete="off"
@@ -80,8 +81,9 @@ async function handleSubmit() {
         id="idNumber"
         v-model="idNumber"
         type="text"
+        inputmode="numeric"
         class="field-input"
-        placeholder="请输入你的身份证号"
+        placeholder="选填，未录入可不填"
         autocomplete="off"
       />
     </div>
@@ -111,7 +113,7 @@ async function handleSubmit() {
 
 .field-label {
   font-size: 0.85rem;
-  color: #5c5040;
+  color: #3d3224;
   font-weight: 500;
   letter-spacing: 0.08em;
   display: flex;
@@ -144,19 +146,23 @@ async function handleSubmit() {
   color: #2c2c2c;
   background: #fefcf9;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  transition: border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
 }
 
 .field-input::placeholder {
-  color: #c4b8a8;
+  color: #8e7b68;
   font-size: 0.9rem;
 }
 
 .field-input:focus {
   border-color: #b5343a;
-  box-shadow: 0 0 0 3px rgba(181, 52, 58, 0.07);
+  box-shadow: 0 0 0 4px rgba(181, 52, 58, 0.1);
   background: #fff;
+  outline: 2px solid rgba(181, 52, 58, 0.2);
+  outline-offset: 1px;
 }
 
 .error-msg {
@@ -185,19 +191,22 @@ async function handleSubmit() {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.25s ease;
   font-family: inherit;
   margin-top: 6px;
-  box-shadow: 0 2px 12px rgba(181, 52, 58, 0.25);
+  box-shadow: 0 2px 8px rgba(181, 52, 58, 0.2);
 }
 
 .btn:hover:not(:disabled) {
-  opacity: 0.93;
-  box-shadow: 0 4px 16px rgba(181, 52, 58, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(181, 52, 58, 0.32);
 }
 
 .btn:active:not(:disabled) {
-  transform: scale(0.985);
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 1px 4px rgba(181, 52, 58, 0.15);
 }
 
 .btn:disabled {
@@ -219,7 +228,103 @@ async function handleSubmit() {
 }
 
 @media(max-width:480px){
-  .field-input{height:48px;font-size:1rem}
-  .btn{height:50px;font-size:1rem}
+  .form{
+    gap:14px;
+  }
+  .field{
+    gap:8px;
+  }
+  .field-label{
+    font-size:.86rem;
+    font-weight:700;
+    color:#242a31;
+    letter-spacing:.12em;
+  }
+  .field-num{
+    display:none;
+  }
+  .field-input{
+    height:50px;
+    padding:0 16px;
+    border:1.5px solid #ddd4cb;
+    border-radius:13px;
+    background:#fff;
+    color:#29313a;
+    font-size:.94rem;
+    box-shadow:inset 0 1px 2px rgba(40,30,20,.03);
+  }
+  .field-input::placeholder{
+    color:#9b9691;
+    font-size:.94rem;
+  }
+  .field-input:focus{
+    border-color:#a31522;
+    box-shadow:0 0 0 4px rgba(163,21,34,.10);
+    outline:none;
+  }
+  .btn{
+    height:52px;
+    margin-top:6px;
+    border-radius:13px;
+    background:linear-gradient(135deg,#bd1f2e 0%,#8f101c 100%);
+    color:#fff;
+    font-size:1rem;
+    font-weight:800;
+    letter-spacing:.22em;
+    text-indent:.22em;
+    box-shadow:0 10px 24px rgba(143,16,28,.28);
+  }
+  .error-msg{
+    margin-top:-2px;
+    border-radius:12px;
+  }
+}
+
+@media(min-width:481px) and (max-width:768px){
+  .form{
+    gap:16px;
+  }
+  .field{
+    gap:8px;
+  }
+  .field-label{
+    font-size:.9rem;
+    font-weight:700;
+    color:#242a31;
+    letter-spacing:.12em;
+  }
+  .field-num{
+    display:none;
+  }
+  .field-input{
+    height:54px;
+    padding:0 18px;
+    border:1.5px solid #ddd4cb;
+    border-radius:13px;
+    background:#fff;
+    color:#29313a;
+    font-size:.98rem;
+  }
+  .field-input::placeholder{
+    color:#9b9691;
+    font-size:1rem;
+  }
+  .field-input:focus{
+    border-color:#a31522;
+    box-shadow:0 0 0 4px rgba(163,21,34,.10);
+    outline:none;
+  }
+  .btn{
+    height:54px;
+    margin-top:6px;
+    border-radius:13px;
+    background:linear-gradient(135deg,#bd1f2e 0%,#8f101c 100%);
+    color:#fff;
+    font-size:1.04rem;
+    font-weight:800;
+    letter-spacing:.24em;
+    text-indent:.24em;
+    box-shadow:0 10px 24px rgba(143,16,28,.28);
+  }
 }
 </style>

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.response import fail_envelope, me_ok, verify_ok
+from app.core.response import fail_envelope, ok_envelope, verify_ok
 from app.core.security import get_current_payload
 from app.db.database import get_db
 from app.schemas.auth import StudentVerifyRequest
@@ -65,9 +65,9 @@ def auth_me(
         row = db.scalars(select(Student).where(Student.student_id == sid)).first()
         if row:
             detail = student_to_student_display(row)
-            return me_ok(data=detail)
+            return ok_envelope(message="操作成功", data=detail)
     # 兜底：查不到学生记录时返回完整结构，前端 {{ student.advisor.name }} 等不会因字段缺失崩溃
-    return me_ok(data={
+    return ok_envelope(message="操作成功", data={
         "name": str(payload.get("name", "")),
         "student_id": sid or str(payload.get("sub", "")),
         "role": str(payload.get("role", "student")),

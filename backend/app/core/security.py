@@ -108,3 +108,33 @@ async def require_admin(
             detail="需要管理员权限",
         )
     return payload
+
+
+async def require_any_admin(
+    payload: Dict[str, Any] = Depends(get_current_payload),
+) -> Dict[str, Any]:
+    """允许 admin 或 club_admin 角色访问。"""
+    role = payload.get("role", "")
+    if role not in ("admin", "club_admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="需要管理员权限",
+        )
+    return payload
+
+
+def get_student_id_from_payload(payload: Dict[str, Any]) -> int | None:
+    """从 JWT payload 的 sub（student_id 字符串）反查 Student.id。"""
+    from app.db.database import SessionLocal
+    from app.models.student import Student
+    from sqlalchemy import select
+
+    sid = str(payload.get("sub", ""))
+    if not sid:
+        return None
+    db = SessionLocal()
+    try:
+        row = db.scalars(select(Student.id).where(Student.student_id == sid)).first()
+        return row
+    finally:
+        db.close()

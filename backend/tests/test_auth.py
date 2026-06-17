@@ -84,3 +84,4 @@ class TestVerifyStudent:
         assert data["success"] is True
         assert data["data"]["name"] == "张三"
         assert data["data"]["student_id"] == "20260901001"
+        assert isinstance(data["data"]["id"], int)

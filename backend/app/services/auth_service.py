@@ -7,16 +7,19 @@ from app.services.student_service import admin_verify_display, student_to_studen
 
 
 def verify_student_login(db: Session, *, name: str, student_id: str, id_number: str):
-    id_hash = hash_id_number(id_number)
     s = db.scalars(
         select(Student).where(
             Student.name == name,
             Student.student_id == student_id,
-            Student.id_number_hash == id_hash,
         )
     ).first()
     if not s:
         return None
+    # 如果学生已设置身份证号，必须匹配
+    if s.id_number_hash:
+        if s.id_number_hash != hash_id_number(id_number):
+            return None
+    # 未设置身份证号的学生，跳过身份证验证
     role = (s.role or "student").strip().lower()
     token = create_access_token(subject=s.student_id, name=s.name, role=role)
     if role == "admin":

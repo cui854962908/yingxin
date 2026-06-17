@@ -1,12 +1,29 @@
-"""FastAPI 共享依赖"""
+"""
+智能助手身份依赖：仅信任服务端签发的 JWT，不信任前端传入的 student_id。
 
-from fastapi import Depends, HTTPException
+返回 (is_authenticated, current_student_id, role)。
+- 无 Bearer：未登录。
+- 非法 / 过期 Bearer：401（由 get_optional_payload 抛出）。
+"""
 
-from app.core.auth import get_current_user
-from app.core.database import get_db
+from __future__ import annotations
+
+from typing import Optional, Tuple
+
+from fastapi import Depends
+
+from app.core.security import get_optional_payload
+
+JWTClaim = dict
+
+AgentIdentity = Tuple[bool, Optional[str], str]
 
 
-def require_admin(user: dict = Depends(get_current_user)) -> dict:
-    if user.get("role") != "admin":
-        raise HTTPException(403, "需要管理员权限")
-    return user
+async def get_agent_identity(
+    payload: Optional[JWTClaim] = Depends(get_optional_payload),
+) -> AgentIdentity:
+    if not payload:
+        return False, None, "anonymous"
+    sub = str(payload.get("sub", "")).strip()
+    role = str(payload.get("role", "student")).strip().lower() or "student"
+    return True, sub or None, role
