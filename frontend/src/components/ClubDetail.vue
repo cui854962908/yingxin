@@ -268,7 +268,13 @@ async function copyJoinQQ() {
   } catch { /* ignore */ }
 }
 
-onMounted(loadClub)
+onMounted(() => {
+  if (isNew && !isAdmin.value && !isClubAdmin.value) {
+    router.replace('/clubs')
+    return
+  }
+  loadClub()
+})
 </script>
 
 <template>
@@ -277,14 +283,13 @@ onMounted(loadClub)
   <div v-else-if="club || isNew" class="club-detail" style="--tc: #4a8c5c; --tcl: #e8f5e9">
     <!-- Hero Banner -->
     <div class="cd-hero-wrapper">
-      <div class="cd-hero" :class="{ 'is-editing': editing }">
+      <div class="cd-hero">
         <button class="cd-back" @click="goBack">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
           返回
         </button>
         <img v-if="club?.hero_image || (editing && editForm.hero_image)" :src="(editing && editForm.hero_image) || club?.hero_image!" class="cd-hero-bg"
           @error="($event.target as HTMLImageElement).style.display='none'" />
-        <div v-else class="cd-hero-bg cd-hero-bg--fallback" />
         <div class="cd-hero-gradient" />
 
         <div class="cd-hero-actions">
@@ -308,7 +313,7 @@ onMounted(loadClub)
               <img v-if="(editing && editForm.cover_image) || club?.cover_image"
                 :src="(editing && editForm.cover_image) || club?.cover_image!" class="cd-hero-badge-img"
                 @error="($event.target as HTMLImageElement).style.display='none'" />
-              <span v-else class="cd-hero-badge-text">{{ ((editing ? editForm.name : club?.name) || '社').charAt(0) }}</span>
+              <span v-else class="cd-hero-badge-text">{{ (club?.name || '社').charAt(0) }}</span>
             </div>
             <label v-if="editing" class="cd-badge-upload">
               <input type="file" accept="image/*" @change="uploadAndSet('cover_image', $event)" />
@@ -553,14 +558,6 @@ onMounted(loadClub)
 .cd-hero-wrapper { padding: 16px 32px 0; margin: 0 auto }
 .cd-hero { position: relative; height: 280px; overflow: hidden; background-color: #e8e8e8 }
 .cd-hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 75% center }
-.cd-hero-bg--fallback {
-  background:
-    radial-gradient(circle at 68% 34%, rgba(255,255,255,.22), transparent 22%),
-    linear-gradient(135deg, rgba(44, 58, 45, .92), rgba(92, 80, 62, .86)),
-    image-set(url('/club1.webp') type('image/webp'), url('/club1.png') type('image/png'));
-  background-size: cover, cover, cover;
-  background-position: center, center, right center;
-}
 .cd-hero-gradient { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.25) 55%, rgba(0,0,0,.65) 100%); z-index: 1 }
 .cd-hero-actions { position: absolute; top: 16px; right: 24px; z-index: 3; display: flex; align-items: center; gap: 8px }
 .cd-hero-content { position: absolute; left: 0; top: 0; right: 0; z-index: 2; padding: 40px 28px 0 32px; display: flex; align-items: flex-start; gap: 16px }
@@ -721,84 +718,47 @@ onMounted(loadClub)
     /* 抵消 HomePage .section-card 内边距，Hero 贴边更干净 */
     margin: -14px -14px 0;
   }
-  .cd-hero-wrapper { padding: 8px 12px 0 }
+  .cd-hero-wrapper { padding: 0 }
   .cd-main { padding: 12px 12px calc(20px + env(safe-area-inset-bottom, 0px)) }
 
   /* Hero：封面 + 下方信息流式排版，避免元素叠在一起 */
   .cd-hero {
     height: auto;
     overflow: visible;
-    background:
-      linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,250,244,.98));
-    border: 1px solid rgba(201,169,110,.18);
-    border-radius: 22px;
-    box-shadow: 0 18px 36px rgba(70, 48, 28, .14);
+    background: #fff;
+    border-radius: 0 0 14px 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.05);
   }
   .cd-hero-bg {
     position: relative;
     inset: auto;
-    height: 172px;
+    height: 152px;
     display: block;
-    border-radius: 21px 21px 0 0;
   }
   .cd-hero-gradient {
     inset: auto;
     top: 0;
     left: 0;
     right: 0;
-    height: 172px;
-    border-radius: 21px 21px 0 0;
-    background:
-      linear-gradient(180deg, rgba(0,0,0,.34) 0%, rgba(0,0,0,.08) 52%, rgba(0,0,0,.42) 100%);
+    height: 152px;
   }
-  .cd-back {
-    top: 14px;
-    left: 14px;
-    min-height: 42px;
-    border-radius: 13px;
-    background: rgba(12,10,8,.62);
-    border-color: rgba(255,255,255,.18);
-    backdrop-filter: blur(10px);
-  }
-  .cd-hero-actions { top: 14px; right: 14px; max-width: 55%; flex-wrap: wrap; justify-content: flex-end; gap: 7px }
-  .cd-hero-actions .cd-tag {
-    box-shadow: 0 8px 18px rgba(0,0,0,.18);
-    backdrop-filter: blur(10px);
-  }
+  .cd-back { top: 10px; left: 10px }
+  .cd-hero-actions { top: 10px; right: 10px; max-width: 55%; flex-wrap: wrap; justify-content: flex-end; gap: 6px }
   .cd-hero-content {
     position: relative;
     left: auto;
     top: auto;
     right: auto;
-    padding: 12px 18px 18px;
-    margin-top: 0;
-    align-items: center;
-    gap: 14px;
+    padding: 0 14px 12px;
+    margin-top: -30px;
+    align-items: flex-end;
+    gap: 12px;
   }
-  .cd-hero-badge-ring {
-    width: 84px;
-    height: 84px;
-    margin-top: -48px;
-    padding: 4px;
-    background: linear-gradient(135deg, #d7b979, #fff1c8 48%, #b98a45);
-    box-shadow: 0 10px 26px rgba(62, 39, 20, .24);
-  }
+  .cd-hero-badge-ring { width: 72px; height: 72px }
   .cd-hero-badge-text { font-size: 1.6rem }
-  .cd-hero-info { padding: 2px 0 4px }
-  .cd-hero-info .cd-hero-name {
-    font-size: 1.22rem;
-    color: #3C2415;
-    text-shadow: none;
-    margin-bottom: 6px;
-    letter-spacing: .02em;
-  }
-  .cd-hero-info .cd-hero-intro { font-size: .82rem; color: #6d5a47; margin-bottom: 8px; line-height: 1.45 }
-  .cd-tag-category {
-    background: linear-gradient(135deg, rgba(74,140,92,.16), rgba(74,140,92,.08));
-    color: #2f7945;
-    border: 1px solid rgba(74,140,92,.08);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.42);
-  }
+  .cd-hero-info .cd-hero-name { font-size: 1.15rem; color: #1a1a1a; text-shadow: none; margin-bottom: 4px }
+  .cd-hero-info .cd-hero-intro { font-size: .82rem; color: #666; margin-bottom: 8px; line-height: 1.45 }
+  .cd-tag-category { background: rgba(74,140,92,.12); color: #3d7a4e; border: none }
   .cd-hero-meta {
     position: relative;
     left: auto;
@@ -808,11 +768,10 @@ onMounted(loadClub)
     grid-template-columns: 1fr 1fr;
     gap: 10px 12px;
     padding: 12px 14px;
-    background: rgba(248,244,237,.78);
-    border: 1px solid rgba(201,169,110,.2);
-    border-radius: 14px;
+    background: #f7f7f7;
+    border: 1px solid #ebebeb;
+    border-radius: 12px;
   }
-  .cd-hero-meta:empty { display: none }
   .cd-hero-meta-item { padding: 0 }
   .cd-hero-meta-label { font-size: .68rem; color: #999 }
   .cd-hero-meta-value { font-size: .82rem; color: #333; white-space: normal; font-weight: 600 }
@@ -821,120 +780,6 @@ onMounted(loadClub)
   .cd-meta-input::placeholder { color: #aaa }
   .cd-hero-bg-upload { bottom: auto; top: 118px; font-size: .72rem; padding: 4px 10px }
   .cd-upload-toast { top: 44px; right: 10px; font-size: .68rem }
-  .cd-hero.is-editing {
-    display: flex;
-    flex-direction: column;
-    padding-bottom: 16px;
-  }
-  .cd-hero.is-editing .cd-hero-bg,
-  .cd-hero.is-editing .cd-hero-gradient { order: 0 }
-  .cd-hero.is-editing .cd-hero-content {
-    order: 1;
-    align-items: flex-start;
-    padding: 14px 18px 8px;
-    margin-top: 0;
-  }
-  .cd-hero.is-editing .cd-hero-badge-ring {
-    width: 72px;
-    height: 72px;
-    margin-top: -44px;
-  }
-  .cd-hero.is-editing .cd-hero-info {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    width: 100%;
-    padding: 0;
-  }
-  .cd-hero.is-editing .cd-hero-name-input,
-  .cd-hero.is-editing .cd-hero-intro-input,
-  .cd-hero.is-editing .cd-hero-cat-select {
-    width: 100%;
-    max-width: none;
-    height: 42px;
-    margin: 0;
-    border-radius: 14px;
-    border: 1px solid rgba(201,169,110,.22);
-    background: #fff;
-    color: #3C2415;
-    box-shadow: 0 8px 18px rgba(70,48,28,.06);
-  }
-  .cd-hero.is-editing .cd-hero-name-input {
-    font-size: 1.1rem;
-    letter-spacing: .02em;
-  }
-  .cd-hero.is-editing .cd-hero-intro-input {
-    font-size: .84rem;
-  }
-  .cd-hero.is-editing .cd-hero-name-input::placeholder,
-  .cd-hero.is-editing .cd-hero-intro-input::placeholder {
-    color: #b6aa9d;
-  }
-  .cd-hero.is-editing .cd-hero-cat-select {
-    appearance: none;
-    font-size: .84rem;
-    font-weight: 700;
-    padding: 0 14px;
-  }
-  .cd-hero.is-editing .cd-hero-bg-upload {
-    order: 2;
-    position: relative;
-    left: auto;
-    top: auto;
-    bottom: auto;
-    align-self: flex-start;
-    transform: none;
-    margin: 2px 18px 12px 108px;
-    height: 34px;
-    padding: 0 14px;
-    border-radius: 999px;
-    background: rgba(60,36,21,.72);
-    box-shadow: 0 10px 20px rgba(60,36,21,.14);
-    backdrop-filter: blur(10px);
-  }
-  .cd-hero.is-editing .cd-hero-actions {
-    order: 4;
-    position: relative;
-    top: auto;
-    right: auto;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1.15fr;
-    gap: 8px;
-    width: auto;
-    max-width: none;
-    margin: 12px 18px 0;
-  }
-  .cd-hero.is-editing .cd-hero-actions .cd-tag {
-    width: 100%;
-    height: 40px;
-    padding: 0 10px;
-    border-radius: 14px;
-    text-align: center;
-    justify-content: center;
-    box-shadow: none;
-  }
-  .cd-hero.is-editing .cd-tag-save { background: #2f8d47 }
-  .cd-hero.is-editing .cd-tag-cancel {
-    background: #f2eee8;
-    color: #6d5a47;
-    border: 1px solid rgba(109,90,71,.16);
-  }
-  .cd-hero.is-editing .cd-tag-status-select {
-    background-color: #4c4b47;
-    color: #fff;
-    border: none;
-  }
-  .cd-hero.is-editing .cd-hero-meta {
-    order: 3;
-    margin: 0 18px;
-    padding: 14px;
-    background: #fffaf4;
-    border-color: rgba(201,169,110,.28);
-  }
-  .cd-hero.is-editing .cd-meta-input {
-    height: 36px;
-    border-radius: 10px;
-  }
 
   .cd-tabs { margin: 10px 12px 0; padding: 4px; border-radius: 12px }
   .cd-tab-btn { height: 40px; font-size: .86rem }
@@ -950,4 +795,87 @@ onMounted(loadClub)
   .cd-honor-text { max-width: 100% }
   .cd-edit-textarea--sm { max-width: 100% }
   .cd-info-card { padding: 18px 14px }
-  .cd-cards-row { grid-template-columns: 1fr; gap: 12px 
+  .cd-cards-row { grid-template-columns: 1fr; gap: 12px }
+  .cd-recruit-split { flex-direction: column; gap: 0 }
+  .cd-recruit-right {
+    width: 100%;
+    margin: 16px 0 0;
+    padding-top: 14px;
+    border-top: 1px solid rgba(0,0,0,.06);
+    align-items: stretch;
+    text-align: center;
+  }
+  .cd-join-btn { width: 100%; height: 44px; font-size: .9rem }
+  .cd-edit-dates { flex-wrap: wrap; max-width: 100% }
+  .cd-edit-input { max-width: 100% }
+}
+@media(max-width: 480px) {
+  .club-detail { margin: -14px -12px 0 }
+  .cd-main { padding: 10px 10px calc(16px + env(safe-area-inset-bottom, 0px)) }
+  .cd-hero-bg,
+  .cd-hero-gradient { height: 128px }
+  .cd-back { top: 8px; left: 8px; font-size: .72rem; padding: 4px 10px; min-height: 36px }
+  .cd-hero-actions { top: 8px; right: 8px; gap: 4px }
+  .cd-hero-content { padding: 0 12px 10px; margin-top: -26px; gap: 10px }
+  .cd-hero-badge-ring { width: 60px; height: 60px }
+  .cd-hero-badge-text { font-size: 1.35rem }
+  .cd-hero-info .cd-hero-name { font-size: 1.02rem }
+  .cd-hero-info .cd-hero-intro { font-size: .76rem }
+  .cd-tag { font-size: .64rem; padding: 3px 8px }
+  .cd-hero-meta { margin: 0 10px 12px; padding: 10px 12px; gap: 8px 10px; border-radius: 10px }
+  .cd-hero-meta-label { font-size: .62rem }
+  .cd-hero-meta-value { font-size: .76rem }
+  .cd-tabs { margin: 8px 10px 0 }
+  .cd-tab-btn { height: 38px; font-size: .82rem }
+  .cd-section { padding: 12px 10px; border-radius: 10px; margin-bottom: 10px }
+  .cd-section-title { font-size: .86rem; gap: 6px; margin-bottom: 8px }
+  .cd-desc-body,
+  .cd-honor-text { font-size: .82rem; line-height: 1.65 }
+  .cd-info-card { padding: 14px 12px }
+  .cd-info-card-head { font-size: .82rem; margin-bottom: 8px }
+  .cd-recruit-right { margin-top: 12px; padding-top: 12px }
+  .cd-join-title { font-size: .92rem }
+  .cd-join-desc { font-size: .72rem; margin-bottom: 10px }
+  .cd-join-btn { height: 42px; font-size: .86rem }
+  .cd-hero-bg-upload { top: 96px; font-size: .66rem; padding: 3px 8px }
+}
+
+/* 联系方式编辑卡片 */
+.cd-info-card--contact { margin-top: 0 }
+.cd-contact-edit { display: flex; flex-direction: column; gap: 14px }
+
+/* 加入弹窗 */
+.cd-join-overlay {
+  position: fixed; inset: 0; z-index: 5000;
+  background: rgba(0,0,0,.52); display: flex;
+  align-items: center; justify-content: center;
+}
+.cd-join-modal {
+  position: relative; width: 360px; max-width: 90vw;
+  background: #fff; border-radius: 20px; padding: 32px 28px 24px;
+  box-shadow: 0 16px 48px rgba(0,0,0,.18);
+}
+.cd-join-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 32px; height: 32px; border-radius: 50%; border: none;
+  background: #f5f0eb; color: #8b7b65; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.cd-join-close:hover { background: #e8e0d5 }
+.cd-join-title-text { margin: 0 0 20px; font-size: 1.1rem; font-weight: 700; color: #3C2415; text-align: center }
+.cd-join-empty { text-align: center; color: #b0a090 }
+.cd-join-empty p { margin: 0 0 4px; font-size: .88rem }
+.cd-join-empty-hint { font-size: .76rem !important; color: #c4b8a4 }
+.cd-join-row { margin-bottom: 18px }
+.cd-join-row:last-child { margin-bottom: 0 }
+.cd-join-label { display: block; font-size: .78rem; color: #8b7b65; margin-bottom: 8px; font-weight: 500 }
+.cd-join-qq { display: flex; align-items: center; gap: 10px }
+.cd-join-qq-num { flex: 1; padding: 10px 14px; background: #faf6f0; border-radius: 10px; font-size: 1.05rem; font-weight: 700; color: #3C2415; letter-spacing: .06em; text-align: center; font-family: inherit }
+.cd-join-copy { height: 38px; padding: 0 16px; border: none; border-radius: 10px; background: #4a8c5c; color: #fff; font-size: .8rem; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; transition: opacity .15s }
+.cd-join-copy:hover { opacity: .85 }
+.cd-join-qr { display: block; width: 200px; height: 200px; margin: 0 auto; object-fit: contain; border-radius: 12px; border: 1px solid #f0e4d8 }
+.join-modal-enter-active { animation: jmIn .25s ease-out }
+.join-modal-leave-active { animation: jmOut .18s ease-in }
+@keyframes jmIn { from { opacity:0; transform:scale(.95) } to { opacity:1; transform:scale(1) } }
+@keyframes jmOut { to { opacity:0; transform:scale(.95) } }
+</style>

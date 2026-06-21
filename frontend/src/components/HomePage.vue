@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, inject, computed, watch, nextTick, onMounted, onUnmounted, type Ref } from 'vue'
+import { ref, inject, computed, watch, nextTick, onMounted, onUnmounted, type Ref, type ComputedRef } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppNavigate } from '../composables/useAppNavigate'
 import ProfileCard from './ProfileCard.vue'
@@ -7,52 +7,74 @@ import AdminSidebar from './AdminSidebar.vue'
 import MobileBottomNav from './MobileBottomNav.vue'
 
 import type { Student } from '../types/student'
+import { studentGradeLabel } from '../utils/gradeLabel'
+import { GUEST_STUDENT, isGuestRole, readStoredStudent, hasAuthToken } from '../composables/useGuest'
+import { GUEST_ROLE_LABEL } from '../constants/product'
 
-const studentRef = inject<Ref<Student>>('student')
-if (!studentRef) {
-  console.error('[HomePage] student 未通过 provide 注入，请检查父组件')
-  throw new Error('学生登录信息未初始化，请重新登录')
-}
-const student = computed(() => studentRef.value)
-const logout = inject<() => void>('logout')
-if (!logout) {
-  throw new Error('[HomePage] logout 未通过 provide 注入，请检查父组件')
-}
+const studentRef = inject<Ref<Student | null>>('student', ref(null))
+const isAuthenticated = inject<ComputedRef<boolean>>(
+  'isAuthenticated',
+  computed(() => hasAuthToken() && !isGuestRole(studentRef.value?.role)),
+)
+
+/** 优先 inject，其次 localStorage（防止 inject 链断裂时误显示为游客） */
+const student = computed(() => {
+  const live = studentRef.value
+  if (live && !isGuestRole(live.role)) return live
+  const stored = readStoredStudent()
+  if (stored && !isGuestRole(stored.role)) return stored
+  return live ?? GUEST_STUDENT
+})
+
+const logout = inject<() => void>('logout', () => {
+  console.warn('[HomePage] logout 未注入')
+})
 
 const route = useRoute()
 const { appNavigate } = useAppNavigate()
+const isGuest = computed(() => isGuestRole(student.value.role))
 const isAdmin = computed(() => student.value.role === 'admin')
 const isClubAdmin = computed(() => student.value.role === 'club_admin')
 // computed 改为 ref + watch + nextTick，避免布局类切换与 Vue Transition 动画同时触发导致组件被"淹没"
-const isClubRoute = ref(route.path.startsWith('/clubs'))
+function isFullBleedPath(path: string): boolean {
+  return path.startsWith('/clubs') || path.startsWith('/wall')
+}
+
+const isIntroModule = computed(() => route.path.startsWith('/intro'))
+
+const isFullBleedModule = ref(isFullBleedPath(route.path))
 watch(() => route.path, (path) => {
-  if (path.startsWith('/clubs')) {
-    // 切入社团路由：延迟一帧，让 Transition 入场动画先启动
-    nextTick(() => { isClubRoute.value = true })
+  if (isFullBleedPath(path)) {
+    nextTick(() => { isFullBleedModule.value = true })
   } else {
-    // 切出社团路由：立即恢复，不延迟
-    isClubRoute.value = false
+    isFullBleedModule.value = false
   }
 })
+
+/** 已登录展示个人信息卡（问牧墙/社团全屏页除外） */
+const showProfileCard = computed(
+  () => isAuthenticated.value && !isFullBleedModule.value,
+)
 
 // 侧边栏显隐（桌面常驻，移动端 v-model 控制；状态提升至 App.vue 以供 XiaoXin 感知）
 const sidebarOpen = inject<Ref<boolean>>('sidebarOpen', ref(true))
 
 // 根据当前路由反推侧边栏选中项
 const activeKey = computed(() => {
+  if (route.path.startsWith('/intro')) return 'intro'
   if (route.path === '/') return 'home'
   if (route.path.startsWith('/announcements')) return 'announcements'
   if (route.path.startsWith('/faq')) return 'faq'
-  if (route.path.startsWith('/clubs')) return 'clubs'
-  if (route.path.startsWith('/admin')) return 'admin'
+  if (route.path.startsWith('/wall')) return 'wall'
   return 'home'
 })
 
 // 用户角色文案
 const userRoleLabel = computed(() => {
+  if (isGuest.value) return GUEST_ROLE_LABEL
   if (isAdmin.value) return '管理员'
   if (isClubAdmin.value) return '社团管理员'
-  return '2026 级新生'
+  return studentGradeLabel(student.value.student_id)
 })
 
 const isNavigating = ref(false)
@@ -60,10 +82,10 @@ function handleNavigate(key: string) {
   if (isNavigating.value) return
   const routeMap: Record<string, string> = {
     home: '/',
+    intro: '/intro/wiki',
     announcements: '/announcements',
     faq: '/faq',
-    clubs: '/clubs',
-    admin: '/admin',
+    wall: '/wall',
     campus: '/campus',
   }
   const target = routeMap[key]
@@ -137,13 +159,13 @@ onUnmounted(() => {
       @pointerdown.prevent="onEdgeDown"
     />
     <!-- 主内容区 -->
-    <main class="main" :class="{ 'main--fixed': isClubRoute }">
-      <section class="profile-section" :class="{ 'profile-section--hide': isClubRoute }">
+    <main class="main" :class="{ 'main--fixed': isFullBleedModule, 'main--fullbleed': isFullBleedModule }">
+      <section v-show="showProfileCard" class="profile-section">
         <ProfileCard />
       </section>
 
-      <section class="bottom-section" :class="{ 'bottom-section--full': isClubRoute }">
-        <div class="section-card">
+      <section class="bottom-section" :class="{ 'bottom-section--full': isFullBleedModule }">
+        <div class="section-card" :class="{ 'section-card--fullbleed': isFullBleedModule, 'section-card--intro': isIntroModule }">
           <Transition name="module" mode="out-in">
             <router-view :key="route.fullPath" />
           </Transition>
@@ -156,6 +178,7 @@ onUnmounted(() => {
       v-model="sidebarOpen"
       :user="{ name: student.name, role: userRoleLabel }"
       :active-menu="activeKey"
+      :is-guest="isGuest"
       @navigate="handleNavigate"
       @logout="handleLogout"
     />
@@ -210,27 +233,28 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .dashboard {
     background-attachment: scroll;
+    /* 论坛/社团等全屏模块与底栏、回答框共用 */
+    --yx-mobile-nav: calc(52px + env(safe-area-inset-bottom, 0px));
   }
   .dashboard::after {
     display: none;
   }
   .main { margin-left: 0; padding: 8px 14px calc(68px + env(safe-area-inset-bottom, 0px)); gap: 10px }
+  .main--fullbleed {
+    padding: 4px 8px calc(52px + env(safe-area-inset-bottom, 0px));
+    gap: 0;
+  }
   .profile-section { flex: 0 0 auto }
   .bottom-section { flex: 1; min-height: 0 }
 }
 
 /* ===== 内容区 ===== */
 .profile-section {
-  flex: 0 0 auto; min-height: 0; overflow: hidden;
-  max-height: 300px; opacity: 1; margin-bottom: 0;
-  transition: flex .45s cubic-bezier(.33,1,.68,1),
-              max-height .45s cubic-bezier(.33,1,.68,1),
-              opacity .35s cubic-bezier(.33,1,.68,1),
-              margin .45s cubic-bezier(.33,1,.68,1);
-}
-.profile-section--hide {
-  flex: 0 0 0; max-height: 0; opacity: 0; margin-bottom: -24px;
-  pointer-events: none;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  overflow: visible;
+  opacity: 1;
+  margin-bottom: 0;
 }
 .bottom-section { flex: 1; min-height: 0; transition: flex .45s cubic-bezier(.33,1,.68,1) }
 .bottom-section--full { flex: 1 }
@@ -240,9 +264,29 @@ onUnmounted(() => {
   box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 6px 20px rgba(0,0,0,.05);
   padding: 24px 28px; overflow-y: auto; overflow-x: hidden;
 }
+.section-card--intro {
+  padding: 14px 16px 16px;
+  background: #faf8f5;
+  box-shadow: 0 1px 2px rgba(0,0,0,.02), 0 4px 16px rgba(60,48,40,.04);
+}
 
 @media(max-width:768px){ .section-card { border-radius: 12px; padding: 14px } }
+@media(max-width:768px){
+  .section-card--intro {
+    padding: 8px 8px 10px;
+    border-radius: 10px;
+    background: #faf7f3;
+  }
+}
+@media(max-width:768px){
+  .section-card--fullbleed {
+    padding: 0;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+}
 @media(max-width:480px){ .section-card { border-radius: 10px; padding: 14px 12px } }
+@media(max-width:480px){ .section-card--fullbleed { padding: 0; border-radius: 10px } }
 
 /* ===== 模块切换动画 ===== */
 .module-enter-active{animation:velvetIn .5s cubic-bezier(.33,1,.68,1) both}
@@ -282,7 +326,6 @@ onUnmounted(() => {
 
 @media(max-width:1024px){
   .main{padding:20px 24px 24px}
-  .profile-section{flex:0 0 32%}
 }
 @media(max-width:480px){
   .main{padding:12px 12px calc(68px + env(safe-area-inset-bottom, 0px));gap:12px}

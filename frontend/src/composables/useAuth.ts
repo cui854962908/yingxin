@@ -1,5 +1,6 @@
 import { inject, computed, type Ref, type ComputedRef } from 'vue'
 import type { Student } from '../types/student'
+import { isGuestRole } from './useGuest'
 
 /**
  * 共享的认证请求头构造器。
@@ -23,13 +24,15 @@ export function useAuth(): {
   student: ComputedRef<Student | null>
   isAdmin: ComputedRef<boolean>
   isClubAdmin: ComputedRef<boolean>
+  isGuest: ComputedRef<boolean>
   token: ComputedRef<string | null>
 } {
   const studentRef = inject<Ref<Student | null> | null>('student', null)
   const student = computed(() => studentRef?.value ?? null)
   const isAdmin = computed(() => student.value?.role === 'admin')
   const isClubAdmin = computed(() => student.value?.role === 'club_admin')
+  const isGuest = computed(() => isGuestRole(student.value?.role))
   const token = computed(() => localStorage.getItem('token'))
 
-  return { student, isAdmin, isClubAdmin, token }
+  return { student, isAdmin, isClubAdmin, isGuest, token }
 }

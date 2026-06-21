@@ -10,7 +10,7 @@ import { useTTS } from '../composables/useTTS'
 import { useDrag } from '../composables/useDrag'
 import { useXinChat } from '../composables/useXinChat'
 
-const { autoSpeak, isSpeaking, speak, stopSpeak, toggleSpeak } = useTTS()
+const { autoSpeak, isSpeaking, speak, speakSynced, stopSpeak, toggleSpeak } = useTTS()
 
 const route = useRoute()
 const injectedOpen = inject<Ref<boolean>>('xinOpen')
@@ -19,7 +19,7 @@ const sidebarOpen = inject<Ref<boolean>>('sidebarOpen', ref(false))
 const {
   open, messages, input, sending, chatBody, quickList,
   send, onKeydown, closeChat, navigateTo, ensureWelcome,
-} = useXinChat(autoSpeak, speak, injectedOpen)
+} = useXinChat(autoSpeak, { speak, speakSynced, stopSpeak }, injectedOpen)
 
 const { lottieRef, x, y, dragging, isMobile, onPointerDown, reclampPosition } = useDrag(
   open,
@@ -143,7 +143,7 @@ onUnmounted(() => {
         <div class="panel-header-text">
           <span class="panel-title">小信</span>
           <span class="panel-subtitle">
-            <span class="online-dot" />在线 · AI 引擎 v2.0
+            <span class="online-dot" />AI 迎新助手 · 在线
           </span>
         </div>
         <!-- 语音开关 -->
@@ -180,8 +180,12 @@ onUnmounted(() => {
         <span v-for="n in 6" :key="n" class="data-block" :style="{ animationDelay: n * 0.3 + 's' }" />
       </div>
 
-      <!-- 快捷标签 -->
-      <XinQuickTags :quickList="quickList" @select="(t: string) => { input = t; send() }" />
+      <!-- 快捷标签（FAQ 排序前若干条，无数据时不展示） -->
+      <XinQuickTags
+        v-if="quickList.length"
+        :quickList="quickList"
+        @select="(t: string) => { input = t; send() }"
+      />
 
       <!-- 输入区 -->
       <div class="panel-footer">
@@ -263,6 +267,7 @@ onUnmounted(() => {
   background: #0c1a2d;
   box-shadow: -8px 0 50px rgba(0,0,0,.4);
   display: flex; flex-direction: column;
+  overflow-x: hidden;
 }
 .xin-panel.mobile { width: 100vw; box-shadow: none; }
 
@@ -321,7 +326,7 @@ onUnmounted(() => {
 
 .panel-header-text { flex: 1; display: flex; flex-direction: column; gap: 1px; color: #d8e8ff; position: relative; z-index: 1; }
 .panel-title { font-weight: 700; font-size: 1rem; letter-spacing: .04em; }
-.panel-subtitle { font-size: .68rem; opacity: .7; display: flex; align-items: center; gap: 5px; font-family: 'Courier New', monospace; }
+.panel-subtitle { font-size: .72rem; opacity: .75; display: flex; align-items: center; gap: 5px; }
 .online-dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: #4effa0;

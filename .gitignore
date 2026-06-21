@@ -26,8 +26,11 @@ Thumbs.db
 
 # Logs & backups
 backend/logs/
+logs/
 backend/*backup*.sql
 backend/agent_data_only.sql
+*.db
+database_dump.sql
 frontend/test-results/
 
 # Uploaded media (user-generated, not source code)

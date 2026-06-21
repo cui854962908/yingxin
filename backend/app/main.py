@@ -10,7 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import agent, announcements, auth, clubs, faq, students
+from app.api import agent, announcements, auth, clubs, faq, forum
 
 # ── Agent fallback 日志：记录小信未回答上来的问题，供运维补充知识库 ──
 _log_dir = Path("logs")
@@ -46,7 +46,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(
-    title="河南牧业经济学院迎新系统",
+    title="河南牧业经济学院迎新门户",
     version="0.1.0",
     description="迎新系统后端（FastAPI + PostgreSQL），业务接口统一以 `/api` 为前缀。",
     docs_url=_docs_url,
@@ -123,13 +123,14 @@ async def validation_exception_handler(_request: Request, exc: RequestValidation
 app.include_router(v1_api_router)
 app.include_router(agent.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
-app.include_router(students.router, prefix="/api")
 app.include_router(faq.router_public, prefix="/api")
 app.include_router(faq.router_admin, prefix="/api")
 app.include_router(announcements.router_public, prefix="/api")
 app.include_router(announcements.router_admin, prefix="/api")
 app.include_router(clubs.router_public, prefix="/api")
 app.include_router(clubs.router_admin, prefix="/api")
+app.include_router(forum.router_public, prefix="/api")
+app.include_router(forum.router_admin, prefix="/api")
 
 # 静态文件 — 上传的社团图片等
 _static_dir = Path("static")

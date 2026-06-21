@@ -33,8 +33,17 @@ _SEM = threading.Semaphore(2)
 
 def _links_for_kb() -> list[dict[str, str]]:
     return [
-        {"label": "📋 查看问题答疑", "to": "/faq"},
-        {"label": "📢 查看校园公告", "to": "/announcements"},
+        {"label": "查看问题答疑", "to": "/faq"},
+        {"label": "查看校园公告", "to": "/announcements"},
+    ]
+
+
+def _links_for_fallback() -> list[dict[str, str]]:
+    """知识库未命中时的引导链接（问牧墙优先）。"""
+    return [
+        {"label": "🌾 去问牧墙", "to": "/wall"},
+        {"label": "查看问题答疑", "to": "/faq"},
+        {"label": "查看校园公告", "to": "/announcements"},
     ]
 
 
@@ -114,7 +123,12 @@ async def stream_xiaoxin_events(question: str) -> AsyncIterator[dict]:
                 # 微小延迟，让前端打字效果可见（DeepSeek 推理模型输出极快）
                 await asyncio.sleep(0.03)
 
-            links = _links_for_kb() if context else []
+            if context:
+                links = _links_for_kb()
+            elif reply_mode == "no_hit_school":
+                links = _links_for_fallback()
+            else:
+                links = []
             yield {
                 "done": True,
                 "links": links,

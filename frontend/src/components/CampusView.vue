@@ -1,25 +1,20 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useBreakpoint } from '../composables/useBreakpoint'
+import { useAppNavigate } from '../composables/useAppNavigate'
 
-const router = useRouter()
+const { appGoBackTo } = useAppNavigate()
 const loading = ref(true)
-const { isMobile } = useBreakpoint()
-
-const galleryImages = [
-  { src: '/campus/track-field-new-8BPgcsJr.jpg', label: '田径场' },
-  { src: '/campus/basketball-court-BbXm4vee.jpg', label: '篮球场' },
-  { src: '/campus/tennis-court-DqtrJ6oM.jpg', label: '网球场' },
-  { src: '/campus/volleyball-court-Bxf0g7_t.jpg', label: '排球场' },
-]
 
 function onIframeLoad() {
   loading.value = false
 }
 
+function goBack() {
+  appGoBackTo('/')
+}
+
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') router.push('/')
+  if (e.key === 'Escape') goBack()
 }
 
 onMounted(() => window.addEventListener('keydown', onKeydown))
@@ -29,43 +24,29 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 <template>
   <div class="campus-view">
     <header class="campus-topbar">
-      <button class="back-btn" @click="router.push('/')">
+      <button class="back-btn" @click="goBack">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
           <path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/>
         </svg>
-        <span class="back-label">返回</span>
+        <span class="back-label">返回首页</span>
       </button>
       <span class="campus-title">校园导览 · 英才校区</span>
-      <span v-if="!isMobile" class="campus-hint">ESC 返回</span>
+      <span class="campus-hint">返回</span>
     </header>
 
-    <!-- 移动端：静态图集，避免 WebGL 卡顿 -->
-    <div v-if="isMobile" class="campus-gallery">
-      <p class="campus-gallery-tip">手机端展示校园实景图册；完整 3D 漫游请在电脑端打开。</p>
-      <div class="campus-gallery-grid">
-        <figure v-for="img in galleryImages" :key="img.src" class="campus-gallery-item">
-          <img :src="img.src" :alt="img.label" loading="lazy" decoding="async" />
-          <figcaption>{{ img.label }}</figcaption>
-        </figure>
+    <Transition name="fade">
+      <div v-if="loading" class="loading-overlay">
+        <span class="loading-spinner" />
+        <p>3D 校园加载中…</p>
       </div>
-    </div>
-
-    <!-- 桌面端：3D iframe -->
-    <template v-else>
-      <Transition name="fade">
-        <div v-if="loading" class="loading-overlay">
-          <span class="loading-spinner" />
-          <p>3D 校园加载中…</p>
-        </div>
-      </Transition>
-      <iframe
-        src="/campus/app.html"
-        class="campus-iframe"
-        title="校园 3D 漫游"
-        allow="accelerometer; autoplay; clipboard-write; gyroscope"
-        @load="onIframeLoad"
-      />
-    </template>
+    </Transition>
+    <iframe
+      src="/campus/app.html"
+      class="campus-iframe"
+      title="校园 3D 漫游"
+      allow="accelerometer; autoplay; clipboard-write; gyroscope; xr-spatial-tracking"
+      @load="onIframeLoad"
+    />
   </div>
 </template>
 
@@ -158,51 +139,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 .campus-iframe {
   flex: 1;
   width: 100%;
+  min-height: 0;
   border: none;
 }
 
-.campus-gallery {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 12px 12px calc(16px + env(safe-area-inset-bottom, 0px));
-  background: #fefcf9;
-}
-
-.campus-gallery-tip {
-  margin: 0 0 12px;
-  font-size: 0.8rem;
-  color: #8b7b65;
-  line-height: 1.5;
-  text-align: center;
-}
-
-.campus-gallery-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.campus-gallery-item {
-  margin: 0;
-  border-radius: 10px;
-  overflow: hidden;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,.06);
-}
-
-.campus-gallery-item img {
-  width: 100%;
-  aspect-ratio: 4/3;
-  object-fit: cover;
-  display: block;
-}
-
-.campus-gallery-item figcaption {
-  padding: 8px;
-  font-size: 0.78rem;
-  color: #5c5040;
-  text-align: center;
+@media (max-width: 768px) {
+  .loading-overlay { inset: calc(48px + env(safe-area-inset-top, 0px)) 0 0; }
 }
 
 @media (max-width: 480px) {

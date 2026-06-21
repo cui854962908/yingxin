@@ -249,143 +249,11 @@ Authorization: Bearer <token>
 
 ---
 
-## 5. 学生管理（管理员）
-
-以下均需：**`Authorization: Bearer <管理员token>`**
-
-### 5.1 按班级分组列出全部学生
-
-**GET** `/api/admin/students`
-
-**说明：** 仅包含 **`role` 为学生** 的记录；**`role=admin` 的系统账号不会出现在结果中**。
-
-**成功 `data`：** 对象，**key 为班级名称**，**value 为该班学生数组**。学生项字段与「管理员视角」一致，含 `id_number` 及嵌套 `advisor`、`class_teacher`、`assistants`。
-
----
-
-### 5.2 按学号搜索
-
-**GET** `/api/admin/students/search?q={keyword}`
-
-**说明：** 与学生列表相同，**不包含** `role=admin` 账号。
-
-**Query：**
-
-| 参数 | 说明 |
-|------|------|
-| q | 学号关键字；**为空或仅空格**时返回提示 + `data` 为空数组 `[]` |
-
-**成功 `data`：** 学生对象数组（结构同列表中的单条）。
-
----
-
-### 5.3 新增学生
-
-**POST** `/api/admin/students`
-
-**Body（JSON）：**
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| name | string | 是 | 姓名 |
-| student_id | string | 是 | 学号，唯一 |
-| id_number | string | 是 | 身份证号 |
-| photo | string | 否 | 照片 URL |
-| class_name | string | 是 | 班级 |
-| dormitory | string | 否 | 宿舍 |
-| advisor_name | string | 否 | 辅导员姓名 |
-| advisor_phone | string | 否 | 辅导员电话 |
-| class_teacher_name | string | 否 | 班主任姓名 |
-| class_teacher_phone | string | 否 | 班主任电话 |
-| assistant_name | string | 否 | 代班姓名 |
-| assistant_phone | string | 否 | 代班电话 |
-| assistant_class_name | string | 否 | 代班班级 |
-
-**字段命名：** 请求体可同时使用 **snake_case** 或 **camelCase**；亦支持 **`advisor` / `classTeacher` / `assistants`** 等**与 GET 学生详情一致的嵌套对象**（后端会展平入库）。学号、身份证号可为**数字**（JSON 数字会转成字符串）。
-
-**成功：** `message` 如「新增成功」，`data` 为学生完整信息（含嵌套结构）。
-
-**学号重复：** `success: false`，`message` 提示学号已存在（HTTP 仍为 200，需前端以 `success` 为准）。
-
----
-
-### 5.4 修改学生（部分字段）
-
-**PUT** `/api/admin/students/{student_id}`
-
-`student_id` 为路径参数（学号）。
-
-**Body：** 仅传需要修改的字段即可，**不要求**传全量。字段名与 5.3 中「库字段」对应：如只改宿舍：
-
-```json
-{
-  "dormitory": "南苑 5号楼 608室"
-}
-```
-
-**成功：** `data` 为更新后的学生完整信息。
-
-**不存在：** 404，`success: false`。
-
-**目标为系统管理员行：** 403，`success: false`（禁止修改）。
-
----
-
-### 5.5 删除学生
-
-**DELETE** `/api/admin/students/{student_id}`
-
-**成功：** `success: true`，`message` 如「删除成功」，`data` 为 `null`。
-
-**不存在：** 404，`success: false`。
-
-**系统管理员行：** 403，`success: false`（禁止删除）。
-
----
-
-### 5.6 Excel 批量导入
-
-**POST** `/api/admin/students/import`
-
-**Headers：**
-
-- `Authorization: Bearer <管理员token>`
-- `Content-Type: multipart/form-data`
-
-**表单字段：**
-
-| 字段名 | 说明 |
-|--------|------|
-| file | 仅支持 **`.xlsx`** |
-
-**表头（第一行）须包含以下列名（顺序可调整，但列名需一致）：**
-
-`姓名`、`学号`、`身份证号`、`班级`、`宿舍`、`辅导员`、`辅导员电话`、`班主任`、`班主任电话`、`代班`、`代班电话`、`代班班级`
-
-可选扩展列：`照片`（若表头存在则会写入 `photo`）。
-
-**逻辑摘要：** 从第二行起；姓名/学号/身份证号为空则跳过；学号不存在则新增，存在则更新；班级为空会跳过该行；**学号对应 `role=admin` 的系统账号时整行跳过**（不覆盖管理员）。
-
-**成功 `data` 示例：**
-
-```json
-{
-  "imported": 100,
-  "updated": 5,
-  "skipped": 3,
-  "errors": [
-    { "row": 8, "reason": "学号为空" }
-  ]
-}
-```
-
----
-
-## 6. 智能助手（Agent）
+## 5. 智能助手（Agent）
 
 与迎新业务 **同一数据库**。通用问答可**不带** Bearer；涉及**本人宿舍等个人数据**时必须带学生 JWT（`sub` 为学号）。**勿**在请求体传 `student_id`；身份**只认**服务端签发的 JWT。
 
-### 6.0 对接要点（给前端）
+### 5.0 对接要点（给前端）
 
 1. **URL：** `POST {API_BASE}/api/agent/chat`，`Content-Type: application/json`。  
 2. **Body 仅允许：** `{ "message": string }`，`message` 去首尾空格后不能为空，否则 **422**。  
@@ -459,7 +327,7 @@ export async function agentChat(message: string, token?: string | null) {
 | 401 | 仅当携带了 **无效/过期** Bearer |
 | 422 | 参数错误（如 `message` 为空） |
 
-### 6.1 对话
+### 5.1 对话
 
 **POST** `/api/agent/chat`
 
@@ -480,16 +348,16 @@ export async function agentChat(message: string, token?: string | null) {
 | source | string \| null | **建议前端以此区分链路**：`faq`、`xiaoxin_kb`、`chitchat`、`student_agent`、`privacy`、`irrelevant`、`fallback` 等 |
 | matched_title | string \| null | 命中 FAQ 或小信检索到的文档标题等 |
 
-### 6.2 FAQ 缓存与兜底观测（无独立管理路由）
+### 5.2 FAQ 缓存与兜底观测（无独立管理路由）
 
 后台 **POST/DELETE `/api/admin/faq`** 成功后服务端会清空进程内 **`faq`** 快车缓存，无需单独的缓存失效接口。  
 历史接口 **`GET /api/agent/logs/fallbacks`**、**`POST /api/admin/agent/faq-cache/invalidate`** 已移除。兜底问题可开后端 **`AGENT_PERF_LOG`**，并检索 **`source=fallback`** 时 **`app.agent`** 日志打点。
 
-### 6.3 性能调试（可选）
+### 5.3 性能调试（可选）
 
 服务端 `.env` 设置 **`AGENT_PERF_LOG=true`** 后，对 `POST /api/agent/chat` 会在日志中输出 **`[agent_perf]`** 各阶段耗时（jwt、domain、faq、`xiaoxin_rag`、route_body 等；历史向量字段则可能为 0 或未计入）。
 
-### 6.4 小信 SSE：`POST /api/chat`（Ollama + `documents` 表）
+### 5.4 小信 SSE：`POST /api/chat`（Ollama + `documents` 表）
 
 面向「小信」聊天窗：**流式 SSE**。**与 JSON 信封 `POST /api/agent/chat`** 在编排上略有不同（SSE 独立入口先做隐私闸，再直奔向量分支；Agent JSON 会先尝试 **`faq`** 快车）。两者在 **知识检索（`documents` + Ollama）** 上一致。
 
@@ -519,7 +387,7 @@ data: {"event":"done","reply_mode":"knowledge_base","top_similarity":0.72}
 
 详见 **`backend/docs/XIAOXIN_SSE.md`**。
 
-### 6.5 小信朗读：`POST /api/tts`
+### 5.5 小信朗读：`POST /api/tts`
 
 **Body：** `{ "text": "要合成的文字" }`  
 
@@ -529,9 +397,9 @@ data: {"event":"done","reply_mode":"knowledge_base","top_similarity":0.72}
 
 ---
 
-## 7. FAQ
+## 6. FAQ
 
-### 7.1 获取 FAQ 列表（匿名可读）
+### 6.1 获取 FAQ 列表（匿名可读）
 
 **GET** `/api/faq`
 
@@ -547,7 +415,7 @@ data: {"event":"done","reply_mode":"knowledge_base","top_similarity":0.72}
 
 ---
 
-### 7.2 新增 FAQ（管理员）
+### 6.2 新增 FAQ（管理员）
 
 **POST** `/api/admin/faq`
 
@@ -566,7 +434,7 @@ data: {"event":"done","reply_mode":"knowledge_base","top_similarity":0.72}
 
 ---
 
-### 7.3 删除 FAQ（管理员）
+### 6.3 删除 FAQ（管理员）
 
 **DELETE** `/api/admin/faq/{id}`
 
@@ -578,21 +446,21 @@ data: {"event":"done","reply_mode":"knowledge_base","top_similarity":0.72}
 
 ---
 
-## 8. 社团
+## 7. 社团
 
-### 8.1 社团列表（匿名可读）
+### 7.1 社团列表（匿名可读）
 
 **GET** `/api/clubs`
 
 **成功 `data`：** 数组，按名称拼音排序。主要字段：`id`、`name`、`category`、`cover_image`、`hero_image`、`intro`、`status`（含招募期自动计算「招新中/已结束」）、`recruit_start`、`recruit_end`、`member_count`、`qq_group`、`wechat_qr` 等。
 
-### 8.2 社团详情（匿名可读）
+### 7.2 社团详情（匿名可读）
 
 **GET** `/api/clubs/{club_id}`
 
 `club_id` 为 UUID。**404** 表示不存在。
 
-### 8.3 管理端 CRUD
+### 7.3 管理端 CRUD
 
 需管理员或社团管理员 JWT（`require_any_admin`）。
 
@@ -608,9 +476,9 @@ data: {"event":"done","reply_mode":"knowledge_base","top_similarity":0.72}
 
 ---
 
-## 9. 公告
+## 8. 公告
 
-### 9.1 获取公告列表（匿名可读）
+### 8.1 获取公告列表（匿名可读）
 
 **GET** `/api/announcements`
 
@@ -629,7 +497,7 @@ data: {"event":"done","reply_mode":"knowledge_base","top_similarity":0.72}
 
 ---
 
-### 9.2 发布公告（管理员）
+### 8.2 发布公告（管理员）
 
 **POST** `/api/admin/announcements`
 
@@ -647,7 +515,7 @@ data: {"event":"done","reply_mode":"knowledge_base","top_similarity":0.72}
 
 ---
 
-### 9.3 删除公告（管理员）
+### 8.3 删除公告（管理员）
 
 **DELETE** `/api/admin/announcements/{id}`
 
@@ -659,7 +527,7 @@ data: {"event":"done","reply_mode":"knowledge_base","top_similarity":0.72}
 
 ---
 
-## 10. 前端联调清单（建议）
+## 9. 前端联调清单（建议）
 
 1. 使用 Vite 默认 `http://localhost:5173` 调试，避免 CORS 问题；局域网调试见 **§1.3**。  
 2. **环境变量：** 配置 `VITE_API_BASE`（或项目约定名）指向后端，例如 `http://127.0.0.1:8000`，与后端 **`BACKEND_CORS_ORIGINS`** 中的前端 Origin 一致。  
@@ -673,7 +541,7 @@ data: {"event":"done","reply_mode":"knowledge_base","top_similarity":0.72}
 
 ---
 
-## 11. 接口路径速查
+## 10. 接口路径速查
 
 | 方法 | 路径 | 鉴权 |
 |------|------|------|
@@ -683,12 +551,6 @@ data: {"event":"done","reply_mode":"knowledge_base","top_similarity":0.72}
 | POST | `/api/chat` | 无强制（可按需加 Bearer） |
 | POST | `/api/tts` | 无 |
 | POST | `/api/agent/chat` | **可选** Bearer（无效则 401） |
-| GET | `/api/admin/students` | 管理员 |
-| GET | `/api/admin/students/search` | 管理员 |
-| POST | `/api/admin/students` | 管理员 |
-| PUT | `/api/admin/students/{student_id}` | 管理员 |
-| DELETE | `/api/admin/students/{student_id}` | 管理员 |
-| POST | `/api/admin/students/import` | 管理员 |
 | GET | `/api/faq` | **无强制** Bearer |
 | POST | `/api/admin/faq` | 管理员 |
 | DELETE | `/api/admin/faq/{id}` | 管理员 |

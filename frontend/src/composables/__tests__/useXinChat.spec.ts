@@ -1,14 +1,31 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { ref, nextTick, type Ref } from 'vue'
-import { useXinChat } from '../useXinChat'
+import { useXinChat, buildQuickTagsFromFaq } from '../useXinChat'
+import { usePreload } from '../usePreload'
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }))
 
+function makeTtsMock() {
+  const speak = vi.fn(async (_text: string) => {})
+  const stopSpeak = vi.fn()
+  const speakSynced = vi.fn(async (
+    text: string,
+    onReveal: (partial: string) => void,
+    onComplete?: () => void,
+  ) => {
+    for (let i = 0; i < text.length; i++) {
+      onReveal(text.slice(0, i + 1))
+    }
+    onComplete?.()
+  })
+  return { speak, speakSynced, stopSpeak }
+}
+
 describe('useXinChat', () => {
   let autoSpeak: Ref<boolean>
-  let speak = vi.fn<(text: string) => void>()
+  let tts: ReturnType<typeof makeTtsMock>
   let chat: ReturnType<typeof useXinChat>
 
   const mockFetch = (ok: boolean, data: unknown) => {
@@ -22,7 +39,8 @@ describe('useXinChat', () => {
     vi.restoreAllMocks()
     localStorage.clear()
     autoSpeak = ref(true)
-    speak = vi.fn<(text: string) => void>()
+    tts = makeTtsMock()
+    usePreload().faqItems.value = []
   })
 
   afterEach(() => {
@@ -30,7 +48,7 @@ describe('useXinChat', () => {
   })
 
   function createChat() {
-    chat = useXinChat(autoSpeak, speak)
+    chat = useXinChat(autoSpeak, tts)
     return chat
   }
 
@@ -53,116 +71,80 @@ describe('useXinChat', () => {
       expect(messages.value.length).toBe(1)
     })
 
-    it('首次调用后自动朗读（延迟）', async () => {
+    it('开启语音时同步朗读欢迎语', async () => {
       const { ensureWelcome } = createChat()
       ensureWelcome()
-      await new Promise(r => setTimeout(r, 1000))
-      expect(speak).toHaveBeenCalledWith(expect.stringContaining('河南牧业经济学院'))
+      await nextTick()
+      await vi.waitFor(() => {
+        expect(tts.speakSynced).toHaveBeenCalledWith(
+          expect.stringContaining('河南牧业经济学院'),
+          expect.any(Function),
+          expect.any(Function),
+        )
+      })
     })
 
     it('第二次调用不再朗读', async () => {
       const { ensureWelcome } = createChat()
       ensureWelcome()
-      await new Promise(r => setTimeout(r, 1000))
-      speak.mockClear()
+      await nextTick()
+      tts.speakSynced.mockClear()
 
       ensureWelcome()
-      await new Promise(r => setTimeout(r, 100))
-      expect(speak).not.toHaveBeenCalled()
+      await nextTick()
+      expect(tts.speakSynced).not.toHaveBeenCalled()
     })
   })
 
   describe('send', () => {
-    it('空输入时不发送', () => {
-      const { send, input, messages, sending } = createChat()
-      input.value = '   '
-      send()
-      expect(sending.value).toBe(false)
-      expect(messages.value.length).toBe(0)
-    })
-
-    it('发送中时不重复发送', () => {
-      const { send, input, sending, messages } = createChat()
-      input.value = '你好'
-      sending.value = true
-      send()
-      expect(messages.value.length).toBe(0)
-    })
-
-    it('输入和发送后清空 input', async () => {
+    it('空输入不发送', async () => {
       const { send, input, messages } = createChat()
-      input.value = '测试消息'
+      input.value = '   '
+      await send()
+      expect(messages.value.length).toBe(0)
+    })
 
-      // agent chat 返回有效响应
-      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          success: true,
-          data: { reply: '测试回复', source: 'faq' },
-        }),
-      } as Response)
-
-      send()
+    it('发送后清空输入框', async () => {
+      mockFetch(true, { success: true, data: { reply: 'ok', source: 'faq' } })
+      const { send, input } = createChat()
+      input.value = 'hello'
+      await send()
       expect(input.value).toBe('')
-      expect(messages.value[0].text).toBe('测试消息')
-      expect(messages.value[0].role).toBe('user')
-    })
-  })
-
-  describe('closeChat / navigateTo', () => {
-    it('closeChat 设置 open 为 false', () => {
-      const { open, closeChat } = createChat()
-      open.value = true
-      closeChat()
-      expect(open.value).toBe(false)
-    })
-
-    it('navigateTo 关闭面板并跳转', () => {
-      const { navigateTo, open } = createChat()
-      open.value = true
-      navigateTo('/faq')
-      expect(open.value).toBe(false)
-    })
-  })
-
-  describe('onKeydown', () => {
-    it('Enter 触发 send', () => {
-      const { onKeydown, input } = createChat()
-      input.value = '测试'
-      const e = new KeyboardEvent('keydown', { key: 'Enter', shiftKey: false })
-      // send 内部会调用 fetch，我们验证 input 清空即可
-      e.preventDefault = vi.fn()
-      onKeydown(e)
-      expect(e.preventDefault).toHaveBeenCalled()
-      expect(input.value).toBe('')
-    })
-
-    it('Shift+Enter 不触发 send', () => {
-      const { onKeydown, input } = createChat()
-      input.value = '测试'
-      const e = new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true })
-      e.preventDefault = vi.fn()
-      onKeydown(e)
-      expect(e.preventDefault).not.toHaveBeenCalled()
-      expect(input.value).toBe('测试')
-    })
-
-    it('其他按键不触发 send', () => {
-      const { onKeydown, input } = createChat()
-      input.value = '测试'
-      const e = new KeyboardEvent('keydown', { key: 'a' })
-      e.preventDefault = vi.fn()
-      onKeydown(e)
-      expect(e.preventDefault).not.toHaveBeenCalled()
     })
   })
 
   describe('quickList', () => {
-    it('包含 4 个快捷入口', () => {
+    it('buildQuickTagsFromFaq 按 FAQ 顺序取前 6 条', () => {
+      const tags = buildQuickTagsFromFaq([
+        { question: '快递在哪' },
+        { question: '宿舍几点熄灯' },
+        { question: '学费怎么交' },
+        { question: '有没有街舞社' },
+        { question: '报到要带什么' },
+        { question: '食堂开放时间' },
+        { question: '多余条目' },
+      ])
+      expect(tags).toHaveLength(6)
+      expect(tags[0]).toEqual({ label: '快递在哪', text: '快递在哪' })
+      expect(tags[5].text).toBe('食堂开放时间')
+    })
+
+    it('过长问题截断展示、点击仍发完整问题', () => {
+      const longQ = '新生报到需要携带哪些材料和证件'
+      const tags = buildQuickTagsFromFaq([{ question: longQ }])
+      expect(tags[0].label).toBe('新生报到需要携带哪些材料…')
+      expect(tags[0].text).toBe(longQ)
+    })
+
+    it('FAQ 预加载后 quickList 同步更新', () => {
+      const { faqItems } = usePreload()
+      faqItems.value = [
+        { id: '1', question: '快递在哪', answer: '菜鸟驿站' },
+        { id: '2', question: '宿舍几点熄灯', answer: '23:00' },
+      ]
       const { quickList } = createChat()
-      expect(quickList).toHaveLength(4)
-      expect(quickList.map(q => q.text)).toContain('快递在哪')
-      expect(quickList.map(q => q.text)).toContain('宿舍几点熄灯')
+      expect(quickList.value).toHaveLength(2)
+      expect(quickList.value[0].text).toBe('快递在哪')
     })
   })
 
@@ -178,28 +160,26 @@ describe('useXinChat', () => {
       const { send, input, messages } = createChat()
       input.value = '快递在哪'
 
-      // Agent chat 失败
       vi.spyOn(globalThis, 'fetch')
-        .mockRejectedValueOnce(new Error('agent down')) // agent
-        .mockResolvedValueOnce({ ok: false } as Response) // stream
-        .mockResolvedValueOnce({ // faq fetch
+        .mockRejectedValueOnce(new Error('agent down'))
+        .mockResolvedValueOnce({ ok: false } as Response)
+        .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve({ success: true, data: [{ question: '快递在哪', answer: '菜鸟驿站' }] }),
         } as Response)
-        .mockResolvedValueOnce({ // announcements fetch
+        .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve({ success: true, data: [] }),
         } as Response)
-        .mockResolvedValueOnce({ // clubs fetch
+        .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve({ success: true, data: [] }),
         } as Response)
 
       send()
-      // 推进 fallbackReply 的 setTimeout(..., 400)
       await vi.advanceTimersByTimeAsync(500)
 
-      expect(messages.value.length).toBeGreaterThanOrEqual(2) // user + xin reply
+      expect(messages.value.length).toBeGreaterThanOrEqual(2)
       const xinMsg = messages.value.find((m) => m.role === 'xin')
       expect(xinMsg?.text).toContain('菜鸟驿站')
     })
@@ -222,6 +202,59 @@ describe('useXinChat', () => {
       const xinMsg = messages.value.find((m) => m.role === 'xin')
       expect(xinMsg).toBeDefined()
       expect(xinMsg!.text).toContain('统一支付平台')
+    })
+
+    it('agent fallback 时推送问牧墙跳转链接', async () => {
+      localStorage.setItem('token', 'test-token')
+      const { send, input, messages } = createChat()
+      input.value = '食堂几点开门'
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          success: true,
+          data: { reply: '这个问题我暂时答不上来，可以去问牧墙问问学长学姐哦', source: 'fallback' },
+        }),
+      } as Response)
+
+      send()
+      await vi.advanceTimersByTimeAsync(400)
+
+      const linkMsg = messages.value.find(m => m.links?.some(l => l.to.startsWith('/wall/new')))
+      expect(linkMsg).toBeDefined()
+      expect(linkMsg!.links![0].label).toContain('问牧墙')
+      expect(decodeURIComponent(linkMsg!.links![0].to)).toContain('食堂几点开门')
+    })
+
+    it('本地兜底未知问题时文案含问牧墙', async () => {
+      localStorage.setItem('token', 'test-token')
+      const { send, input, messages } = createChat()
+      input.value = '完全不知道的问题xyz'
+
+      vi.spyOn(globalThis, 'fetch')
+        .mockRejectedValueOnce(new Error('agent down'))
+        .mockResolvedValueOnce({ ok: false } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ success: true, data: [] }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ success: true, data: [] }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ success: true, data: [] }),
+        } as Response)
+
+      send()
+      await vi.advanceTimersByTimeAsync(700)
+
+      const xinMsgs = messages.value.filter(m => m.role === 'xin')
+      const unknownReply = xinMsgs.find(m => m.text.includes('答不上'))
+      expect(unknownReply?.text).toContain('问牧墙')
+      const linkMsg = xinMsgs.find(m => m.links?.some(l => l.to.startsWith('/wall/new')))
+      expect(linkMsg).toBeDefined()
     })
   })
 })

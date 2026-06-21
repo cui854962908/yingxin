@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { computed, inject, type Ref } from 'vue'
+import { computed, inject, ref, type Ref } from 'vue'
+import { studentGradeBadge } from '../utils/gradeLabel'
+import { GUEST_STUDENT, isGuestRole, readStoredStudent } from '../composables/useGuest'
+import type { Student } from '../types/student'
 
-interface Student {
-  name: string; student_id: string; class_name: string
-  dormitory: string
-  advisor: { name: string; phone: string }
-  class_teacher: { name: string; phone: string }
-  assistants: { name: string; phone: string; class_name: string }[]
-}
+const studentRef = inject<Ref<Student | null>>('student', ref(null))
 
-const studentRef = inject<Ref<Student>>('student')!
-const student = computed(() => studentRef.value)
+const student = computed(() => {
+  const live = studentRef.value
+  if (live && !isGuestRole(live.role)) return live
+  const stored = readStoredStudent()
+  if (stored && !isGuestRole(stored.role)) return stored
+  return live ?? GUEST_STUDENT
+})
 const avatarChar = computed(() => student.value?.name?.charAt(0) || '')
+const gradeBadge = computed(() => studentGradeBadge(student.value?.student_id || ''))
 </script>
 
 <template>
@@ -23,7 +26,7 @@ const avatarChar = computed(() => student.value?.name?.charAt(0) || '')
       </div>
       <div class="top-info">
         <h2 class="name">{{ student.name }}</h2>
-        <span class="badge">2026</span>
+        <span v-if="gradeBadge" class="badge">{{ gradeBadge }}</span>
       </div>
     </div>
 
@@ -70,7 +73,7 @@ const avatarChar = computed(() => student.value?.name?.charAt(0) || '')
 
 <style scoped>
 .card {
-  height: 100%; background: #fff; border-radius: 16px;
+  background: #fff; border-radius: 16px;
   box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 6px 20px rgba(0,0,0,.05);
   padding: 22px 32px 28px; display: flex; flex-direction: column;
   justify-content: flex-start; position: relative; overflow: hidden;

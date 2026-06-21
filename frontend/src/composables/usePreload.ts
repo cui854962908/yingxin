@@ -1,5 +1,4 @@
 import { ref } from 'vue'
-import { authHeaders } from './useAuth'
 import { MOBILE_MAX } from './useBreakpoint'
 
 // 全局缓存：登录后预加载，切换模块时数据已就绪，消除空白闪烁
@@ -10,7 +9,6 @@ const announcements = ref<Announcement[]>([])
 const faqItems = ref<FaqItem[]>([])
 const faqTotal = ref(0)
 const clubs = ref<any[]>([])
-const adminStudents = ref<any[]>([])
 
 let preloaded = false
 
@@ -39,19 +37,9 @@ async function preload() {
     }
     if (isMobile) setTimeout(loadClubs, 400)
     else await loadClubs()
-
-    // 管理员/班助预加载学生数据
-    const student = JSON.parse(localStorage.getItem('student') || '{}')
-    if (student.role === 'admin' || student.role === 'assistant') {
-      try {
-        const sRes = await fetch('/api/admin/students', { headers: authHeaders() })
-        const sData = await sRes.json()
-        if (sData.success) adminStudents.value = sData.data
-      } catch { /* 非管理员静默失败 */ }
-    }
   } catch { preloaded = false }
 }
 
 export function usePreload() {
-  return { announcements, faqItems, faqTotal, clubs, adminStudents, preload }
+  return { announcements, faqItems, faqTotal, clubs, preload }
 }

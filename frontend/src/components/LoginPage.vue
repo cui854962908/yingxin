@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import LoginForm from './LoginForm.vue'
+import { PRODUCT_TAGLINE, PRODUCT_POSITIONING, GUEST_ENTRY_LABEL } from '../constants/product'
 
 const emit = defineEmits<{
   'login-success': [student: Record<string, any>, token: string]
+  'guest-enter': []
 }>()
 </script>
 
@@ -29,7 +31,8 @@ const emit = defineEmits<{
           <span class="brand-rule-dot">◆</span>
         </div>
         <p class="year-badge">2026</p>
-        <p class="brand-sub">迎 新 系 统</p>
+        <p class="brand-sub">迎 新 门 户</p>
+        <p class="brand-tagline">{{ PRODUCT_TAGLINE }}</p>
       </div>
     </aside>
 
@@ -50,11 +53,16 @@ const emit = defineEmits<{
         <p class="form-eyebrow">NEW STUDENT · IDENTITY VERIFICATION</p>
         <h2 class="form-heading">新生入学验证</h2>
         <div class="heading-rule" />
-        <p class="form-desc">请输入你的入学信息以完成身份核验</p>
+        <p class="form-desc">{{ PRODUCT_POSITIONING }}</p>
 
         <LoginForm @login-success="(s, t) => emit('login-success', s, t)" />
 
-        <p class="footer-tip">姓名 · 学号 · 身份证号，三项验证通过即可进入系统</p>
+        <div class="guest-divider"><span>或</span></div>
+        <button type="button" class="guest-btn" @click="emit('guest-enter')">
+          {{ GUEST_ENTRY_LABEL }}
+        </button>
+
+        <p class="footer-tip">已录取新生：姓名 · 学号 · 身份证号（未录入可留空）验证登录</p>
       </div>
     </main>
   </div>
@@ -676,6 +684,10 @@ body{font-family:'PingFang SC','Microsoft YaHei','Noto Serif SC',-apple-system,B
 .brand-rule-dot{font-size:.35rem;color:rgba(201,169,110,.5)}
 .year-badge{font-size:3.2rem;font-weight:300;color:#f2e6d0;letter-spacing:.15em;font-family:'Georgia','Noto Serif SC',serif;line-height:1}
 .brand-sub{font-size:.85rem;color:rgba(242,230,208,.5);letter-spacing:.3em;margin-top:8px}
+.brand-tagline{
+  margin-top:10px;font-size:.72rem;color:rgba(242,230,208,.72);
+  letter-spacing:.08em;line-height:1.5;max-width:280px;
+}
 
 /* 右面板 */
 .form-panel{flex:1;background:#fefcf9;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
@@ -700,7 +712,20 @@ body{font-family:'PingFang SC','Microsoft YaHei','Noto Serif SC',-apple-system,B
 .form-eyebrow{font-size:.65rem;color:#c4b298;letter-spacing:.2em;text-transform:uppercase;margin-bottom:6px}
 .form-heading{font-size:2rem;font-weight:700;color:#2c2c2c;letter-spacing:.12em;line-height:1.3}
 .heading-rule{width:36px;height:2px;background:#b5343a;margin-top:14px;border-radius:1px}
-.form-desc{font-size:.9rem;color:#a09888;margin-top:14px;margin-bottom:36px}
+.form-desc{font-size:.9rem;color:#a09888;margin-top:14px;margin-bottom:28px;line-height:1.55;max-width:36em}
+.guest-divider{
+  display:flex;align-items:center;gap:12px;margin:20px 0 14px;color:#c4b8a8;font-size:.72rem;
+}
+.guest-divider::before,.guest-divider::after{
+  content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,#e5dbcc,transparent);
+}
+.guest-btn{
+  width:100%;height:44px;border:1.5px solid #e5dbcc;border-radius:12px;
+  background:#fefcf9;color:#6b5e4e;font-size:.84rem;font-weight:600;
+  cursor:pointer;font-family:inherit;letter-spacing:.04em;
+  transition:background .2s,border-color .2s,color .2s;
+}
+.guest-btn:hover{border-color:#b5343a;color:#b5343a;background:#fff8f8}
 .footer-tip{margin-top:24px;font-size:.76rem;color:#c4b8a8;text-align:center;line-height:1.6}
 
 /* 平板竖屏 */

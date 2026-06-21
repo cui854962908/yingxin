@@ -6,8 +6,9 @@ import { authHeaders, useAuth } from '../composables/useAuth'
 import AppSpinner from './AppSpinner.vue'
 import ClubCard from './ClubCard.vue'
 
-const router = useRouter()
+const props = withDefaults(defineProps<{ hideHeader?: boolean }>(), { hideHeader: false })
 const route = useRoute()
+const router = useRouter()
 const clubs = ref<Club[]>([])
 const loading = ref(true)
 const searchQuery = ref('')
@@ -89,10 +90,13 @@ onMounted(loadClubs)
 <template>
   <div class="clubs">
     <!-- 吸顶区：标题 + 搜索 + 分类 -->
-    <div class="clubs-toolbar">
-      <div class="clubs-header">
+    <div class="clubs-toolbar" :class="{ 'clubs-toolbar--embed': hideHeader }">
+      <div v-if="!hideHeader" class="clubs-header">
         <h3 class="clubs-title">社团介绍</h3>
         <button v-if="isAnyAdmin" class="clubs-add-btn" @click="goAdd">+ 添加社团</button>
+      </div>
+      <div v-else-if="isAnyAdmin" class="clubs-header clubs-header--compact">
+        <button class="clubs-add-btn" @click="goAdd">+ 添加社团</button>
       </div>
       <div class="clubs-search">
         <svg class="clubs-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -161,7 +165,12 @@ onMounted(loadClubs)
   height: 50px; background: #fff;
   pointer-events: none;
 }
-.clubs-header { display: flex; align-items: center; justify-content: space-between }
+.clubs-toolbar--embed {
+  position: static; margin: 0; padding: 0 0 8px;
+  box-shadow: none; background: transparent;
+}
+.clubs-toolbar--embed::before { display: none }
+.clubs-header--compact { justify-content: flex-end }
 .clubs-title { font-size: 1.15rem; font-weight: 700; color: #2c2c2c; letter-spacing: .06em; margin: 0 }
 .clubs-add-btn {
   height: 32px; padding: 0 14px; border: 1px solid #c9a96e; border-radius: 8px;
@@ -225,4 +234,6 @@ onMounted(loadClubs)
   .clubs-toolbar::before { left: -12px; right: -12px }
   .clubs-search { max-width: 100% }
   .clubs-search-input { height: 38px; font-size: .84rem }
-  .clubs-gr
+  .clubs-grid { grid-template-columns: 1fr; gap: 14px }
+}
+</style>

@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted, provide } from 'vue'
+import { ref, onMounted, provide, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import LoginPage from './components/LoginPage.vue'
 import XiaoXinAssistant from './components/XiaoXinAssistant.vue'
 import AppSpinner from './components/AppSpinner.vue'
 import { usePreload } from './composables/usePreload'
+import { GUEST_STUDENT, isGuestRole, readGuestSession, setGuestSession } from './composables/useGuest'
 
 import type { Student } from './types/student'
 
+const router = useRouter()
 const { preload } = usePreload()
 
 const student = ref<Student | null>(null)
@@ -15,7 +18,6 @@ const showWelcome = ref(false)
 const xinOpen = ref(false)
 const sidebarOpen = ref(typeof window !== 'undefined' ? window.innerWidth > 768 : true)
 
-// 自动登录（有 token 则跳过欢迎动画）
 onMounted(async () => {
   const token = localStorage.getItem('token')
   if (token) {
@@ -25,25 +27,26 @@ onMounted(async () => {
       })
       const d = await res.json()
       if (d.success) {
-        // 优先用服务端最新数据，覆盖 localStorage 旧缓存
-        const fresh = onLoginSuccess(d.data, token)
-        student.value = fresh
+        applyLoginSession(d.data, token)
         loading.value = false
-        preload()
         return
       }
     } catch { console.warn('自动登录验证失败，退回登录页') }
     clearAuth()
   }
-  // 无 token，播放欢迎动画 → 登录页
+  if (readGuestSession()) {
+    student.value = { ...GUEST_STUDENT }
+    loading.value = false
+    preload()
+    return
+  }
   loading.value = false
   showWelcome.value = true
   setTimeout(() => { showWelcome.value = false }, 2800)
 })
 
-function onLoginSuccess(s: Record<string, any>, token: string) {
-  // 防御后端返回字段缺失/为 null，兼容嵌套和扁平两种格式
-  const safe: Student = {
+function buildStudent(s: Record<string, any>): Student {
+  return {
     id: typeof s.id === 'number' ? s.id : undefined,
     name: s.name || '',
     student_id: s.student_id || '',
@@ -61,6 +64,11 @@ function onLoginSuccess(s: Record<string, any>, token: string) {
       ? s.assistants.map((a: { name?: string; phone?: string; class_name?: string }) => ({ name: a.name || '', phone: a.phone || '', class_name: a.class_name || '' }))
       : (s.assistant_name ? [{ name: s.assistant_name || '', phone: s.assistant_phone || '', class_name: s.assistant_class_name || '' }] : []),
   }
+}
+
+function applyLoginSession(s: Record<string, any>, token: string): Student {
+  setGuestSession(false)
+  const safe = buildStudent(s)
   student.value = safe
   localStorage.setItem('token', token)
   localStorage.setItem('student', JSON.stringify(safe))
@@ -68,9 +76,25 @@ function onLoginSuccess(s: Record<string, any>, token: string) {
   return safe
 }
 
+function onLoginSuccess(s: Record<string, any>, token: string) {
+  applyLoginSession(s, token)
+  router.replace('/')
+}
+
 function clearAuth() {
   localStorage.removeItem('token')
   localStorage.removeItem('student')
+  setGuestSession(false)
+}
+
+function onGuestEnter() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('student')
+  setGuestSession(true)
+  student.value = { ...GUEST_STUDENT }
+  showWelcome.value = false
+  preload()
+  router.push('/intro/wiki')
 }
 
 function onLogout() {
@@ -82,6 +106,12 @@ provide('student', student)
 provide('logout', onLogout)
 provide('xinOpen', xinOpen)
 provide('sidebarOpen', sidebarOpen)
+
+/** 供 HomePage 判断个人信息卡等登录态 UI */
+const isAuthenticated = computed(
+  () => !!student.value && !isGuestRole(student.value.role),
+)
+provide('isAuthenticated', isAuthenticated)
 </script>
 
 <template>
@@ -103,7 +133,7 @@ provide('sidebarOpen', sidebarOpen)
   </div>
 
   <Transition v-else name="login" mode="out-in">
-    <LoginPage v-if="!student" key="login" @login-success="onLoginSuccess" />
+    <LoginPage v-if="!student" key="login" @login-success="onLoginSuccess" @guest-enter="onGuestEnter" />
     <div v-else key="home" class="app-main">
       <router-view v-slot="{ Component }">
         <Transition name="module" mode="out-in">
@@ -128,7 +158,7 @@ html { scrollbar-width: thin; scrollbar-color: #d4c8b0 transparent }
   input, textarea, select { font-size: 16px; }
 }
 
-.app-main { width: 100%; min-height: 100vh; min-height: calc(var(--vh, 1vh) * 100) }
+.app-main { width: 100%; min-height: 100vh; min-height: calc(var(--vh, 1vh) * 100); background: #fefcf9 }
 
 .loading {
   min-height: 100vh; min-height: calc(var(--vh, 1vh) * 100); display: flex; align-items: center; justify-content: center;

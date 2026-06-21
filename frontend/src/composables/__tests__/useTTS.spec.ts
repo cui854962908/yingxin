@@ -102,4 +102,16 @@ describe('useTTS', () => {
       expect(isSpeaking.value).toBe(false)
     })
   })
+
+  describe('speakSynced', () => {
+    it('TTS 失败时仍展示全文', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({ ok: false } as Response)
+
+      const { speakSynced } = useTTS()
+      let final = ''
+      await speakSynced('测试', (p) => { final = p })
+
+      expect(final).toBe('测试')
+    })
+  })
 })

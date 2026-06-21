@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAppNavigate } from '../composables/useAppNavigate'
-import { authHeaders } from '../composables/useAuth'
+import { authHeaders, useAuth } from '../composables/useAuth'
 
 const { appGoBackTo } = useAppNavigate()
+const { isAdmin } = useAuth()
 const question = ref('')
 const answer = ref('')
 const keywords = ref('')
-const category = ref('')
 const sortOrder = ref(0)
 const saving = ref(false)
 
@@ -24,7 +24,6 @@ async function handleSubmit() {
         question: question.value.trim(),
         answer: answer.value.trim(),
         keywords: keywords.value.trim() || null,
-        category: category.value.trim() || null,
         sort_order: Number(sortOrder.value),
       }),
     })
@@ -35,6 +34,10 @@ async function handleSubmit() {
   } catch { console.warn('发布FAQ请求失败') }
   finally { saving.value = false }
 }
+
+onMounted(() => {
+  if (!isAdmin.value) appGoBackTo('/faq')
+})
 </script>
 
 <template>
@@ -47,15 +50,9 @@ async function handleSubmit() {
       <label class="faf-label">答案内容</label>
       <textarea v-model="answer" class="faf-textarea" placeholder="请输入详细的答案内容，支持换行分段..." rows="8" />
     </div>
-    <div class="faf-grid">
-      <div class="faf-field">
-        <label class="faf-label">关键词</label>
-        <input v-model="keywords" class="faf-input" placeholder="如：快递, 驿站, 包裹" />
-      </div>
-      <div class="faf-field">
-        <label class="faf-label">分类</label>
-        <input v-model="category" class="faf-input" placeholder="如：生活服务" />
-      </div>
+    <div class="faf-field">
+      <label class="faf-label">关键词（可选）</label>
+      <input v-model="keywords" class="faf-input" placeholder="逗号分隔，如：学费,缴费" />
     </div>
     <div class="faf-field">
       <label class="faf-label">排序权重</label>
@@ -72,7 +69,6 @@ async function handleSubmit() {
 
 <style scoped>
 .faf{display:flex;flex-direction:column;gap:20px;width:100%}
-.faf-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .faf-field{display:flex;flex-direction:column;gap:8px}
 .faf-label{font-size:.88rem;font-weight:500;color:#3c3028;letter-spacing:.04em}
 .faf-input{height:44px;padding:0 14px;border:1.5px solid #e5dbcc;border-radius:8px;font-size:.9rem;color:#3c3028;background:#fefcf9;outline:none;font-family:inherit;transition:border-color .2s}
@@ -82,4 +78,13 @@ async function handleSubmit() {
 .faf-textarea:focus{border-color:#b5343a}
 .faf-actions{display:flex;justify-content:flex-end;gap:10px}
 .faf-cancel{height:38px;padding:0 24px;border:1px solid #d4c8b0;border-radius:8px;background:#fff;color:#8b7b65;font-size:.84rem;cursor:pointer;font-family:inherit}
-.faf-submit{height:38px;padding:0 28px;border:none;border-radius:8px;background:#b5343a;color
+.faf-submit{height:38px;padding:0 28px;border:none;border-radius:8px;background:#b5343a;color:#fff;font-size:.84rem;font-weight:500;cursor:pointer;font-family:inherit}
+.faf-submit:disabled{opacity:.5}
+
+@media(max-width:768px){
+  .faf-actions{flex-direction:column-reverse}
+  .faf-cancel,.faf-submit{width:100%;height:44px;min-height:44px}
+  .faf-input,.faf-textarea{font-size:1rem}
+  .faf-input--sm{max-width:none;width:100%}
+}
+</style>

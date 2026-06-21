@@ -12,14 +12,14 @@ const route = useRoute()
 const tabs = [
   { key: 'home', label: '首页' },
   { key: 'faq', label: '答疑' },
-  { key: 'clubs', label: '社团' },
+  { key: 'intro', label: '介绍' },
   { key: 'menu', label: '菜单' },
 ] as const
 
 const activeKey = computed(() => {
+  if (route.path.startsWith('/intro')) return 'intro'
   if (route.path === '/') return 'home'
   if (route.path.startsWith('/faq')) return 'faq'
-  if (route.path.startsWith('/clubs')) return 'clubs'
   return ''
 })
 
@@ -52,7 +52,7 @@ function onClick(key: string) {
         <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
         <line x1="12" y1="17" x2="12.01" y2="17"/>
       </svg>
-      <svg v-else-if="tab.key === 'clubs'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg v-else-if="tab.key === 'intro'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="4" y="2" width="16" height="20" rx="2"/>
         <path d="M9 22v-4h6v4"/>
         <path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/>

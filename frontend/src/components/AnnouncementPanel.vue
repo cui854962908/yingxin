@@ -198,6 +198,18 @@ onMounted(load)
 .ann-empty{text-align:center;color:#b0a090;padding:16px 0;font-size:.84rem}
 .ann-loading{display:flex;align-items:center;justify-content:center;padding:32px 0}
 
+@media(max-width:768px){
+  .ann-header { flex-wrap: wrap; gap: 10px }
+  .ann-add-btn { min-height: 40px; padding: 0 14px; font-size: .8rem }
+  .ann-item-head { flex-wrap: wrap; gap: 8px }
+  .ann-edit-row { flex-direction: column }
+  .ann-edit-date { width: 100%; min-height: 44px; font-size: 16px }
+  .ann-edit-title, .ann-edit-category, .ann-edit-content {
+    min-height: 44px; font-size: 16px;
+  }
+  .ann-edit-save, .ann-edit-cancel { min-height: 44px; padding: 0 18px }
+}
+
 @media(max-width:480px){
   .ann-item{padding:12px}
   .ann-title{font-size:.88rem}

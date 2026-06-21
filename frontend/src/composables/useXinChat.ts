@@ -1,7 +1,8 @@
-import { ref, nextTick, type Ref } from 'vue'
+import { ref, computed, nextTick, type Ref } from 'vue'
 import { useAppNavigate } from './useAppNavigate'
 import { usePreload } from './usePreload'
 import type { Msg } from '../components/XinChatBubble.vue'
+import type { XinTTS } from './useTTS'
 
 interface FaqItem { question: string; answer: string }
 interface AnnounceItem { title: string; content: string }
@@ -18,7 +19,81 @@ interface AgentResponse {
   }
 }
 
-export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => void, externalOpen?: Ref<boolean>) {
+/** 小信答不上 / 知识库未命中时的跳转（问牧墙优先） */
+const KB_HINT_LINKS = [
+  { label: '查看问题答疑', to: '/faq' },
+  { label: '查看校园公告', to: '/announcements' },
+] as const
+
+function wallAskTo(question: string, loggedIn: boolean): string {
+  const q = question.trim().slice(0, 120)
+  if (!loggedIn || !q) return '/wall'
+  return `/wall/new?title=${encodeURIComponent(q)}`
+}
+
+function wallFallbackLinks(question: string, loggedIn: boolean): { label: string; to: string }[] {
+  const askTo = wallAskTo(question, loggedIn)
+  const hasQ = !!question.trim()
+  return [
+    {
+      label: loggedIn && hasQ ? '🌾 去问牧墙提问' : '🌾 去问牧墙',
+      to: askTo,
+    },
+    { label: '查看问题答疑', to: '/faq' },
+    { label: '查看校园公告', to: '/announcements' },
+  ]
+}
+
+/** SSE 返回的静态 /wall 链接按当前问题改写为发帖页预填 */
+function applyWallAskToLinks(
+  links: { label: string; to: string }[],
+  question: string,
+  loggedIn: boolean,
+): { label: string; to: string }[] {
+  return links.map((l) => {
+    if (l.to !== '/wall') return l
+    const to = wallAskTo(question, loggedIn)
+    return {
+      ...l,
+      to,
+      label: loggedIn && question.trim() ? '🌾 去问牧墙提问' : l.label,
+    }
+  })
+}
+
+function linksAfterAgent(
+  source: string,
+  question: string,
+  loggedIn: boolean,
+): { label: string; to: string }[] | null {
+  if (source === 'fallback') return wallFallbackLinks(question, loggedIn)
+  if (['faq', 'xiaoxin_kb', 'personal'].includes(source)) return [...KB_HINT_LINKS]
+  return null
+}
+
+const QUICK_TAG_MAX = 6
+const QUICK_TAG_LABEL_MAX = 12
+
+/** 从 FAQ 排序生成快捷标签（与后台拖拽顺序一致） */
+export function buildQuickTagsFromFaq(
+  faqs: { question: string }[],
+  max = QUICK_TAG_MAX,
+): { label: string; text: string }[] {
+  return faqs.slice(0, max).map((f) => {
+    const text = f.question.trim()
+    const label = text.length <= QUICK_TAG_LABEL_MAX
+      ? text
+      : `${text.slice(0, QUICK_TAG_LABEL_MAX)}…`
+    return { label, text }
+  })
+}
+
+export function useXinChat(
+  autoSpeak: Ref<boolean>,
+  tts: XinTTS,
+  externalOpen?: Ref<boolean>,
+) {
+  const { speakSynced, stopSpeak } = tts
   const open = externalOpen ?? ref(false)
   const { appNavigate } = useAppNavigate()
   const messages = ref<Msg[]>([])
@@ -26,19 +101,13 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
   const sending = ref(false)
   const chatBody = ref<HTMLElement | null>(null)
   let typeQueue: Array<{ idx: number; timer: ReturnType<typeof setTimeout> }> = []
-  let welcomeSpoken = false
 
-  const quickList = [
-    { label: '📦 快递在哪', text: '快递在哪' },
-    { label: '🏠 熄灯时间', text: '宿舍几点熄灯' },
-    { label: '💰 学费', text: '学费怎么交' },
-    { label: '🎭 有街舞社吗', text: '有没有街舞社' },
-  ]
   const faqData = ref<{ q: string; a: string }[]>([])
   const announceData = ref<{ title: string; content: string }[]>([])
   const clubData = ref<ClubItem[]>([])
   const useLLM = ref(true)
   const { faqItems, announcements, clubs } = usePreload()
+  const quickList = computed(() => buildQuickTagsFromFaq(faqItems.value))
 
   function syncFallbackFromCache() {
     if (faqData.value.length === 0 && faqItems.value.length > 0) {
@@ -60,11 +129,14 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
     if (chatBody.value) chatBody.value.scrollTop = chatBody.value.scrollHeight
   }
 
-  function pushLinkMsg(links: { label: string; to: string }[]) {
+  function pushLinkMsg(links: { label: string; to: string }[], wallAsk = false) {
+    const text = wallAsk
+      ? '要不要把刚才的问题发到问牧墙，让学长学姐帮你？'
+      : '需要我帮你跳转到相关页面查看详细信息吗？'
     messages.value.push({
       role: 'xin', time: now(),
-      text: '需要我帮你跳转到相关页面查看详细信息吗？',
-      displayText: '需要我帮你跳转到相关页面查看详细信息吗？',
+      text,
+      displayText: text,
       done: true, links,
     })
     nextTick(() => scrollBottom())
@@ -73,10 +145,7 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
   function scheduleNextChar(idx: number, i: number) {
     const msg = messages.value[idx]
     if (!msg || i >= msg.text.length) {
-      if (msg) {
-        msg.done = true
-        if (msg.role === 'xin' && messages.value.length > 1 && autoSpeak.value) speak(msg.text)
-      }
+      if (msg) msg.done = true
       return
     }
     msg.displayText = msg.text.slice(0, i + 1)
@@ -95,22 +164,38 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
       if (msg) { msg.displayText = msg.text; msg.done = true }
     })
     typeQueue = []
+    stopSpeak()
+  }
+
+  function revealXinMsg(idx: number, text: string) {
+    const msg = messages.value[idx]
+    if (!msg) return
+    if (autoSpeak.value) {
+      void speakSynced(
+        text,
+        (partial) => {
+          msg.displayText = partial
+          scrollBottom()
+        },
+        () => { msg.displayText = text; msg.done = true },
+      )
+    } else {
+      scheduleNextChar(idx, 0)
+    }
   }
 
   function pushXinMsg(text: string, source?: string) {
     messages.value.push({ role: 'xin', text, time: now(), displayText: '', done: false, source })
     const idx = messages.value.length - 1
-    nextTick(() => scrollBottom())
-    scheduleNextChar(idx, 0)
+    nextTick(() => {
+      scrollBottom()
+      revealXinMsg(idx, text)
+    })
   }
 
   function ensureWelcome() {
     if (messages.value.length === 0) {
       pushXinMsg('你好！我是来自河南牧业经济学院信息工程学院的小信，有什么不懂的请尽管问我吧。')
-      if (!welcomeSpoken && autoSpeak.value) {
-        welcomeSpoken = true
-        setTimeout(() => speak('你好！我是来自河南牧业经济学院信息工程学院的小信，有什么不懂的请尽管问我吧。'), 800)
-      }
     }
   }
 
@@ -143,12 +228,10 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
 
     pushXinMsg(reply, source)
 
-    const showLinks = ['faq', 'xiaoxin_kb', 'personal'].includes(source)
-    if (showLinks) {
-      setTimeout(() => pushLinkMsg([
-        { label: '📋 查看问题答疑', to: '/faq' },
-        { label: '📢 查看校园公告', to: '/announcements' },
-      ]), 300)
+    const agentLinks = linksAfterAgent(source, q, !!token)
+    if (agentLinks) {
+      const wallAsk = source === 'fallback'
+      setTimeout(() => pushLinkMsg(agentLinks, wallAsk), 300)
     }
 
     sending.value = false
@@ -202,13 +285,25 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
 
     readSSE()
 
+    const streamSyncSpeak = autoSpeak.value
+
     return new Promise((resolve) => {
       function drain() {
         if (tokenBuffer.length === 0) {
           if (streamDone) {
-            messages.value[idx].done = true
-            if (doneLinks?.length) pushLinkMsg(doneLinks)
-            if (autoSpeak.value) speak(messages.value[idx].text)
+            const full = messages.value[idx].text
+            if (streamSyncSpeak && full) {
+              messages.value[idx].displayText = ''
+              messages.value[idx].done = false
+              revealXinMsg(idx, full)
+            } else {
+              messages.value[idx].done = true
+            }
+            if (doneLinks?.length) {
+              const resolved = applyWallAskToLinks(doneLinks, q, !!authToken())
+              const wallAsk = resolved.some(l => l.to.startsWith('/wall/new'))
+              pushLinkMsg(resolved, wallAsk)
+            }
             resolve(true)
             return
           }
@@ -220,10 +315,14 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
 
         const ch = tokenBuffer.shift()!
         messages.value[idx].text += ch
-        messages.value[idx].displayText = messages.value[idx].text
-        scrollBottom()
+        if (!streamSyncSpeak) {
+          messages.value[idx].displayText = messages.value[idx].text
+          scrollBottom()
+        }
 
-        const delay = '，。！？、；：\n'.includes(ch) ? 40 + Math.random() * 50 : 10 + Math.random() * 10
+        const delay = streamSyncSpeak
+          ? 0
+          : ('，。！？、；：\n'.includes(ch) ? 40 + Math.random() * 50 : 10 + Math.random() * 10)
         setTimeout(drain, delay)
       }
       drain()
@@ -234,13 +333,13 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
     const faqMatch = faqData.value.find(f => f.q.includes(q) || q.includes(f.q.slice(0, 4)))
     if (faqMatch) return {
       answer: faqMatch.a,
-      links: [{ label: '📋 查看问题答疑', to: '/faq' }],
+      links: [{ label: '查看问题答疑', to: '/faq' }],
     }
 
     const annMatch = announceData.value.find(a => a.title.includes(q) || q.includes(a.title.slice(0, 4)))
     if (annMatch) return {
-      answer: `📢 相关公告：${annMatch.title}\n\n${annMatch.content}`,
-      links: [{ label: '📢 查看校园公告', to: '/announcements' }],
+      answer: `相关公告：${annMatch.title}\n\n${annMatch.content}`,
+      links: [{ label: '查看校园公告', to: '/announcements' }],
     }
 
     // 社团搜索
@@ -267,11 +366,8 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
     }
 
     return {
-      answer: `这个问题小信目前还不知道 🥲\n\n关于「${q.slice(0, 15)}」，建议你：\n• 查看校园公告了解最新动态\n• 在问题答疑页面搜索 FAQ\n• 联系辅导员获取一对一帮助\n\n还有其他问题吗？😊`,
-      links: [
-        { label: '📢 查看校园公告', to: '/announcements' },
-        { label: '📋 查看问题答疑', to: '/faq' },
-      ],
+      answer: `这个问题我暂时答不上来。\n\n关于「${q.slice(0, 15)}」，建议你：\n• 去「问牧墙」发帖，让学长学姐帮你\n• 查看校园公告或问题答疑\n• 联系辅导员获取一对一帮助`,
+      links: wallFallbackLinks(q, !!authToken()),
     }
   }
 
@@ -298,7 +394,8 @@ export function useXinChat(autoSpeak: Ref<boolean>, speak: (text: string) => voi
       sending.value = false
       pushXinMsg(answer, 'local')
       if (links && links.length > 0) {
-        setTimeout(() => pushLinkMsg(links), 300)
+        const wallAsk = links.some(l => l.to.startsWith('/wall/new'))
+        setTimeout(() => pushLinkMsg(links, wallAsk), 300)
       }
     }, 300)
   }

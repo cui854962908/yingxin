@@ -1,0 +1,47 @@
+/**
+ * 问牧墙移动端共用样式（列表 / 详情 / 发帖三页 import）
+ * 依赖 HomePage .dashboard 上的 --yx-mobile-nav
+ */
+.forum-mobile-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: #8b7b65;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.84rem;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 768px) {
+  .forum-mobile-back {
+    min-height: 42px;
+    padding: 0 12px 0 8px;
+    border: 1px solid #e5dbcc;
+    border-radius: 12px;
+    background: #fefcf9;
+    color: #6b5e4e;
+    font-weight: 600;
+  }
+
+  .forum-mobile-sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 11;
+    margin: 0;
+    padding: 8px 14px 10px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 14px rgba(60, 48, 40, 0.06);
+  }
+}
+
+@media (max-width: 480px) {
+  .forum-mobile-sticky-top {
+    padding: 8px 12px 10px;
+  }
+}

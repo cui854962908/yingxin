@@ -136,7 +136,7 @@ sudo ufw allow 8000
 
 ### 5.2 批量导入学生
 
-管理端 **Excel 导入**（`POST /api/admin/students/import`），表头要求见 `import_service.py` 中 `EXPECTED_HEADERS`。
+Web 端与 API 均已移除学生名册管理。首次部署或本地演示请执行 `scripts/init_db.py` 写入管理员与示例学生；生产环境新生名单由运维在数据库侧维护（不经过本 Web）。
 
 ### 5.3 健康检查
 

@@ -19,22 +19,36 @@ const emit = defineEmits<{
 
 <style scoped>
 .quick-tags {
-  display: flex; gap: 6px; padding: 10px 16px;
+  display: flex; gap: 8px; padding: 10px 16px 12px;
   overflow-x: auto; flex-shrink: 0;
+  width: 100%; max-width: 100%; min-width: 0;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
 .quick-tags::-webkit-scrollbar { display: none; }
 .quick-tag {
-  flex-shrink: 0; padding: 8px 14px; min-height: 36px;
-  border-radius: 6px;
-  border: 1px solid rgba(64,158,255,.15);
-  background: rgba(64,158,255,.04); color: #7aa8e0; font-size: .74rem;
+  flex-shrink: 0; padding: 9px 15px; min-height: 38px;
+  border-radius: 20px;
+  border: 1px solid rgba(64,158,255,.22);
+  background: linear-gradient(180deg, rgba(64,158,255,.12) 0%, rgba(64,158,255,.05) 100%);
+  color: #a8c8f0; font-size: .78rem; letter-spacing: .02em;
   cursor: pointer; white-space: nowrap;
-  transition: all .2s; font-family: inherit;
+  transition: border-color .2s, background .2s, color .2s, transform .15s;
+  font-family: inherit;
 }
 .quick-tag:hover {
-  border-color: #409eff; color: #409eff;
-  background: rgba(64,158,255,.1);
-  box-shadow: 0 0 12px rgba(64,158,255,.15);
+  border-color: rgba(64,158,255,.45); color: #d0e4ff;
+  background: linear-gradient(180deg, rgba(64,158,255,.2) 0%, rgba(64,158,255,.08) 100%);
+  transform: translateY(-1px);
+}
+.quick-tag:active { transform: translateY(0); }
+
+@media (max-width: 768px) {
+  .quick-tags {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    row-gap: 8px;
+  }
 }
 </style>

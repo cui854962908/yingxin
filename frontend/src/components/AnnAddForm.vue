@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAppNavigate } from '../composables/useAppNavigate'
-import { authHeaders } from '../composables/useAuth'
+import { authHeaders, useAuth } from '../composables/useAuth'
 
 const { appGoBackTo } = useAppNavigate()
+const { isAdmin } = useAuth()
 const title = ref('')
 const content = ref('')
 const category = ref('')
-const date = ref('')
 const saving = ref(false)
 
 function goBack() { appGoBackTo('/announcements') }
@@ -21,7 +21,6 @@ async function handleSubmit() {
       content: content.value.trim(),
       category: category.value || 'campus',
     }
-    if (date.value) body.date = date.value
     const res = await fetch('/api/admin/announcements', {
       method: 'POST',
       headers: { ...authHeaders(), 'Content-Type': 'application/json' },
@@ -34,6 +33,10 @@ async function handleSubmit() {
   } catch { console.warn('发布公告请求失败') }
   finally { saving.value = false }
 }
+
+onMounted(() => {
+  if (!isAdmin.value) appGoBackTo('/announcements')
+})
 </script>
 
 <template>
@@ -49,10 +52,6 @@ async function handleSubmit() {
         <option value="guide">报到须知</option>
         <option value="tips">新生攻略</option>
       </select>
-    </div>
-    <div class="aaf-field">
-      <label class="aaf-label">发布日期</label>
-      <input v-model="date" type="date" class="aaf-input" />
     </div>
     <div class="aaf-field">
       <label class="aaf-label">公告内容</label>
@@ -80,4 +79,11 @@ async function handleSubmit() {
 .aaf-actions{display:flex;justify-content:flex-end;gap:10px}
 .aaf-cancel{height:38px;padding:0 24px;border:1px solid #d4c8b0;border-radius:8px;background:#fff;color:#8b7b65;font-size:.84rem;cursor:pointer;font-family:inherit}
 .aaf-submit{height:38px;padding:0 28px;border:none;border-radius:8px;background:#b5343a;color:#fff;font-size:.84rem;font-weight:500;cursor:pointer;font-family:inherit}
-.aaf-submit:disabled{
+.aaf-submit:disabled{opacity:.5}
+
+@media(max-width:768px){
+  .aaf-actions{flex-direction:column-reverse}
+  .aaf-cancel,.aaf-submit{width:100%;height:44px;min-height:44px}
+  .aaf-input,.aaf-select,.aaf-textarea{font-size:1rem}
+}
+</style>

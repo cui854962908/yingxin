@@ -2,6 +2,21 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { shouldMobileBackToHome } from '../composables/useAppNavigate'
 import { MOBILE_MAX } from '../composables/useBreakpoint'
 
+function getStoredRole(): string | null {
+  try {
+    const raw = localStorage.getItem('student')
+    if (!raw) return null
+    return JSON.parse(raw).role ?? null
+  } catch {
+    return null
+  }
+}
+
+function isClubManager(): boolean {
+  const role = getStoredRole()
+  return role === 'admin' || role === 'club_admin'
+}
+
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -26,13 +41,6 @@ const router = createRouter({
           ],
         },
         {
-          path: 'admin',
-          children: [
-            { path: '', name: 'admin', component: () => import('../components/AdminPanel.vue') },
-            { path: 'students/add', name: 'admin-student-add', component: () => import('../components/StudentFormPage.vue') },
-          ],
-        },
-        {
           path: 'guide',
           name: 'guide',
           component: () => import('../components/RegistrationGuide.vue'),
@@ -45,9 +53,49 @@ const router = createRouter({
           props: { category: 'tips', pageTitle: '新生攻略', pageSubtitle: '校园生活实用信息，帮你快速适应大学生活' },
         },
         {
+          path: 'wall',
+          children: [
+            { path: '', name: 'wall', component: () => import('../components/ForumPanel.vue') },
+            { path: 'new', name: 'wall-new', component: () => import('../components/ForumCompose.vue') },
+            { path: ':id', name: 'wall-detail', component: () => import('../components/ForumDetail.vue') },
+          ],
+        },
+        {
+          path: 'intro',
+          component: () => import('../components/IntroLayout.vue'),
+          children: [
+            { path: '', redirect: '/intro/wiki' },
+            {
+              path: 'wiki',
+              name: 'intro-wiki',
+              component: () => import('../components/IntroSchoolWiki.vue'),
+            },
+            {
+              path: 'colleges',
+              name: 'intro-colleges',
+              component: () => import('../components/IntroCollegeList.vue'),
+            },
+            {
+              path: 'clubs',
+              name: 'intro-clubs',
+              component: () => import('../components/ClubList.vue'),
+              props: { hideHeader: true },
+            },
+            {
+              path: ':id',
+              name: 'intro-college-detail',
+              component: () => import('../components/IntroCollegeDetail.vue'),
+              props: true,
+            },
+          ],
+        },
+        { path: 'intro/sie/overview', redirect: '/intro/sie' },
+        { path: 'intro/sie/clubs', redirect: '/intro/clubs' },
+        { path: 'intro/sie/faculty', redirect: '/intro/sie' },
+        {
           path: 'clubs',
           children: [
-            { path: '', name: 'clubs', component: () => import('../components/ClubList.vue') },
+            { path: '', redirect: '/intro/clubs' },
             { path: 'add', name: 'club-add', component: () => import('../components/ClubDetail.vue') },
             { path: ':id', name: 'club-detail', component: () => import('../components/ClubDetail.vue') },
           ],
@@ -60,6 +108,25 @@ const router = createRouter({
       component: () => import('../components/CampusView.vue'),
     },
   ],
+})
+
+function hasToken(): boolean {
+  return !!localStorage.getItem('token')
+}
+
+router.beforeEach((to) => {
+  const path = to.path
+  const role = getStoredRole()
+
+  if ((path === '/faq/add' || path === '/announcements/add') && role !== 'admin') {
+    return path === '/faq/add' ? '/faq' : '/announcements'
+  }
+  if (path === '/clubs/add' && !isClubManager()) {
+    return '/clubs'
+  }
+  if (path === '/wall/new' && !hasToken()) {
+    return '/wall'
+  }
 })
 
 /** 小信聊天打开时，系统返回优先关聊天（由 XiaoXinAssistant 注册） */

@@ -1,0 +1,167 @@
+"""问牧墙 API 集成测试。"""
+
+import pytest
+from app.core.security import create_access_token
+
+
+@pytest.fixture
+def student_headers(seed_student):
+    token = create_access_token(subject="20260901001", name="张三", role="student")
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def other_student_headers(db, seed_student):
+    from app.core.security import hash_id_number
+    from app.models.student import Student
+
+    s = Student(
+        name="李四",
+        student_id="20260901002",
+        id_number_hash=hash_id_number("410105200509010022"),
+        class_name="软件工程2026-1班",
+        role="student",
+    )
+    db.add(s)
+    db.commit()
+    token = create_access_token(subject="20260901002", name="李四", role="student")
+    return {"Authorization": f"Bearer {token}"}
+
+
+def _create_post(client, headers, title="宿舍几点关门？"):
+    return client.post(
+        "/api/forum/posts",
+        headers=headers,
+        json={"title": title, "content": "想了解一下晚上回寝时间。", "category": "生活"},
+    )
+
+
+class TestForumPosts:
+    def test_list_public_without_auth(self, client):
+        resp = client.get("/api/forum/posts")
+        assert resp.status_code == 200
+        assert resp.json()["success"] is True
+
+    def test_create_and_detail(self, client, student_headers):
+        resp = _create_post(client, student_headers)
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert data["title"] == "宿舍几点关门？"
+        assert data["author"]["name"] == "张三"
+
+        post_id = data["id"]
+        detail = client.get(f"/api/forum/posts/{post_id}")
+        assert detail.json()["data"]["answer_count"] == 0
+
+    def test_create_requires_auth(self, client):
+        resp = client.post("/api/forum/posts", json={"title": "x", "content": "hello world", "category": "其他"})
+        assert resp.status_code == 401
+
+    def test_answer_and_accept(self, client, student_headers, other_student_headers):
+        post_id = _create_post(client, student_headers).json()["data"]["id"]
+        ans = client.post(
+            f"/api/forum/posts/{post_id}/answers",
+            headers=other_student_headers,
+            json={"content": "一般是 22:30。"},
+        )
+        assert ans.status_code == 200
+        assert ans.json()["data"]["answer_count"] == 1
+
+        accept = client.post(
+            f"/api/forum/answers/{ans.json()['data']['answers'][0]['id']}/accept",
+            headers=student_headers,
+        )
+        assert accept.status_code == 200
+        assert accept.json()["data"]["has_accepted"] is True
+
+    def test_non_author_cannot_accept(self, client, student_headers, other_student_headers):
+        post_id = _create_post(client, student_headers).json()["data"]["id"]
+        ans = client.post(
+            f"/api/forum/posts/{post_id}/answers",
+            headers=other_student_headers,
+            json={"content": "回答一条"},
+        )
+        answer_id = ans.json()["data"]["answers"][0]["id"]
+        bad = client.post(f"/api/forum/answers/{answer_id}/accept", headers=other_student_headers)
+        assert bad.status_code == 403
+
+    def test_close_post(self, client, student_headers, other_student_headers):
+        post_id = _create_post(client, student_headers).json()["data"]["id"]
+        client.post(f"/api/forum/posts/{post_id}/close", headers=student_headers)
+        blocked = client.post(
+            f"/api/forum/posts/{post_id}/answers",
+            headers=other_student_headers,
+            json={"content": "不能再答了"},
+        )
+        assert blocked.status_code == 403
+
+    def test_mine_requires_auth(self, client, student_headers):
+        assert client.get("/api/forum/posts?mine=true").status_code == 401
+        resp = client.get("/api/forum/posts?mine=true", headers=student_headers)
+        assert resp.status_code == 200
+
+    def test_admin_hide(self, client, admin_headers, student_headers):
+        post_id = _create_post(client, student_headers).json()["data"]["id"]
+        hide = client.post(f"/api/admin/forum/posts/{post_id}/hide", headers=admin_headers)
+        assert hide.status_code == 200
+        assert client.get(f"/api/forum/posts/{post_id}").status_code == 404
+
+    def test_author_delete_own_post(self, client, student_headers):
+        post_id = _create_post(client, student_headers).json()["data"]["id"]
+        resp = client.delete(f"/api/forum/posts/{post_id}", headers=student_headers)
+        assert resp.status_code == 200
+        assert resp.json()["success"] is True
+        assert client.get(f"/api/forum/posts/{post_id}").status_code == 404
+
+    def test_author_delete_with_answers(self, client, student_headers, other_student_headers):
+        post_id = _create_post(client, student_headers).json()["data"]["id"]
+        client.post(
+            f"/api/forum/posts/{post_id}/answers",
+            headers=other_student_headers,
+            json={"content": "一条回答"},
+        )
+        resp = client.delete(f"/api/forum/posts/{post_id}", headers=student_headers)
+        assert resp.status_code == 200
+        assert client.get(f"/api/forum/posts/{post_id}").status_code == 404
+
+    def test_cannot_delete_others_post(self, client, student_headers, other_student_headers):
+        post_id = _create_post(client, student_headers).json()["data"]["id"]
+        resp = client.delete(f"/api/forum/posts/{post_id}", headers=other_student_headers)
+        assert resp.status_code == 403
+
+    def test_admin_delete_post(self, client, admin_headers, student_headers):
+        post_id = _create_post(client, student_headers).json()["data"]["id"]
+        resp = client.delete(f"/api/forum/posts/{post_id}", headers=admin_headers)
+        assert resp.status_code == 200
+        assert client.get(f"/api/forum/posts/{post_id}").status_code == 404
+
+    def test_toggle_post_like(self, client, student_headers, other_student_headers):
+        post_id = _create_post(client, student_headers).json()["data"]["id"]
+        like = client.post(f"/api/forum/posts/{post_id}/like", headers=other_student_headers)
+        assert like.status_code == 200
+        assert like.json()["data"]["like_count"] == 1
+        assert like.json()["data"]["liked_by_me"] is True
+
+        detail = client.get(f"/api/forum/posts/{post_id}", headers=other_student_headers)
+        assert detail.json()["data"]["like_count"] == 1
+        assert detail.json()["data"]["liked_by_me"] is True
+
+        unlike = client.post(f"/api/forum/posts/{post_id}/like", headers=other_student_headers)
+        assert unlike.json()["data"]["like_count"] == 0
+        assert unlike.json()["data"]["liked_by_me"] is False
+
+    def test_toggle_answer_like(self, client, student_headers, other_student_headers):
+        post_id = _create_post(client, student_headers).json()["data"]["id"]
+        ans = client.post(
+            f"/api/forum/posts/{post_id}/answers",
+            headers=other_student_headers,
+            json={"content": "点赞测试回答"},
+        )
+        answer_id = ans.json()["data"]["answers"][0]["id"]
+        like = client.post(f"/api/forum/answers/{answer_id}/like", headers=student_headers)
+        assert like.status_code == 200
+        assert like.json()["data"]["like_count"] == 1
+
+    def test_like_requires_auth(self, client, student_headers):
+        post_id = _create_post(client, student_headers).json()["data"]["id"]
+        assert client.post(f"/api/forum/posts/{post_id}/like").status_code == 401

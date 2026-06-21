@@ -210,7 +210,7 @@ function dayLabel(d: string, i: number): 'past' | 'today' | 'future' {
 </template>
 
 <style scoped>
-.home-panel { padding: 4px 0 8px; display: flex; flex-direction: column; gap: 20px }
+.home-panel { padding: 4px 0 8px; display: flex; flex-direction: column; gap: 16px }
 
 /* ===== 顶部：标题 + 日历卡片 ===== */
 .top-bar {

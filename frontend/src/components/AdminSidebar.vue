@@ -11,7 +11,7 @@ interface UserInfo {
 interface MenuItem {
   id: string
   label: string
-  icon: 'home' | 'megaphone' | 'message-circle' | 'building' | 'users'
+  icon: 'home' | 'megaphone' | 'message-circle' | 'building' | 'wall'
 }
 
 // ===== Props & Emits =====
@@ -19,9 +19,11 @@ const props = withDefaults(defineProps<{
   user: UserInfo
   activeMenu?: string
   modelValue?: boolean
+  isGuest?: boolean
 }>(), {
   activeMenu: 'home',
   modelValue: true,
+  isGuest: false,
 })
 
 const emit = defineEmits<{
@@ -30,13 +32,12 @@ const emit = defineEmits<{
   logout: []
 }>()
 
-// ===== 菜单数据 =====
 const menuItems: MenuItem[] = [
   { id: 'home',             label: '首页',     icon: 'home' },
   { id: 'announcements',    label: '校园公告', icon: 'megaphone' },
   { id: 'faq',              label: '问题答疑', icon: 'message-circle' },
-  { id: 'clubs',            label: '社团介绍', icon: 'building' },
-  { id: 'admin',            label: '学生管理', icon: 'users' },
+  { id: 'wall',             label: '问牧墙',   icon: 'wall' },
+  { id: 'intro',            label: '认识牧院', icon: 'building' },
 ]
 
 const avatarChar = computed(() => props.user.name?.charAt(0) || '')
@@ -173,11 +174,11 @@ onUnmounted(() => {
             <template v-else-if="item.icon === 'message-circle'">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </template>
+            <template v-else-if="item.icon === 'wall'">
+              <path d="M4 19h16"/><path d="M4 15h10"/><path d="M4 11h16"/><path d="M4 7h7"/>
+            </template>
             <template v-else-if="item.icon === 'building'">
               <rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/>
-            </template>
-            <template v-else-if="item.icon === 'users'">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </template>
           </svg>
           <span>{{ item.label }}</span>
@@ -189,7 +190,7 @@ onUnmounted(() => {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
         </svg>
-        <span>退出登录</span>
+        <span>{{ props.isGuest ? '退出浏览' : '退出登录' }}</span>
       </button>
     </aside>
   </Transition>

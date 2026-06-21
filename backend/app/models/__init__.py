@@ -7,6 +7,7 @@ from app.models.document import (
     Document,
 )
 from app.models.faq import FAQ
+from app.models.forum import ForumAnswer, ForumAnswerLike, ForumPost, ForumPostLike
 from app.models.student import Student
 
 __all__ = [
@@ -17,5 +18,9 @@ __all__ = [
     "DOCUMENT_SOURCE_STUDENT_FAQ",
     "Document",
     "FAQ",
+    "ForumAnswer",
+    "ForumAnswerLike",
+    "ForumPost",
+    "ForumPostLike",
     "Student",
 ]
