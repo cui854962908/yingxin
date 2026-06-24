@@ -10,7 +10,7 @@ import { useTTS } from '../composables/useTTS'
 import { useDrag } from '../composables/useDrag'
 import { useXinChat } from '../composables/useXinChat'
 
-const { autoSpeak, isSpeaking, speak, speakSynced, stopSpeak, toggleSpeak } = useTTS()
+const { autoSpeak, isSpeaking, speak, speakSynced, enqueueSpeak, stopSpeak, toggleSpeak } = useTTS()
 
 const route = useRoute()
 const injectedOpen = inject<Ref<boolean>>('xinOpen')
@@ -19,7 +19,7 @@ const sidebarOpen = inject<Ref<boolean>>('sidebarOpen', ref(false))
 const {
   open, messages, input, sending, chatBody, quickList,
   send, onKeydown, closeChat, navigateTo, ensureWelcome,
-} = useXinChat(autoSpeak, { speak, speakSynced, stopSpeak }, injectedOpen)
+} = useXinChat(autoSpeak, { speak, speakSynced, enqueueSpeak, stopSpeak }, injectedOpen)
 
 const { lottieRef, x, y, dragging, isMobile, onPointerDown, reclampPosition } = useDrag(
   open,

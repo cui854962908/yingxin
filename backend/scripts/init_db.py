@@ -309,5 +309,17 @@ def main() -> None:
             print("  向量库：已构建")
         except Exception:
             logger.warning(
-                "向量库构建未完成（DeepSeek API 不可用），启动后可手动执行 rebuild_documents_best_effort",
-                exc_info=
+                "向量库构建未完成（Ollama 不可用），启动后可手动执行 rebuild_documents_best_effort",
+                exc_info=True,
+            )
+
+    except Exception:
+        db.rollback()
+        logger.exception("初始化失败")
+        raise
+    finally:
+        db.close()
+
+
+if __name__ == "__main__":
+    main()

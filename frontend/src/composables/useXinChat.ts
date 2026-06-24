@@ -93,7 +93,7 @@ export function useXinChat(
   tts: XinTTS,
   externalOpen?: Ref<boolean>,
 ) {
-  const { speakSynced, stopSpeak } = tts
+  const { speakSynced, stopSpeak, enqueueSpeak } = tts
   const open = externalOpen ?? ref(false)
   const { appNavigate } = useAppNavigate()
   const messages = ref<Msg[]>([])
@@ -285,20 +285,19 @@ export function useXinChat(
 
     readSSE()
 
-    const streamSyncSpeak = autoSpeak.value
+    const ttsStream = autoSpeak.value
+    let sentenceBuf = ''
+    const SENTENCE_END = /[。！？\n]/
 
     return new Promise((resolve) => {
       function drain() {
         if (tokenBuffer.length === 0) {
           if (streamDone) {
-            const full = messages.value[idx].text
-            if (streamSyncSpeak && full) {
-              messages.value[idx].displayText = ''
-              messages.value[idx].done = false
-              revealXinMsg(idx, full)
-            } else {
-              messages.value[idx].done = true
+            if (ttsStream && sentenceBuf.trim()) {
+              enqueueSpeak(sentenceBuf.trim())
+              sentenceBuf = ''
             }
+            messages.value[idx].done = true
             if (doneLinks?.length) {
               const resolved = applyWallAskToLinks(doneLinks, q, !!authToken())
               const wallAsk = resolved.some(l => l.to.startsWith('/wall/new'))
@@ -315,14 +314,18 @@ export function useXinChat(
 
         const ch = tokenBuffer.shift()!
         messages.value[idx].text += ch
-        if (!streamSyncSpeak) {
-          messages.value[idx].displayText = messages.value[idx].text
-          scrollBottom()
+        messages.value[idx].displayText = messages.value[idx].text
+        scrollBottom()
+
+        if (ttsStream) {
+          sentenceBuf += ch
+          if (SENTENCE_END.test(ch)) {
+            enqueueSpeak(sentenceBuf.trim())
+            sentenceBuf = ''
+          }
         }
 
-        const delay = streamSyncSpeak
-          ? 0
-          : ('，。！？、；：\n'.includes(ch) ? 40 + Math.random() * 50 : 10 + Math.random() * 10)
+        const delay = '，。！？、；：\n'.includes(ch) ? 40 + Math.random() * 50 : 10 + Math.random() * 10
         setTimeout(drain, delay)
       }
       drain()
