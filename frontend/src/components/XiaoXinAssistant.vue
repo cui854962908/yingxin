@@ -27,7 +27,7 @@ const { lottieRef, x, y, dragging, isMobile, onPointerDown, reclampPosition } = 
 )
 
 // 校园地图页 / 手机端侧边栏打开时隐藏悬浮球
-const hideOnCampus = computed(() => route.path === '/campus')
+const hideOnCampus = computed(() => route.path.startsWith('/campus'))
 const hideBySidebar = computed(() => isMobile.value && sidebarOpen.value)
 
 function onKeyup(e: KeyboardEvent) { if (e.key === 'Escape') closeChatAndStop() }

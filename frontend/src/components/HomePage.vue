@@ -265,17 +265,20 @@ onUnmounted(() => {
   padding: 24px 28px; overflow-y: auto; overflow-x: hidden;
 }
 .section-card--intro {
-  padding: 14px 16px 16px;
-  background: #faf8f5;
-  box-shadow: 0 1px 2px rgba(0,0,0,.02), 0 4px 16px rgba(60,48,40,.04);
+  padding: 0;
+  border: 1px solid rgba(181, 31, 45, .18);
+  border-top: 3px solid #b51f2d;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: none;
 }
 
 @media(max-width:768px){ .section-card { border-radius: 12px; padding: 14px } }
 @media(max-width:768px){
   .section-card--intro {
-    padding: 8px 8px 10px;
-    border-radius: 10px;
-    background: #faf7f3;
+    padding: 0;
+    border-radius: 6px;
+    background: #fff;
   }
 }
 @media(max-width:768px){

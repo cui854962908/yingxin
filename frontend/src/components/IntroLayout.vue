@@ -73,37 +73,69 @@ function goTab(path: string) {
   flex-direction: column;
   gap: var(--intro-gap, 12px);
   min-height: 100%;
+  background: #fff;
 }
 
 .intro-head {
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--intro-line, #f0e8dc);
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  align-items: center;
+  gap: 32px;
+  min-height: 106px;
+  padding: 0 30px;
+  border: 1px solid var(--intro-line, #dedee3);
+  border-bottom: 0;
+  background: #fff;
+}
+
+.intro-head::before {
+  content: '';
+  position: absolute;
+  left: 30px;
+  right: 30px;
+  bottom: 0;
+  height: 1px;
+  background: var(--intro-line, #dedee3);
 }
 
 .intro--wiki .intro-head {
-  padding-bottom: 4px;
-  border-bottom: none;
+  border-bottom: 0;
 }
 
 .intro-head--detail {
   padding-bottom: 8px;
 }
 
+.intro-brand {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  align-items: start;
+  column-gap: 28px;
+}
+
 .intro-eyebrow {
-  margin: 0 0 2px;
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  color: var(--intro-accent, #b5343a);
-  font-weight: 600;
+  grid-column: 1;
+  margin: 0 0 7px;
+  font-size: 24px;
+  line-height: 1.1;
+  letter-spacing: 0;
+  color: var(--intro-accent-strong, #b51f2d);
+  font-weight: 800;
 }
 
 .intro-title {
+  grid-column: 2;
+  grid-row: 1;
   margin: 0;
-  font-size: 1.22rem;
-  font-weight: 700;
-  color: var(--intro-ink, #3c3028);
-  font-family: 'Noto Serif SC', Georgia, serif;
-  letter-spacing: 0.06em;
+  padding-left: 28px;
+  border-left: 1px solid var(--intro-line, #dedee3);
+  font-size: 24px;
+  line-height: 1.1;
+  font-weight: 800;
+  color: var(--intro-ink, #15151a);
+  font-family: inherit;
+  letter-spacing: 0;
 }
 
 .intro-title--sm {
@@ -111,21 +143,23 @@ function goTab(path: string) {
 }
 
 .intro-sub {
-  margin: 4px 0 0;
-  font-size: 0.76rem;
-  color: var(--intro-faint, #8b7b65);
+  grid-column: 1;
+  margin: 8px 0 0;
+  font-size: 15px;
+  color: var(--intro-faint, #777780);
   line-height: 1.45;
 }
 
 .intro-tabs {
   display: flex;
   flex-wrap: nowrap;
-  gap: 6px;
+  justify-content: flex-end;
+  gap: 18px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  margin-top: 10px;
-  padding-bottom: 2px;
+  margin-top: 0;
+  padding-bottom: 0;
 }
 
 .intro--wiki .intro-tabs {
@@ -137,24 +171,40 @@ function goTab(path: string) {
 }
 
 .intro-tab {
+  position: relative;
   flex-shrink: 0;
-  height: 34px;
-  padding: 0 14px;
+  width: 144px;
+  height: 44px;
+  padding: 0 18px;
   border-radius: 999px;
-  border: 1px solid #e5dbcc;
-  background: #fefcf9;
-  color: var(--intro-muted, #6b5e4e);
-  font-size: 0.78rem;
+  border: 1px solid var(--intro-line, #dedee3);
+  background: #fff;
+  color: var(--intro-muted, #4b4b52);
+  font-size: 16px;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+}
+
+.intro-tab:hover {
+  border-color: rgba(181, 31, 45, .42);
+  color: var(--intro-accent, #b51f2d);
+  transform: translateY(-1px);
+}
+
+.intro-tab:focus-visible {
+  outline: 3px solid rgba(181, 31, 45, .22);
+  outline-offset: 2px;
 }
 
 .intro-tab--on {
-  background: linear-gradient(135deg, #75171d, #b5343a);
-  border-color: #b5343a;
+  background: var(--intro-accent, #b51f2d);
+  border-color: var(--intro-accent, #b51f2d);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(181, 52, 58, 0.25);
+}
+
+.intro-tab--on:hover {
+  color: #fff;
 }
 
 .intro-body {
@@ -167,6 +217,18 @@ function goTab(path: string) {
     gap: 8px;
   }
 
+  .intro-head {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding: 18px 16px;
+    gap: 16px;
+  }
+
+  .intro-head::before {
+    left: 16px;
+    right: 16px;
+  }
+
   .intro-head-top {
     display: flex;
     align-items: flex-start;
@@ -175,18 +237,35 @@ function goTab(path: string) {
   }
 
   .intro-title {
-    font-size: 1.08rem;
+    font-size: 21px;
+  }
+
+  .intro-brand {
+    grid-template-columns: 1fr;
+  }
+
+  .intro-title,
+  .intro-sub,
+  .intro-eyebrow {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .intro-title {
+    padding-left: 0;
+    border-left: 0;
   }
 
   .intro--wiki .intro-brand .intro-title,
   .intro--wiki .intro-brand .intro-eyebrow {
-    display: none;
+    display: block;
   }
 
   .intro-tab {
-    min-height: 36px;
-    padding: 0 16px;
-    font-size: 0.8rem;
+    width: auto;
+    min-height: 38px;
+    padding: 0 18px;
+    font-size: 14px;
   }
 }
 </style>

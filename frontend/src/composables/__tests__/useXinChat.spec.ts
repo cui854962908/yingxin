@@ -10,6 +10,7 @@ vi.mock('vue-router', () => ({
 function makeTtsMock() {
   const speak = vi.fn(async (_text: string) => {})
   const stopSpeak = vi.fn()
+  const enqueueSpeak = vi.fn((_text: string) => {})
   const speakSynced = vi.fn(async (
     text: string,
     onReveal: (partial: string) => void,
@@ -20,7 +21,7 @@ function makeTtsMock() {
     }
     onComplete?.()
   })
-  return { speak, speakSynced, stopSpeak }
+  return { speak, speakSynced, enqueueSpeak, stopSpeak }
 }
 
 describe('useXinChat', () => {

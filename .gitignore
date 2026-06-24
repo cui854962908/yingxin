@@ -19,6 +19,7 @@ dist/
 
 # Vite cache
 .vite/
+.tmp/
 
 # OS
 .DS_Store

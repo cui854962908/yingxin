@@ -5,7 +5,7 @@ import { useBreakpoint } from './useBreakpoint'
 const SHELL_ROUTES = ['/', '/faq', '/wall', '/clubs', '/announcements', '/intro/wiki', '/intro/colleges', '/intro/clubs'] as const
 
 /** 全屏/独立子页：系统返回时也应先回首页 */
-const STANDALONE_MOBILE_BACK_ROUTES = ['/campus', '/guide', '/tips'] as const
+const STANDALONE_MOBILE_BACK_ROUTES = ['/campus', '/campus/2d', '/campus/3d', '/guide', '/tips'] as const
 
 export function isShellRoute(path: string): boolean {
   const p = (path.split('?')[0].replace(/\/$/, '') || '/')

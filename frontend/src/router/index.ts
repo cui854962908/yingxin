@@ -105,6 +105,16 @@ const router = createRouter({
     {
       path: '/campus',
       name: 'campus',
+      component: () => import('../components/CampusModeSelect.vue'),
+    },
+    {
+      path: '/campus/2d',
+      name: 'campus-2d',
+      component: () => import('../components/CampusMap2D.vue'),
+    },
+    {
+      path: '/campus/3d',
+      name: 'campus-3d',
       component: () => import('../components/CampusView.vue'),
     },
   ],

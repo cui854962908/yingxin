@@ -10,7 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import agent, announcements, auth, clubs, faq, forum
+from app.api import agent, announcements, auth, campus_map, clubs, faq, forum
 
 # ── Agent fallback 日志：记录小信未回答上来的问题，供运维补充知识库 ──
 _log_dir = Path("logs")
@@ -131,6 +131,8 @@ app.include_router(clubs.router_public, prefix="/api")
 app.include_router(clubs.router_admin, prefix="/api")
 app.include_router(forum.router_public, prefix="/api")
 app.include_router(forum.router_admin, prefix="/api")
+app.include_router(campus_map.router, prefix="/api")
+app.include_router(campus_map.proxy_router)
 
 # 静态文件 — 上传的社团图片等
 _static_dir = Path("static")

@@ -44,6 +44,13 @@ def _club_to_item(row: Club) -> dict:
     return d
 
 
+def _clean_optional_text(value: str | None) -> str | None:
+    if value is None:
+        return None
+    cleaned = value.strip()
+    return cleaned or None
+
+
 @router_public.get("/clubs")
 def list_clubs(db: Session = Depends(get_db)):
     rows = db.scalars(select(Club)).all()
@@ -111,7 +118,10 @@ def update_club(
                 detail="只能编辑自己管理的社团",
             )
 
+    optional_text_fields = {"recruit_target", "recruit_require"}
     for key, val in body.model_dump(exclude_unset=True).items():
+        if key in optional_text_fields:
+            val = _clean_optional_text(val)
         setattr(row, key, val)
     db.commit()
     db.refresh(row)

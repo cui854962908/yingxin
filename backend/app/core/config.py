@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: str = "http://localhost:5173"
     # 可选：正则匹配 Origin（如局域网 IP 访问前端时 `http://192.168.1.5:5173`）。留空则只用 BACKEND_CORS_ORIGINS。
     BACKEND_CORS_ORIGIN_REGEX: Optional[str] = None
+    AMAP_WEB_KEY: str = ""
+    AMAP_SECURITY_JS_CODE: str = ""
 
     # --- 智能助手（Agent）---
     FAQ_MATCH_MIN_SCORE: float = 8.0
