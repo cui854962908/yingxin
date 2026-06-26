@@ -19,7 +19,7 @@ const TARGETS = [
   'club3.png',
   'dengluzuo.png',
   'dengluyou3.png',
-- `logo-1.webp`,
+  'logo-1.png',
 ]
 
 async function convertOne(name) {

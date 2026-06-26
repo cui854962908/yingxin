@@ -30,11 +30,9 @@ docker compose up -d
 
 ## 运维
 
-部署和接口文档见 `rizhi/` 目录：
-
-- `rizhi/yunwei.md` — 部署说明
-- `rizhi/jieshao.md` — 文档索引（API 见 `backend/docs/FRONTEND_API.md`）
-- `rizhi/xiugairizhi-*.md` — 修改日志
+- [yunwei.md](yunwei.md) — 部署与排障
+- [backend/docs/FRONTEND_API.md](backend/docs/FRONTEND_API.md) — 前后端接口
+- [CONTEXT.md](CONTEXT.md) — 项目画像与模块说明
 
 ## 开发
 

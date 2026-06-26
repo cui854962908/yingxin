@@ -1,4 +1,4 @@
-export type CategoryKey = 'dining' | 'college' | 'service' | 'sports' | 'scenery'
+export type CategoryKey = 'service' | 'teaching' | 'dining' | 'scenery' | 'sports'
 
 export interface CampusCategory {
   key: CategoryKey

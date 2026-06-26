@@ -8,6 +8,7 @@ import { formatForumAuthor } from '../utils/forumAuthor'
 import { formatRelativeTime } from '../utils/formatTime'
 import AppSpinner from './AppSpinner.vue'
 import '../styles/forum-mobile.css'
+import '../styles/panel-enter.css'
 
 const router = useRouter()
 const { token, isAdmin, isGuest } = useAuth()
@@ -52,6 +53,24 @@ async function load() {
 
 function goDetail(id: string) {
   router.push(`/wall/${id}`)
+}
+
+function authorInitial(item: ForumPostBrief): string {
+  const name = formatForumAuthor(item.author.name, item.author.class_name, isGuest.value)
+  return name.charAt(0) || '新'
+}
+
+function cardClass(item: ForumPostBrief): Record<string, boolean> {
+  return {
+    'wall-card--pinned': item.is_pinned,
+    'wall-card--solved': item.has_accepted,
+    'wall-card--closed': item.is_closed && !item.has_accepted,
+    'wall-card--await': !item.has_accepted && !item.is_closed && item.answer_count === 0,
+  }
+}
+
+function categoryColor(cat: ForumCategory): string {
+  return FORUM_CATEGORY_COLORS[cat] ?? '#8b7b65'
 }
 
 function goAsk() {
@@ -130,7 +149,7 @@ onMounted(load)
 
 <template>
   <div class="wall">
-    <div class="wall-sticky-head">
+    <div class="wall-sticky-head wall-enter-head">
       <div class="wall-hero">
         <div class="wall-hero-text">
           <h2 class="wall-title">问牧墙</h2>
@@ -166,7 +185,7 @@ onMounted(load)
       </div>
     </div>
 
-    <div class="wall-body">
+    <div class="wall-body wall-enter-body">
     <div v-if="loading" class="wall-loading"><AppSpinner /></div>
     <div v-else-if="items.length === 0" class="wall-empty">
       <p class="wall-empty-icon">🌾</p>
@@ -174,22 +193,38 @@ onMounted(load)
     </div>
     <div v-else class="wall-list">
       <article
-        v-for="item in items" :key="item.id"
-        class="wall-card"
+        v-for="(item, idx) in items" :key="item.id"
+        class="wall-card panel-reveal__card"
+        :class="cardClass(item)"
+        :style="{ '--wall-accent': categoryColor(item.category), '--enter-i': idx }"
         @click="goDetail(item.id)"
       >
+        <span class="wall-card-mark" aria-hidden="true">问</span>
         <div class="wall-card-top">
           <span v-if="item.is_pinned" class="wall-pin">置顶</span>
-          <span class="wall-cat" :style="{ background: FORUM_CATEGORY_COLORS[item.category] + '18', color: FORUM_CATEGORY_COLORS[item.category] }">{{ item.category }}</span>
+          <span class="wall-cat">{{ item.category }}</span>
           <span v-if="item.has_accepted" class="wall-solved">已采纳</span>
           <span v-else-if="item.is_closed" class="wall-closed">已关闭</span>
+          <span v-else-if="item.answer_count === 0" class="wall-await">待解答</span>
         </div>
         <h3 class="wall-card-title">{{ item.title }}</h3>
         <p class="wall-card-preview">{{ item.content_preview }}</p>
-        <div class="wall-card-meta">
-          <span class="wall-author">{{ formatForumAuthor(item.author.name, item.author.class_name, isGuest) }}</span>
-          <span class="wall-meta-right">{{ item.answer_count }} 回答 · {{ formatRelativeTime(item.created_at) }}</span>
-          <div v-if="!isGuest" class="wall-card-actions">
+        <div class="wall-card-foot">
+          <div class="wall-author-chip">
+            <span class="wall-author-avatar">{{ authorInitial(item) }}</span>
+            <span class="wall-author">{{ formatForumAuthor(item.author.name, item.author.class_name, isGuest) }}</span>
+          </div>
+          <div class="wall-card-stats">
+            <span class="wall-stat" :class="{ 'wall-stat--hot': item.answer_count > 0 }">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              {{ item.answer_count }}
+            </span>
+            <span class="wall-stat">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              {{ formatRelativeTime(item.created_at) }}
+            </span>
+          </div>
+          <div v-if="!isGuest" class="wall-card-actions" @click.stop>
             <button
               type="button"
               class="wall-like-btn"
@@ -284,40 +319,6 @@ onMounted(load)
 }
 .wall-search input:focus { border-color: #b5343a; box-shadow: 0 0 0 3px rgba(181,52,58,.08) }
 
-.wall-list { display: flex; flex-direction: column; gap: 12px }
-.wall-card {
-  padding: 16px 18px; border-radius: 12px; background: #fff;
-  border: 1px solid #f2ebe0; cursor: pointer; transition: box-shadow .2s, border-color .2s, transform .15s;
-  -webkit-tap-highlight-color: transparent;
-}
-.wall-card:hover { box-shadow: 0 6px 20px rgba(60,48,40,.08); border-color: #e8d5c4 }
-.wall-card:active { transform: scale(0.985); background: #fefcf9 }
-.wall-card-top { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px }
-.wall-pin, .wall-cat, .wall-solved, .wall-closed {
-  font-size: .68rem; font-weight: 600; padding: 2px 8px; border-radius: 999px;
-}
-.wall-pin { background: #3d1114; color: #f2e6d0 }
-.wall-solved { background: #edf6ef; color: #4a8c5c }
-.wall-closed { background: #f5f0ea; color: #8b7b65 }
-.wall-card-title { margin: 0 0 6px; font-size: .98rem; color: #3c3028; font-weight: 600; line-height: 1.4 }
-.wall-card-preview { margin: 0 0 10px; font-size: .84rem; color: #6b5e4e; line-height: 1.55 }
-.wall-card-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; font-size: .72rem; color: #b0a090 }
-.wall-author { color: #8b7b65 }
-.wall-card-actions { display: flex; align-items: center; gap: 8px; margin-left: auto }
-.wall-like-btn {
-  display: inline-flex; align-items: center; gap: 4px;
-  height: 28px; padding: 0 10px; border: 1px solid #e5dbcc; border-radius: 999px;
-  background: #fefcf9; color: #8b7b65; font-size: .72rem;
-  cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent;
-}
-.wall-like-btn--on { background: #fff5f5; border-color: rgba(181,52,58,.3); color: #b5343a }
-.wall-del-btn {
-  flex-shrink: 0; height: 28px; padding: 0 10px; border: 1px solid rgba(181,52,58,.25);
-  border-radius: 8px; background: #fff; color: #b5343a; font-size: .72rem;
-  cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent;
-}
-.wall-del-btn:active { background: #fef5f5 }
-
 .wall-loading { display: flex; justify-content: center; padding: 40px 0 }
 .wall-empty { text-align: center; padding: 48px 16px; color: #b0a090 }
 .wall-empty-icon { font-size: 2rem; margin-bottom: 8px }
@@ -372,15 +373,9 @@ onMounted(load)
   .wall-search input {
     height: 44px; font-size: 16px; border-radius: 13px;
   }
-  .wall-card {
-    padding: 14px 14px 12px; border-radius: 14px;
-    box-shadow: 0 2px 10px rgba(60,48,40,.04);
-  }
-  .wall-card-title { font-size: .94rem }
-  .wall-card-meta { flex-direction: column; align-items: flex-start; gap: 4px }
-  .wall-card-actions { width: 100%; justify-content: flex-end; margin-left: 0 }
+  .wall-card-foot { flex-wrap: wrap; gap: 10px }
+  .wall-card-actions { width: 100%; justify-content: flex-end }
   .wall-like-btn, .wall-del-btn { min-height: 36px; padding: 0 14px; font-size: .76rem }
-  .wall-meta-right { font-size: .7rem }
   .wall-pages {
     padding-bottom: 8px;
     gap: 16px;
@@ -392,6 +387,5 @@ onMounted(load)
   .wall-body { padding: 10px 12px 8px }
   .wall-hero { padding: 16px 14px 12px }
   .wall-toolbar { padding: 8px 12px 0 }
-  .wall-card { padding: 12px 12px 10px }
 }
 </style>

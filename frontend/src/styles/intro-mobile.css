@@ -1,0 +1,534 @@
+/**
+ * 认识牧院 · 移动端布局（IntroLayout import）
+ */
+
+/* 社团招新（嵌入 intro）· PC：搜索区不吸顶 */
+.intro-body .clubs--intro-embed {
+  padding: 16px 0 12px;
+  gap: 16px;
+  background: #fff;
+}
+
+.intro-body .clubs--intro-embed .clubs-toolbar--embed {
+  position: static;
+  margin: 0 !important;
+  padding: 0 0 12px !important;
+  background: transparent;
+  border-top: 0;
+  box-shadow: none;
+}
+
+.intro-body .clubs--intro-embed .clubs-toolbar--embed::before,
+.intro-body .clubs--intro-embed .clubs-toolbar--embed::after {
+  display: none;
+}
+
+.intro-body .detail-anchors,
+.intro-body .campus-anchors {
+  z-index: 10;
+}
+
+@media (max-width: 768px) {
+  .intro-page {
+    --intro-page-pad: 12px;
+    --intro-radius: 12px;
+    --intro-radius-sm: 10px;
+  }
+
+  .intro-choreo {
+    min-height: 100%;
+  }
+
+  /* 顶栏吸顶（position 在 IntroLayout scoped，此处补移动端样式） */
+  .intro-choreo .intro-head--sticky {
+    position: sticky;
+    top: 0;
+    z-index: 12;
+    isolation: isolate;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+    background: linear-gradient(180deg, #fff 0%, #fff 100%);
+    box-shadow:
+      0 -24px 0 24px #fff,
+      0 1px 0 var(--intro-line, #dedee3),
+      0 4px 14px rgba(21, 21, 26, 0.05);
+  }
+
+  .intro-choreo .intro-head__veil {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -28px;
+    bottom: 0;
+    background: #fff;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .intro--clubs .intro-head--sticky {
+    box-shadow: 0 -24px 0 24px #fff;
+  }
+
+  .intro-body .detail-anchors,
+  .intro-body .campus-anchors {
+    top: var(--intro-sticky-h, 0px);
+  }
+
+  .intro-choreo .intro-head::before {
+    display: none;
+  }
+
+  .intro-body {
+    flex: 1;
+    min-height: 0;
+    padding: 0 0 calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .intro-body > .clubs--intro-embed {
+    padding-top: 0;
+  }
+
+  /* ===== 牧院大百科（保留桌面栅格感，移动端适度紧凑） ===== */
+  .intro-body .school-wiki {
+    gap: 10px;
+    padding: 10px var(--intro-page-pad) var(--intro-page-pad);
+    background:
+      linear-gradient(#fff, #fff) padding-box,
+      repeating-linear-gradient(90deg, rgba(21, 21, 26, .035) 0 1px, transparent 1px 80px),
+      repeating-linear-gradient(0deg, rgba(21, 21, 26, .035) 0 1px, transparent 1px 80px);
+  }
+
+  .wiki-lead {
+    gap: 10px;
+  }
+
+  .wiki-hero,
+  .wiki-overview,
+  .wiki-stats,
+  .wiki-section,
+  .wiki-gallery-card,
+  .wiki-text-card {
+    border-radius: var(--intro-radius);
+  }
+
+  .wiki-hero {
+    min-height: 152px;
+    max-height: 168px;
+  }
+
+  .wiki-hero__shade {
+    background: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.62) 0%,
+      rgba(0, 0, 0, 0.28) 58%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+
+  .wiki-hero__copy {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 152px;
+    max-width: none;
+    padding: 14px 14px 16px;
+  }
+
+  .wiki-hero__copy h3 {
+    margin-bottom: 6px;
+    font-size: 1.32rem;
+    line-height: 1.2;
+  }
+
+  .wiki-hero__copy p {
+    margin-bottom: 12px;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    font-weight: 500;
+  }
+
+  .wiki-hero__copy a {
+    align-self: flex-start;
+    height: 36px;
+    padding: 0 16px;
+    font-size: 0.78rem;
+  }
+
+  .wiki-overview {
+    padding: 14px 14px 16px;
+  }
+
+  .wiki-kicker {
+    padding-bottom: 8px;
+    font-size: 0.82rem;
+  }
+
+  .wiki-overview h3,
+  .wiki-text-card h3 {
+    margin: 12px 0 10px;
+    font-size: 1.12rem;
+    letter-spacing: 0;
+  }
+
+  .wiki-overview__text,
+  .wiki-text-card__body {
+    font-size: 0.84rem;
+    line-height: 1.72;
+  }
+
+  .wiki-official {
+    margin-top: 12px;
+    font-size: 0.78rem;
+  }
+
+  .wiki-stats {
+    grid-template-columns: repeat(3, 1fr);
+    overflow: hidden;
+  }
+
+  .wiki-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 82px;
+    padding: 10px 6px;
+    border-right: 1px solid var(--intro-line);
+    text-align: center;
+  }
+
+  .wiki-stat:last-child {
+    border-right: 0;
+  }
+
+  .wiki-stat__index {
+    position: static;
+    width: 26px;
+    height: 26px;
+    font-size: 0.62rem;
+    margin: 0 0 2px;
+  }
+
+  .wiki-stat__label {
+    margin: 0;
+    font-size: 0.68rem;
+    line-height: 1.3;
+  }
+
+  .wiki-stat strong {
+    font-size: 1rem;
+    line-height: 1.15;
+  }
+
+  .wiki-section {
+    border: 1px solid var(--intro-line);
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .wiki-section__head {
+    margin: 0;
+    padding: 12px 14px 0 12px;
+  }
+
+  .wiki-section__head h3 {
+    font-size: 0.98rem;
+  }
+
+  .wiki-campus-grid {
+    gap: 10px;
+    padding: 10px 12px 12px;
+  }
+
+  .wiki-campus--link {
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--intro-radius-sm);
+    overflow: hidden;
+  }
+
+  .wiki-campus__image {
+    height: 88px;
+  }
+
+  .wiki-campus__body {
+    padding: 10px 12px 12px;
+  }
+
+  .wiki-campus__more {
+    opacity: 1;
+    transform: none;
+    margin-top: 6px;
+    font-size: 0.72rem;
+  }
+
+  .wiki-feature-grid {
+    gap: 10px;
+  }
+
+  .wiki-gallery-card {
+    display: block;
+  }
+
+  .wiki-gallery-card__image {
+    height: 120px;
+    max-height: none;
+    aspect-ratio: auto;
+  }
+
+  .wiki-gallery-card footer {
+    border-left: 0;
+    border-top: 1px solid var(--intro-line);
+    padding: 12px 14px;
+  }
+
+  .wiki-text-card {
+    padding: 14px 14px 16px;
+  }
+
+  .wiki-facts {
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 14px;
+    border-radius: var(--intro-radius-sm);
+  }
+
+  .wiki-facts span {
+    min-height: 48px;
+    padding: 8px 6px;
+    font-size: 0.65rem;
+    text-align: center;
+  }
+
+  .wiki-facts strong {
+    font-size: 0.78rem;
+  }
+
+  /* ===== 学院列表 ===== */
+  .intro-body .college-list {
+    padding: 10px var(--intro-page-pad) var(--intro-page-pad);
+    gap: 10px;
+  }
+
+  .intro-body .college-list-hint {
+    font-size: 0.74rem;
+    line-height: 1.5;
+  }
+
+  .intro-body .college-card-name {
+    font-size: 0.94rem;
+    line-height: 1.35;
+  }
+
+  .college-card {
+    border-radius: var(--intro-radius);
+  }
+
+  .college-card-cover {
+    height: 120px;
+  }
+
+  .college-card-body {
+    padding: 12px 14px 14px;
+  }
+
+  /* ===== 校区详情 ===== */
+  .intro-body .campus-detail {
+    gap: 10px;
+    padding: 10px var(--intro-page-pad) calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .campus-hero {
+    min-height: 160px;
+    border-radius: var(--intro-radius);
+  }
+
+  .campus-hero__shade {
+    background: linear-gradient(
+      0deg,
+      rgba(45, 12, 15, 0.92) 0%,
+      rgba(45, 12, 15, 0.42) 52%,
+      rgba(45, 12, 15, 0.15) 100%
+    );
+  }
+
+  .campus-hero__copy {
+    min-height: 160px;
+    padding: 14px 14px 16px;
+  }
+
+  .campus-hero__copy h2 {
+    font-size: 1.1rem;
+  }
+
+  .campus-block {
+    border-radius: var(--intro-radius-sm);
+    padding: 14px;
+  }
+
+  .campus-anchors {
+    margin: 0;
+    padding: 4px 0 8px;
+  }
+
+  .intro-stat-row {
+    gap: 6px;
+  }
+
+  /* ===== 社团招新（嵌入 intro）· 移动端吸顶 ===== */
+  .intro-body .clubs--intro-embed {
+    padding: 0 var(--intro-page-pad, 12px) 12px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    gap: 12px;
+  }
+
+  .intro-body .clubs--intro-embed .clubs-toolbar--embed {
+    position: sticky;
+    top: var(--intro-sticky-h, 118px);
+    z-index: 11;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0 calc(-1 * var(--intro-page-pad, 12px)) !important;
+    padding: 10px var(--intro-page-pad, 12px) 12px !important;
+    background: #fff;
+    border-top: 1px solid var(--intro-line, #dedee3);
+    box-shadow: 0 4px 12px rgba(21, 21, 26, 0.06);
+  }
+
+  .intro-body .clubs--intro-embed .clubs-toolbar--embed::before {
+    display: block !important;
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: 16px;
+    background: #fff;
+    pointer-events: none;
+  }
+
+  .intro-body .clubs--intro-embed .clubs-toolbar--embed::after {
+    display: block;
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .intro-body .clubs--intro-embed .clubs-search {
+    max-width: none;
+    margin: 0;
+  }
+
+  .intro-body .clubs--intro-embed .clubs-search-input {
+    height: 40px;
+    font-size: 16px;
+    border-radius: 10px;
+  }
+
+  .intro-body .clubs--intro-embed .clubs-categories {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .intro-body .clubs--intro-embed .clubs-categories::-webkit-scrollbar {
+    display: none;
+  }
+
+  .intro-body .clubs--intro-embed .clubs-cat-btn {
+    flex-shrink: 0;
+    min-height: 34px;
+  }
+
+  .intro-body .clubs--intro-embed .clubs-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* ===== 学院详情 ===== */
+  .intro-body .college-detail {
+    padding: 10px var(--intro-page-pad) var(--intro-page-pad);
+  }
+
+  .intro-body .detail-hero {
+    border-radius: var(--intro-radius);
+    min-height: 112px;
+  }
+
+  /* 入场动画：移动端略快 */
+  .panel-reveal--intro > .panel-reveal__item {
+    transform: translateY(18px);
+  }
+
+  .panel-reveal--intro.panel-reveal--ready > .panel-reveal__item {
+    animation-duration: 0.44s;
+  }
+
+  .panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(1) {
+    animation-delay: 0.06s;
+  }
+
+  .panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(2) {
+    animation-delay: 0.14s;
+  }
+
+  .panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(3) {
+    animation-delay: 0.22s;
+  }
+
+  .panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(4) {
+    animation-delay: 0.3s;
+  }
+
+  .panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(5) {
+    animation-delay: 0.38s;
+  }
+
+  .panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(6) {
+    animation-delay: 0.46s;
+  }
+}
+
+@media (max-width: 480px) {
+  .intro-page {
+    --intro-page-pad: 10px;
+  }
+
+  .wiki-hero,
+  .wiki-hero__copy {
+    min-height: 200px;
+  }
+
+  .wiki-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .wiki-facts span {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--intro-line);
+    text-align: left;
+    font-size: 0.74rem;
+  }
+
+  .wiki-facts span:last-child {
+    border-bottom: 0;
+  }
+
+  .wiki-facts strong {
+    display: inline;
+    font-size: 0.82rem;
+  }
+}

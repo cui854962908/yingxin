@@ -2,8 +2,8 @@
 .intro-page {
   --intro-gap: 10px;
   --intro-gap-lg: 14px;
-  --intro-radius: 0;
-  --intro-radius-sm: 0;
+  --intro-radius: 12px;
+  --intro-radius-sm: 10px;
   --intro-ink: #15151a;
   --intro-muted: #4b4b52;
   --intro-faint: #777780;
@@ -107,7 +107,43 @@
   background: #fff;
 }
 
+/* 认识牧院 · 详情页返回按钮（学院/校区等共用） */
+.intro-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  min-height: 40px;
+  padding: 0 16px 0 12px;
+  border: 1px solid var(--intro-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--intro-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 1px 3px rgba(21, 21, 26, 0.06);
+  transition: border-color 0.2s, color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+.intro-back-btn:hover {
+  border-color: rgba(181, 31, 45, 0.38);
+  color: var(--intro-accent);
+  background: rgba(181, 31, 45, 0.04);
+  box-shadow: 0 2px 8px rgba(181, 31, 45, 0.08);
+}
+
+.intro-back-btn:active {
+  transform: scale(0.98);
+}
+
 @media (max-width: 768px) {
+  .intro-page {
+    --intro-radius: 12px;
+    --intro-radius-sm: 10px;
+  }
+
   .intro-stat-chip {
     padding: 10px 6px;
   }
@@ -119,5 +155,16 @@
   .intro-pill-nav button {
     min-height: 36px;
     font-size: 0.78rem;
+  }
+
+  .intro-back-btn {
+    min-height: 44px;
+    padding: 0 18px 0 14px;
+    font-size: 0.92rem;
+  }
+
+  .intro-back-btn svg {
+    width: 20px;
+    height: 20px;
   }
 }

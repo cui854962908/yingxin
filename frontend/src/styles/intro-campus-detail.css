@@ -1,0 +1,234 @@
+/* 认识牧院 · 校区详情页 */
+.campus-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 4px 16px;
+}
+
+.campus-detail-rest {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.campus-hero {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  min-height: 200px;
+  box-shadow: 0 8px 28px rgba(60, 48, 40, 0.12);
+}
+
+.campus-hero__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.campus-hero__shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    rgba(45, 12, 15, 0.88) 0%,
+    rgba(84, 11, 19, 0.5) 55%,
+    rgba(45, 12, 15, 0.25) 100%
+  );
+}
+
+.campus-hero__copy {
+  position: relative;
+  z-index: 1;
+  padding: 22px 20px 24px;
+  color: #f2e6d0;
+}
+
+.campus-hero__tag {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--intro-accent, #b51f2d);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.campus-hero__copy h2 {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-family: 'Noto Serif SC', Georgia, serif;
+  letter-spacing: 0.06em;
+  padding-right: 72px;
+}
+
+.campus-hero__tagline {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  opacity: 0.92;
+}
+
+.campus-hero__addr {
+  margin: 0;
+  font-size: 0.76rem;
+  opacity: 0.85;
+  line-height: 1.5;
+}
+
+.campus-stats {
+  margin-top: -4px;
+}
+
+.campus-anchors {
+  padding: 4px 0 6px;
+}
+
+.campus-block {
+  padding: 18px 20px;
+  border: 1px solid var(--intro-line, #dedee3);
+  background: #fff;
+}
+
+.campus-block--warm {
+  background: var(--intro-warm-bg, #f7f7f8);
+}
+
+.campus-lead {
+  margin: 8px 0 12px;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--intro-muted, #4b4b52);
+  font-weight: 600;
+}
+
+.campus-text {
+  margin: 0 0 14px;
+  font-size: 0.84rem;
+  line-height: 1.7;
+  color: var(--intro-muted, #4b4b52);
+}
+
+.campus-features {
+  margin: 0;
+  padding: 0 0 0 18px;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: var(--intro-muted, #4b4b52);
+}
+
+.campus-features li + li {
+  margin-top: 6px;
+}
+
+.campus-facility-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.campus-facility {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--intro-line, #dedee3);
+  background: #fff;
+  font-size: 0.78rem;
+  color: var(--intro-muted, #4b4b52);
+}
+
+.campus-map-hint {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid var(--intro-line, #dedee3);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--intro-muted, #4b4b52);
+}
+
+.campus-map-hint strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--intro-accent, #b51f2d);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+}
+
+.campus-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.campus-gallery figure {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--intro-line, #dedee3);
+}
+
+.campus-gallery img {
+  display: block;
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.campus-gallery figure:hover img {
+  transform: scale(1.04);
+}
+
+.campus-gallery figcaption {
+  padding: 8px 10px;
+  font-size: 0.72rem;
+  color: var(--intro-faint, #777780);
+  background: #fff;
+}
+
+@media (max-width: 768px) {
+  .campus-detail {
+    gap: 10px;
+    padding: 0 0 12px;
+  }
+
+  .campus-hero {
+    min-height: 180px;
+    border-radius: 12px;
+  }
+
+  .campus-hero__copy {
+    padding: 18px 16px 20px;
+  }
+
+  .campus-hero__copy h2 {
+    font-size: 1.15rem;
+  }
+
+  .campus-block {
+    padding: 14px 16px;
+  }
+
+  .campus-anchors {
+    position: sticky;
+    top: var(--intro-sticky-h, 0px);
+    z-index: 6;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(6px);
+  }
+
+  .campus-gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .campus-gallery img {
+    height: 180px;
+  }
+}

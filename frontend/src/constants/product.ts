@@ -26,3 +26,7 @@ export const PRODUCT_PILLARS = [
 export const GUEST_ENTRY_LABEL = '游客浏览 · 先看学校与学院介绍'
 
 export const GUEST_ROLE_LABEL = '访客 · 迎新门户'
+
+/** 游客身份卡片状态文案 */
+export const GUEST_PROFILE_STATUS = '正在游客浏览中'
+export const GUEST_PROFILE_HINT = '登录后可查看学号、宿舍与联系人信息'

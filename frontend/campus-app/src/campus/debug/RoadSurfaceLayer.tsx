@@ -8,7 +8,7 @@ interface RoadSurfaceLayerProps {
   groundY: number
 }
 
-/** 与 Ground.tsx 主路一致的中灰，避免近黑 (#3a3a3a) 贴地发脏 */
+/** 校园主路中灰，避免近黑 (#3a3a3a) 贴地发脏 */
 const ROAD_SURFACE_COLOR = "#7d7b78"
 
 export function RoadSurfaceLayer({ roads, groundY }: RoadSurfaceLayerProps) {

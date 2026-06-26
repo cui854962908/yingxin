@@ -82,6 +82,12 @@ const router = createRouter({
               props: { hideHeader: true },
             },
             {
+              path: 'campus/:campusId',
+              name: 'intro-campus-detail',
+              component: () => import('../components/IntroCampusDetail.vue'),
+              props: true,
+            },
+            {
               path: ':id',
               name: 'intro-college-detail',
               component: () => import('../components/IntroCollegeDetail.vue'),

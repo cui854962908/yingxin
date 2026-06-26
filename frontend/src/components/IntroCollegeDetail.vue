@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { getIntroCollege } from '../constants/intro'
+import { getIntroCollege, getIntroCollegeTabPath, INTRO_COLLEGES } from '../constants/intro'
 import { useAppNavigate } from '../composables/useAppNavigate'
 import IntroCollegeModule from './IntroCollegeModule.vue'
 import IntroCollegeClubs from './IntroCollegeClubs.vue'
@@ -17,13 +17,13 @@ const college = computed(() => getIntroCollege(props.id))
 watch(
   () => props.id,
   (id) => {
-    if (!getIntroCollege(id)) router.replace('/intro/colleges')
+    if (!getIntroCollege(id)) router.replace(getIntroCollegeTabPath())
   },
   { immediate: true },
 )
 
 function goBack() {
-  appNavigate('/intro/colleges')
+  appNavigate(INTRO_COLLEGES.length > 1 ? '/intro/colleges' : '/intro/wiki')
 }
 
 function scrollTo(id: string) {
@@ -33,9 +33,9 @@ function scrollTo(id: string) {
 
 <template>
   <div v-if="college" class="college-detail intro-page">
-    <button type="button" class="detail-back" @click="goBack">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-      返回学院列表
+    <button type="button" class="intro-back-btn" @click="goBack">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      返回{{ INTRO_COLLEGES.length > 1 ? '学院列表' : '牧院大百科' }}
     </button>
 
     <div class="detail-hero-wrap">
@@ -88,23 +88,7 @@ function scrollTo(id: string) {
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-.detail-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--intro-faint, #8b7b65);
-  font-size: 0.74rem;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.detail-back:hover {
-  color: var(--intro-accent, #b5343a);
+  padding: 4px 4px 0;
 }
 
 .detail-hero-wrap {
@@ -116,7 +100,8 @@ function scrollTo(id: string) {
   position: relative;
   border-radius: var(--intro-radius, 14px);
   overflow: hidden;
-  min-height: 132px;
+  min-height: 120px;
+  max-height: 168px;
   box-shadow: 0 6px 22px rgba(60, 48, 40, 0.12);
 }
 
@@ -178,23 +163,20 @@ function scrollTo(id: string) {
 }
 
 .detail-anchors {
-  position: sticky;
-  top: 0;
-  z-index: 6;
   padding: 4px 0 6px;
-  background: rgba(250, 247, 243, 0.96);
-  backdrop-filter: blur(6px);
   margin: 0 -2px;
 }
 
 @media (max-width: 768px) {
   .college-detail {
     gap: 8px;
+    padding: 0;
   }
 
   .detail-hero {
-    min-height: 118px;
     border-radius: 12px;
+    min-height: 108px;
+    max-height: 148px;
   }
 
   .detail-hero-inner {
@@ -207,6 +189,14 @@ function scrollTo(id: string) {
 
   .detail-stats-float {
     margin: -14px 6px 0;
+  }
+
+  .detail-anchors {
+    position: sticky;
+    top: var(--intro-sticky-h, 0px);
+    z-index: 6;
+    background: rgba(250, 247, 243, 0.96);
+    backdrop-filter: blur(6px);
   }
 }
 </style>

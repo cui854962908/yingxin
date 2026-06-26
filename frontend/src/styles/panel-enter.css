@@ -1,0 +1,161 @@
+/**
+ * 模块内入场动效
+ * 认识牧院：外层 module 动画关闭，由 intro-choreo 分段编排
+ */
+
+@keyframes panelBlockIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes panelBlockOut {
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes introHeadIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes introSectionIn {
+  from {
+    opacity: 0;
+    transform: translateY(36px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 进入认识牧院：不让 HomePage 整页 velvetIn 盖掉内部分段动画 */
+.section-card--intro .module-enter-active,
+.section-card--intro .module-leave-active {
+  animation: none !important;
+}
+
+.section-card--intro .module-enter-active > * {
+  animation: none !important;
+}
+
+/* 认识牧院 · 顶栏不做 opacity 动画（移动端 sticky 叠层会透底） */
+.intro-choreo__head.intro-choreo__head--on {
+  animation: none;
+}
+
+/* 认识牧院 · 内容区块依次浮现（需 panel-reveal--ready） */
+.panel-reveal--intro > .panel-reveal__item {
+  opacity: 0;
+  transform: translateY(36px);
+}
+
+.panel-reveal--intro.panel-reveal--ready > .panel-reveal__item {
+  animation: introSectionIn 0.62s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(1) {
+  animation-delay: 0.18s;
+}
+
+.panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(2) {
+  animation-delay: 0.36s;
+}
+
+.panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(3) {
+  animation-delay: 0.54s;
+}
+
+.panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(4) {
+  animation-delay: 0.72s;
+}
+
+.panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(5) {
+  animation-delay: 0.9s;
+}
+
+.panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(6) {
+  animation-delay: 1.08s;
+}
+
+/* 通用区块 stagger（非认识牧院） */
+.panel-reveal:not(.panel-reveal--intro) > .panel-reveal__item {
+  animation: panelBlockIn 0.46s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.panel-reveal:not(.panel-reveal--intro) > .panel-reveal__item:nth-child(1) { animation-delay: 0.04s; }
+.panel-reveal:not(.panel-reveal--intro) > .panel-reveal__item:nth-child(2) { animation-delay: 0.1s; }
+.panel-reveal:not(.panel-reveal--intro) > .panel-reveal__item:nth-child(3) { animation-delay: 0.16s; }
+.panel-reveal:not(.panel-reveal--intro) > .panel-reveal__item:nth-child(4) { animation-delay: 0.22s; }
+
+/* 问牧墙 · 顶栏与卡片 */
+.wall-enter-head {
+  opacity: 0;
+  animation: panelBlockIn 0.44s cubic-bezier(0.33, 1, 0.68, 1) 0.05s forwards;
+}
+
+.wall-enter-body {
+  opacity: 0;
+  animation: panelBlockIn 0.44s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
+}
+
+.panel-reveal__card {
+  opacity: 0;
+  animation: panelBlockIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: calc(0.14s + var(--enter-i, 0) * 0.055s);
+}
+
+@keyframes moduleVelvetInMobile {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .section-card--motion:not(.section-card--intro) .module-enter-active {
+    animation: moduleVelvetInMobile 0.34s cubic-bezier(0.33, 1, 0.68, 1) both;
+  }
+
+  .section-card--motion:not(.section-card--intro) .module-leave-active {
+    animation: panelBlockOut 0.16s ease-in both;
+  }
+
+  .section-card--motion:not(.section-card--intro) .module-enter-active > :first-child {
+    animation: panelBlockIn 0.36s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: 0.05s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-choreo__head,
+  .panel-reveal--intro > .panel-reveal__item,
+  .panel-reveal--intro.panel-reveal--ready > .panel-reveal__item,
+  .panel-reveal:not(.panel-reveal--intro) > .panel-reveal__item,
+  .panel-reveal__card,
+  .wall-enter-head,
+  .wall-enter-body,
+  .section-card--motion .module-enter-active,
+  .section-card--motion .module-leave-active,
+  .section-card--motion .module-enter-active > :first-child {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

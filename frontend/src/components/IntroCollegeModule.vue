@@ -138,8 +138,15 @@ onMounted(load)
   font-size: 0.84rem; line-height: 1.65; color: var(--intro-muted, #5a4e42);
 }
 .module-section-body :deep(p) { margin: 0 0 .75em }
-.module-section-body :deep(img) {
-  max-width: 100%; border-radius: 10px; margin: 8px 0;
+.module-section-body :deep(img),
+.module-section-body :deep(.intro-inline-photo) {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin: 8px 0;
 }
 .module-section-body :deep(h4) {
   margin: 1em 0 .5em; font-size: .92rem; color: #3c3028;

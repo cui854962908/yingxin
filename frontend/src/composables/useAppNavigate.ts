@@ -2,7 +2,7 @@ import { useRouter, type RouteLocationRaw } from 'vue-router'
 import { useBreakpoint } from './useBreakpoint'
 
 /** 底栏/侧栏主模块根路径：移动端切换时用 replace，避免系统返回键逐页回溯 */
-const SHELL_ROUTES = ['/', '/faq', '/wall', '/clubs', '/announcements', '/intro/wiki', '/intro/colleges', '/intro/clubs'] as const
+const SHELL_ROUTES = ['/', '/faq', '/wall', '/clubs', '/announcements', '/intro/wiki', '/intro/colleges', '/intro/clubs', '/intro/sie'] as const
 
 /** 全屏/独立子页：系统返回时也应先回首页 */
 const STANDALONE_MOBILE_BACK_ROUTES = ['/campus', '/campus/2d', '/campus/3d', '/guide', '/tips'] as const

@@ -19,7 +19,6 @@ const emit = defineEmits<{ favorite: []; route: []; locate: [] }>()
       <span>
         <small>{{ campusCategories.find((item) => item.key === place.category)?.label }} · {{ place.tags[0] }}</small>
         <h2>{{ place.name }}</h2>
-        <p>{{ place.area }}</p>
       </span>
       <button type="button" :class="{ active: favorite }" aria-label="收藏地点" @click="emit('favorite')">☆</button>
     </div>

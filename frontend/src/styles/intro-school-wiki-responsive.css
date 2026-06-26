@@ -17,57 +17,35 @@
     grid-template-columns: 1fr;
   }
 
+  .wiki-gallery-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wiki-gallery-card__image {
+    max-height: 132px;
+    aspect-ratio: 16 / 7;
+  }
+
+  .wiki-gallery-card footer {
+    border-left: 0;
+    border-top: 1px solid var(--intro-line);
+  }
+
   .wiki-overview,
   .wiki-text-card {
-    padding: 24px;
+    padding: 20px;
   }
 }
 
 @media (max-width: 768px) {
-  .school-wiki {
-    gap: 8px;
-    padding: 8px;
-  }
-
   .wiki-lead,
   .wiki-campus-grid,
-  .wiki-stats,
   .wiki-feature-grid {
     grid-template-columns: 1fr;
   }
 
-  .wiki-hero {
-    min-height: 230px;
-  }
-
-  .wiki-hero__copy {
-    padding: 28px 22px;
-  }
-
-  .wiki-hero__copy p {
-    font-size: 14px;
-  }
-
-  .wiki-stat {
-    min-height: 94px;
-    border-right: 0;
-    border-bottom: 1px solid var(--intro-line);
-  }
-
-  .wiki-stat:last-child {
-    border-bottom: 0;
-  }
-
-  .wiki-facts {
-    grid-template-columns: 1fr;
-  }
-
-  .wiki-facts span {
-    border-right: 0;
-    border-bottom: 1px solid var(--intro-line);
-  }
-
-  .wiki-facts span:last-child {
-    border-bottom: 0;
+  .wiki-overview,
+  .wiki-text-card {
+    padding: 14px;
   }
 }

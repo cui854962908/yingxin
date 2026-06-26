@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import {
   INTRO_SCHOOL,
   INTRO_WIKI_CAMPUSES,
@@ -11,11 +12,12 @@ import {
   INTRO_WIKI_TAGLINE,
 } from '../constants/intro'
 import { useAuth } from '../composables/useAuth'
+import { usePanelReveal } from '../composables/usePanelReveal'
 import AppSpinner from './AppSpinner.vue'
 import '../styles/intro-theme.css'
+import '../styles/panel-enter.css'
 import '../styles/intro-school-wiki.css'
 import '../styles/intro-school-wiki-responsive.css'
-
 interface WikiBlock {
   id?: string
   title: string
@@ -25,6 +27,7 @@ interface WikiBlock {
 const blocks = ref<WikiBlock[]>([...INTRO_WIKI_FALLBACK])
 const loading = ref(true)
 const { isAdmin } = useAuth()
+const { ready: revealReady } = usePanelReveal()
 
 const parsedBlocks = computed(() =>
   blocks.value.map((item) => {
@@ -77,14 +80,17 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="school-wiki intro-page">
-    <section class="wiki-lead">
+  <div
+    class="school-wiki intro-page panel-reveal panel-reveal--intro"
+    :class="{ 'panel-reveal--ready': revealReady }"
+  >
+    <section class="wiki-lead panel-reveal__item">
       <article class="wiki-hero">
         <img class="wiki-hero__img" :src="INTRO_WIKI_HERO_IMAGE" :alt="INTRO_SCHOOL" loading="eager" />
         <div class="wiki-hero__shade" />
         <div class="wiki-hero__copy">
           <h3>{{ INTRO_WIKI_TAGLINE }}</h3>
-          <p>以牧业为特色，以经济为优势，农、经、管、工、文、法、多学科协调发展的高水平应用型大学。</p>
+          <p>以牧业为特色，以经济为优势，农、经、管、工、文、法多学科协调发展；龙子湖主校区、英才智信校区、北林牧科校区各具分工，共同构成河南牧业经济学院的「一校三区」办学格局。</p>
           <a :href="INTRO_WIKI_OFFICIAL_URL" target="_blank" rel="noopener">了解更多</a>
         </div>
       </article>
@@ -100,7 +106,7 @@ onMounted(load)
       </aside>
     </section>
 
-    <section class="wiki-stats" aria-label="学校关键数据">
+    <section class="wiki-stats panel-reveal__item" aria-label="学校关键数据">
       <article v-for="(stat, index) in INTRO_WIKI_STATS" :key="stat.label" class="wiki-stat">
         <span class="wiki-stat__index">{{ String(index + 1).padStart(2, '0') }}</span>
         <span class="wiki-stat__label">{{ stat.label }}</span>
@@ -108,34 +114,40 @@ onMounted(load)
       </article>
     </section>
 
-    <section class="wiki-section">
+    <section class="wiki-section panel-reveal__item">
       <header class="wiki-section__head">
         <h3>三校区一览</h3>
-        <span>查看全部校区</span>
+        <span>点击卡片查看详情</span>
       </header>
       <div class="wiki-campus-grid">
-        <article v-for="campus in INTRO_WIKI_CAMPUSES" :key="campus.id" class="wiki-campus">
+        <RouterLink
+          v-for="campus in INTRO_WIKI_CAMPUSES"
+          :key="campus.id"
+          :to="`/intro/campus/${campus.id}`"
+          class="wiki-campus wiki-campus--link"
+        >
           <div class="wiki-campus__image">
             <img :src="campus.image" :alt="campus.name" loading="lazy" />
-            <span>{{ campus.tag }}</span>
+            <span class="wiki-campus__tag">{{ campus.tag }}</span>
           </div>
           <div class="wiki-campus__body">
             <h4>{{ campus.name }}</h4>
             <p>{{ campus.address }}</p>
+            <span class="wiki-campus__more">查看介绍 →</span>
           </div>
-        </article>
+        </RouterLink>
       </div>
     </section>
 
-    <section class="wiki-feature-grid">
+    <section class="wiki-feature-grid panel-reveal__item">
       <article class="wiki-gallery-card">
         <div class="wiki-gallery-card__image">
           <img :src="sceneryImage" alt="校园风光" loading="lazy" />
           <span>校园风光</span>
         </div>
         <footer>
-          <p>绿树成荫的校园环境与“尚严崇实、善知敏行”的校训相得益彰</p>
-          <b>1 / 5</b>
+          <p>绿树成荫的校园环境与「尚严崇实、善知敏行」的校训相得益彰</p>
+          <b>校园风光</b>
         </footer>
       </article>
 

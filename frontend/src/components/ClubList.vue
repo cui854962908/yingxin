@@ -88,7 +88,7 @@ onMounted(loadClubs)
 </script>
 
 <template>
-  <div class="clubs">
+  <div class="clubs" :class="{ 'clubs--intro-embed': hideHeader }">
     <!-- 吸顶区：标题 + 搜索 + 分类 -->
     <div class="clubs-toolbar" :class="{ 'clubs-toolbar--embed': hideHeader }">
       <div v-if="!hideHeader" class="clubs-header">
@@ -166,8 +166,10 @@ onMounted(loadClubs)
   pointer-events: none;
 }
 .clubs-toolbar--embed {
-  position: static; margin: 0; padding: 0 0 8px;
-  box-shadow: none; background: transparent;
+  margin: 0;
+  padding: 0;
+  box-shadow: none;
+  /* position / 白底吸顶由 intro-mobile.css .clubs--intro-embed 控制 */
 }
 .clubs-toolbar--embed::before { display: none }
 .clubs-header--compact { justify-content: flex-end }

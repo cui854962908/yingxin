@@ -1,9 +1,20 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { INTRO_COLLEGES } from '../constants/intro'
+import { usePanelReveal } from '../composables/usePanelReveal'
 import '../styles/intro-theme.css'
+import '../styles/panel-enter.css'
 
 const router = useRouter()
+const { ready: revealReady } = usePanelReveal()
+
+/** 当前仅信工一个学院时直达详情，保留列表组件供日后扩展 */
+onMounted(() => {
+  if (INTRO_COLLEGES.length === 1) {
+    router.replace(`/intro/${INTRO_COLLEGES[0].id}`)
+  }
+})
 
 function openCollege(id: string) {
   router.push(`/intro/${id}`)
@@ -11,9 +22,12 @@ function openCollege(id: string) {
 </script>
 
 <template>
-  <div class="college-list intro-page">
-    <p class="college-list-hint">点击进入学院详情，了解简介、师资与本院社团</p>
-    <div class="college-grid">
+  <div
+    class="college-list intro-page panel-reveal panel-reveal--intro"
+    :class="{ 'panel-reveal--ready': revealReady }"
+  >
+    <p class="college-list-hint panel-reveal__item">点击进入学院详情，了解简介、师资与本院社团</p>
+    <div class="college-grid panel-reveal__item">
       <button
         v-for="c in INTRO_COLLEGES" :key="c.id"
         type="button"
@@ -178,11 +192,7 @@ function openCollege(id: string) {
 @media (max-width: 768px) {
   .college-grid {
     grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .college-card-cover {
-    height: 96px;
+    gap: 12px;
   }
 }
 </style>

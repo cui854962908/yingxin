@@ -11,7 +11,7 @@
 
 .wiki-lead {
   display: grid;
-  grid-template-columns: minmax(0, 2.25fr) minmax(320px, 0.95fr);
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
   gap: 10px;
 }
 
@@ -47,7 +47,8 @@
 
 .wiki-hero {
   position: relative;
-  min-height: 274px;
+  min-height: 176px;
+  max-height: 192px;
 }
 
 .wiki-hero__img {
@@ -56,13 +57,13 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 45%;
-  transform: scale(1.01);
+  object-position: center 42%;
+  transform: none;
   transition: transform .7s cubic-bezier(.16, 1, .3, 1);
 }
 
 .wiki-hero:hover .wiki-hero__img {
-  transform: scale(1.045);
+  transform: scale(1.03);
 }
 
 .wiki-hero__shade {
@@ -73,33 +74,37 @@
 
 .wiki-hero__copy {
   position: relative;
-  max-width: 610px;
-  padding: 48px 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 520px;
+  min-height: 176px;
+  padding: 22px 28px;
   color: #fff;
 }
 
 .wiki-hero__copy h3 {
-  margin: 0 0 16px;
-  font-size: clamp(31px, 3vw, 44px);
-  line-height: 1.1;
+  margin: 0 0 8px;
+  font-size: clamp(22px, 2vw, 30px);
+  line-height: 1.15;
   font-weight: 800;
   letter-spacing: .02em;
 }
 
 .wiki-hero__copy p {
-  margin: 0 0 28px;
-  max-width: 560px;
-  font-size: 17px;
-  line-height: 1.8;
-  font-weight: 650;
+  margin: 0 0 14px;
+  max-width: 480px;
+  font-size: 14px;
+  line-height: 1.65;
+  font-weight: 600;
 }
 
 .wiki-hero__copy a,
 .wiki-text-card > a {
   display: inline-flex;
   align-items: center;
-  height: 42px;
-  padding: 0 26px;
+  height: 36px;
+  padding: 0 18px;
   border: 1px solid #fff;
   border-radius: 999px;
   background: #fff;
@@ -123,7 +128,7 @@
 .wiki-overview {
   display: flex;
   flex-direction: column;
-  padding: 38px 38px 30px;
+  padding: 22px 24px 20px;
 }
 
 .wiki-kicker {
@@ -139,20 +144,20 @@
 
 .wiki-overview h3,
 .wiki-text-card h3 {
-  margin: 20px 0 22px;
+  margin: 14px 0 12px;
   color: #15151a;
-  font-size: 31px;
-  line-height: 1.12;
-  font-weight: 850;
-  letter-spacing: -.03em;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -.02em;
 }
 
 .wiki-overview__text,
 .wiki-text-card__body {
   color: #3f3f46;
-  font-size: 16px;
-  line-height: 1.95;
-  font-weight: 520;
+  font-size: 14px;
+  line-height: 1.75;
+  font-weight: 500;
 }
 
 .wiki-overview__text p,
@@ -286,7 +291,7 @@
 
 .wiki-campus__image {
   position: relative;
-  height: 116px;
+  height: 92px;
 }
 
 .wiki-campus__image img,
@@ -305,16 +310,41 @@
 }
 
 .wiki-campus__image span,
+.wiki-campus__tag,
 .wiki-gallery-card__image span {
   position: absolute;
-  left: 14px;
+  right: 14px;
   top: 12px;
+  left: auto;
   padding: 4px 11px;
   border-radius: 999px;
   background: var(--intro-accent);
   color: #fff;
   font-size: 13px;
   font-weight: 750;
+}
+
+.wiki-campus--link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.wiki-campus__more {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--intro-accent);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.25s, transform 0.25s;
+}
+
+.wiki-campus--link:hover .wiki-campus__more,
+.wiki-campus--link:focus-visible .wiki-campus__more {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .wiki-campus__body {
@@ -335,31 +365,50 @@
 
 .wiki-feature-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 1fr);
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
   gap: 10px;
+}
+
+.wiki-gallery-card {
+  display: grid;
+  grid-template-columns: minmax(140px, 38%) minmax(0, 1fr);
+  align-items: stretch;
 }
 
 .wiki-gallery-card__image {
   position: relative;
-  height: 232px;
+  height: auto;
+  min-height: 100%;
+  max-height: 148px;
+  aspect-ratio: 4 / 3;
 }
 
 .wiki-gallery-card footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 22px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 16px;
   color: #55555c;
-  border-top: 1px solid var(--intro-line);
+  border-top: 0;
+  border-left: 1px solid var(--intro-line);
 }
 
 .wiki-gallery-card footer p {
   margin: 0;
-  max-width: 76ch;
+  max-width: none;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.wiki-gallery-card footer b {
+  font-size: 14px;
+  color: #1f1f23;
 }
 
 .wiki-text-card {
-  padding: 28px 32px 30px;
+  padding: 22px 24px 20px;
 }
 
 .wiki-text-card > a {

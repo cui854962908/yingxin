@@ -106,7 +106,6 @@ yingxin/
 - 身份证号加盐 SHA-256 哈希存储（`ID_NUMBER_SALT`），不可逆
 - 登录接口限流：单 IP 每 60 秒最多 30 次（`rate_limit.py`）
 - HTTP 安全头：X-Content-Type-Options、X-Frame-Options、Referrer-Policy（`http_middleware.py`）
-- 日志脱敏：写入前自动替换身份证号和手机号为 `[ID]` 和 `[PHONE]`（`pii_redact.py`）
 - 上传文件大小限制 5MB（`http_middleware.py`）
 
 ### 2.4 登录后返回的信息

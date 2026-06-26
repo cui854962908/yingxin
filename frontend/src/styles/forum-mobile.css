@@ -2,6 +2,306 @@
  * 问牧墙移动端共用样式（列表 / 详情 / 发帖三页 import）
  * 依赖 HomePage .dashboard 上的 --yx-mobile-nav
  */
+
+/* ===== 问题卡片 ===== */
+.wall-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.wall-card {
+  --wall-accent: #b5343a;
+  position: relative;
+  padding: 16px 18px 14px 20px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fff 0%, #faf8f5 100%);
+  border: 1px solid #f0e8dc;
+  box-shadow: 0 1px 2px rgba(60, 48, 40, 0.03), 0 4px 14px rgba(60, 48, 40, 0.04);
+  cursor: pointer;
+  overflow: hidden;
+  transition: box-shadow 0.22s, border-color 0.22s, transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.wall-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--wall-accent);
+}
+
+.wall-card:hover {
+  border-color: color-mix(in srgb, var(--wall-accent) 28%, #f0e8dc);
+  box-shadow: 0 8px 24px rgba(60, 48, 40, 0.09);
+  transform: translateY(-1px);
+}
+
+.wall-card:active {
+  transform: scale(0.985);
+}
+
+.wall-card--pinned {
+  background: linear-gradient(135deg, #fffdf8 0%, #faf6ef 100%);
+  border-color: rgba(201, 169, 110, 0.45);
+}
+
+.wall-card--solved {
+  background: linear-gradient(135deg, #fff 0%, #f6fbf7 100%);
+  border-color: rgba(74, 140, 92, 0.22);
+}
+
+.wall-card--await {
+  background: linear-gradient(135deg, #fff 0%, #fffaf5 100%);
+}
+
+.wall-card-mark {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 2.4rem;
+  font-weight: 700;
+  font-family: 'Noto Serif SC', 'KaiTi', serif;
+  color: var(--wall-accent);
+  opacity: 0.06;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.wall-card-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding-right: 36px;
+}
+
+.wall-pin,
+.wall-cat,
+.wall-solved,
+.wall-closed,
+.wall-await {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+.wall-pin {
+  background: linear-gradient(135deg, #3d1114, #591a1e);
+  color: #f2e6d0;
+}
+
+.wall-cat {
+  background: color-mix(in srgb, var(--wall-accent) 12%, #fff);
+  color: var(--wall-accent);
+  border: 1px solid color-mix(in srgb, var(--wall-accent) 22%, transparent);
+}
+
+.wall-solved {
+  background: #edf6ef;
+  color: #4a8c5c;
+}
+
+.wall-closed {
+  background: #f5f0ea;
+  color: #8b7b65;
+}
+
+.wall-await {
+  background: #fff8ef;
+  color: #c47a20;
+  border: 1px solid rgba(196, 122, 32, 0.2);
+}
+
+.wall-card-title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: #2c2420;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.wall-card-preview {
+  margin: 0 0 14px;
+  font-size: 0.84rem;
+  color: #6b5e4e;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.wall-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f2ebe0;
+}
+
+.wall-author-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.wall-author-avatar {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--wall-accent), color-mix(in srgb, var(--wall-accent) 70%, #2c2420));
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Serif SC', serif;
+}
+
+.wall-author {
+  font-size: 0.76rem;
+  color: #6b5e4e;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wall-card-stats {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.wall-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #faf7f3;
+  border: 1px solid #f0e8dc;
+  font-size: 0.72rem;
+  color: #8b7b65;
+}
+
+.wall-stat svg {
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+
+.wall-stat--hot {
+  background: #fff8f5;
+  border-color: rgba(181, 52, 58, 0.18);
+  color: #b5343a;
+  font-weight: 600;
+}
+
+.wall-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.wall-like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #e5dbcc;
+  border-radius: 999px;
+  background: #fefcf9;
+  color: #8b7b65;
+  font-size: 0.72rem;
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.wall-like-btn--on {
+  background: #fff5f5;
+  border-color: rgba(181, 52, 58, 0.3);
+  color: #b5343a;
+}
+
+.wall-del-btn {
+  flex-shrink: 0;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(181, 52, 58, 0.25);
+  border-radius: 8px;
+  background: #fff;
+  color: #b5343a;
+  font-size: 0.72rem;
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.wall-del-btn:active {
+  background: #fef5f5;
+}
+
+@media (max-width: 768px) {
+  .wall-card {
+    padding: 14px 14px 12px 18px;
+    border-radius: 14px;
+  }
+
+  .wall-card-title {
+    font-size: 0.94rem;
+  }
+
+  .wall-card-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .wall-card-stats {
+    margin-left: 0;
+  }
+
+  .wall-card-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .wall-card {
+    padding: 12px 12px 10px 16px;
+  }
+
+  .wall-card-mark {
+    font-size: 2rem;
+  }
+}
+
+/* ===== 详情 / 发帖页共用 ===== */
 .forum-mobile-back {
   display: inline-flex;
   align-items: center;

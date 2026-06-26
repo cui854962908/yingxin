@@ -5,6 +5,12 @@ import CampusMapDetail from './campus-map/CampusMapDetail.vue'
 import CampusMapHeader from './campus-map/CampusMapHeader.vue'
 import CampusMapSidebar from './campus-map/CampusMapSidebar.vue'
 import { campusCategories, campusPlaces } from './campus-map/campusPlaces'
+import {
+  campusLimitBoundsFromLocations,
+  campusOrigin,
+  CAMPUS_DEFAULT_ZOOM,
+  CAMPUS_MAP_ZOOMS,
+} from './campus-map/campusGeo'
 import type { CampusPlace, CampusTab, CategoryKey } from './campus-map/types'
 import './campus-map/campus-map.css'
 
@@ -21,9 +27,10 @@ const loading = ref(true)
 const error = ref('')
 const query = ref('')
 const category = ref<CategoryKey | 'all'>('all')
-const area = ref('全部区域')
 const activeTab = ref<CampusTab>('map')
-const selected = ref<CampusPlace>(campusPlaces[0])
+const selected = ref<CampusPlace>(
+  campusPlaces.find((place) => place.id === 'scenery-lake') ?? campusPlaces[0],
+)
 const favorites = ref<string[]>([])
 const zoom = ref(17)
 const centerText = ref('113.641689, 34.862226')
@@ -32,18 +39,31 @@ const routeMode = ref<'walk' | 'ride' | 'drive'>('walk')
 let map: any = null
 let markers: any[] = []
 let routeLine: any = null
-let campusCenter: [number, number] = [113.6416887, 34.862226]
-let campusZoom = 17
+let campusCenter: [number, number] = campusOrigin()
+let campusZoom = CAMPUS_DEFAULT_ZOOM
+let campusBounds: [[number, number], [number, number]] = campusLimitBoundsFromLocations(
+  campusPlaces.map((place) => place.location),
+)
+
+function applyCampusViewport() {
+  if (!map || !window.AMap) return
+  const bounds = new window.AMap.Bounds(campusBounds[0], campusBounds[1])
+  map.setLimitBounds(bounds)
+  map.setBounds(bounds, false, [48, 48, 48, 48])
+  const center = map.getCenter()
+  campusCenter = [center.lng, center.lat]
+  campusZoom = map.getZoom()
+  zoom.value = campusZoom
+}
 
 const filteredPlaces = computed(() => {
   const text = query.value.trim().toLowerCase()
   return campusPlaces.filter((place) => {
     const matchesCategory = category.value === 'all' || place.category === category.value
-    const matchesArea = area.value === '全部区域' || place.area === area.value
     const searchable = `${place.name} ${place.address} ${place.description} ${place.tags.join(' ')}`.toLowerCase()
     const matchesText = !text || searchable.includes(text)
     const matchesFavorite = activeTab.value !== 'favorites' || favorites.value.includes(place.id)
-    return matchesCategory && matchesArea && matchesText && matchesFavorite
+    return matchesCategory && matchesText && matchesFavorite
   })
 })
 
@@ -95,7 +115,7 @@ function renderMarkers(places: CampusPlace[]) {
 
 function resetView() {
   clearRoute()
-  map?.setZoomAndCenter(campusZoom, campusCenter)
+  applyCampusViewport()
 }
 
 function toggleFavorite() {
@@ -143,13 +163,13 @@ async function initMap() {
     const payload = await response.json()
     if (!response.ok || !payload.success) throw new Error(payload.message || '地图配置不可用')
     campusCenter = payload.data.center
-    campusZoom = payload.data.zoom
+    campusZoom = payload.data.zoom ?? CAMPUS_DEFAULT_ZOOM
     const AMap = await loadAmap(payload.data.key)
     if (!mapEl.value) return
     map = markRaw(new AMap.Map(mapEl.value, {
       viewMode: '2D',
       zoom: campusZoom,
-      zooms: [15, 19],
+      zooms: CAMPUS_MAP_ZOOMS,
       center: campusCenter,
       mapStyle: 'amap://styles/normal',
       resizeEnable: true,
@@ -159,6 +179,7 @@ async function initMap() {
       showLabel: true,
       features: ['bg', 'road', 'building', 'point'],
     }))
+    applyCampusViewport()
     map.addControl(new AMap.ToolBar({ position: { top: '16px', left: '16px' }, liteStyle: false }))
     map.on('mapmove', () => {
       const center = map.getCenter()
@@ -211,7 +232,6 @@ onUnmounted(() => {
       <CampusMapSidebar
         v-model:query="query"
         v-model:category="category"
-        v-model:area="area"
         :places="filteredPlaces"
         :selected-id="selected.id"
         @select="selectPlace"
@@ -232,7 +252,7 @@ onUnmounted(() => {
         </div>
         <div v-if="activeTab === 'data'" class="data-card">
           <strong>数据说明</strong>
-          <p>底图与道路建筑信息由高德地图提供；地点坐标与分类用于英才校区迎新导览，会根据学校实际信息持续完善。</p>
+          <p>底图由高德地图提供。地点坐标与 3D 导览模型对齐；拖动范围限制在英才校区内，个别点位仍建议现场复核。</p>
         </div>
         <div class="map-legend">
           <span v-for="item in campusCategories" :key="item.key"><i :style="{ background: item.color }" />{{ item.label }}</span>

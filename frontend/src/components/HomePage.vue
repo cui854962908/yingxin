@@ -5,6 +5,7 @@ import { useAppNavigate } from '../composables/useAppNavigate'
 import ProfileCard from './ProfileCard.vue'
 import AdminSidebar from './AdminSidebar.vue'
 import MobileBottomNav from './MobileBottomNav.vue'
+import '../styles/panel-enter.css'
 
 import type { Student } from '../types/student'
 import { studentGradeLabel } from '../utils/gradeLabel'
@@ -41,6 +42,8 @@ function isFullBleedPath(path: string): boolean {
 }
 
 const isIntroModule = computed(() => route.path.startsWith('/intro'))
+const isWallModule = computed(() => route.path.startsWith('/wall'))
+const isMotionModule = computed(() => isIntroModule.value || isWallModule.value)
 
 const isFullBleedModule = ref(isFullBleedPath(route.path))
 watch(() => route.path, (path) => {
@@ -51,9 +54,9 @@ watch(() => route.path, (path) => {
   }
 })
 
-/** 已登录展示个人信息卡（问牧墙/社团全屏页除外） */
+/** 登录/游客均展示身份卡片（问牧墙/社团全屏页除外） */
 const showProfileCard = computed(
-  () => isAuthenticated.value && !isFullBleedModule.value,
+  () => !isFullBleedModule.value && (isAuthenticated.value || isGuest.value),
 )
 
 // 侧边栏显隐（桌面常驻，移动端 v-model 控制；状态提升至 App.vue 以供 XiaoXin 感知）
@@ -159,13 +162,30 @@ onUnmounted(() => {
       @pointerdown.prevent="onEdgeDown"
     />
     <!-- 主内容区 -->
-    <main class="main" :class="{ 'main--fixed': isFullBleedModule, 'main--fullbleed': isFullBleedModule }">
+    <main
+      class="main"
+      :class="{
+        'main--fixed': isFullBleedModule,
+        'main--fullbleed': isFullBleedModule,
+        'main--intro': isIntroModule,
+      }"
+    >
       <section v-show="showProfileCard" class="profile-section">
         <ProfileCard />
       </section>
 
-      <section class="bottom-section" :class="{ 'bottom-section--full': isFullBleedModule }">
-        <div class="section-card" :class="{ 'section-card--fullbleed': isFullBleedModule, 'section-card--intro': isIntroModule }">
+      <section
+        class="bottom-section"
+        :class="{ 'bottom-section--full': isFullBleedModule, 'bottom-section--intro': isIntroModule }"
+      >
+        <div
+          class="section-card"
+          :class="{
+            'section-card--fullbleed': isFullBleedModule,
+            'section-card--intro': isIntroModule,
+            'section-card--motion': isMotionModule,
+          }"
+        >
           <Transition name="module" mode="out-in">
             <router-view :key="route.fullPath" />
           </Transition>
@@ -240,6 +260,10 @@ onUnmounted(() => {
     display: none;
   }
   .main { margin-left: 0; padding: 8px 14px calc(68px + env(safe-area-inset-bottom, 0px)); gap: 10px }
+  .main--intro {
+    padding: 6px 8px calc(68px + env(safe-area-inset-bottom, 0px));
+    gap: 8px;
+  }
   .main--fullbleed {
     padding: 4px 8px calc(52px + env(safe-area-inset-bottom, 0px));
     gap: 0;
@@ -266,19 +290,52 @@ onUnmounted(() => {
 }
 .section-card--intro {
   padding: 0;
-  border: 1px solid rgba(181, 31, 45, .18);
-  border-top: 3px solid #b51f2d;
-  border-radius: 6px;
+  border: 1px solid rgba(222, 222, 227, 0.85);
+  border-radius: 16px;
   background: #fff;
-  box-shadow: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 6px 20px rgba(0, 0, 0, 0.05);
+  isolation: isolate;
+}
+
+/* 认识牧院：PC 整页滚动；移动端顶栏 sticky 时滚动锁在卡片内 */
+@media (min-width: 769px) {
+  .section-card--intro {
+    height: auto;
+    overflow-y: visible;
+  }
+}
+
+@media (max-width: 768px) {
+  .main--intro {
+    height: calc(var(--vh, 1vh) * 100);
+    max-height: calc(var(--vh, 1vh) * 100);
+    overflow: hidden;
+  }
+
+  .main--intro .bottom-section--intro {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .main--intro .section-card--intro {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 @media(max-width:768px){ .section-card { border-radius: 12px; padding: 14px } }
-@media(max-width:768px){
+@media (max-width: 768px) {
   .section-card--intro {
     padding: 0;
-    border-radius: 6px;
-    background: #fff;
+    border-radius: 12px;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 }
 @media(max-width:768px){
