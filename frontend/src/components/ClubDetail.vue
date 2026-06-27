@@ -6,7 +6,7 @@
 // 降低可读性的代价大于 20 行超出。
 // 已拆出 ClubDetailGallery（风采展示+灯箱），其为独立功能块，拆分自然。
 //
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DOMPurify from 'dompurify'
 import type { Club } from '../types/club'
@@ -95,12 +95,12 @@ async function loadClub() {
 }
 
 function goBack() {
-  const from = route.query.from as string
-  const page = route.query.page as string
+  const from = route.query.from as string | undefined
+  const page = route.query.page as string | undefined
   const query: Record<string, string> = {}
-  if (from) query.cat = from
+  if (from && from !== 'intro' && from !== '全部') query.cat = from
   if (page) query.page = page
-  appGoBackTo({ path: '/clubs', query })
+  appGoBackTo({ path: '/intro/clubs', query })
 }
 
 function enterEdit() {
@@ -130,7 +130,7 @@ function enterEdit() {
 }
 
 function cancelEdit() {
-  if (isNew) { appGoBackTo('/clubs'); return }
+  if (isNew) { appGoBackTo('/intro/clubs'); return }
   editing.value = false
 }
 
@@ -257,6 +257,14 @@ async function uploadQr(e: Event) {
 // 加入弹窗
 const joinModal = ref(false)
 const joinCopyOk = ref(false)
+
+const backLabel = computed(() => {
+  const from = route.query.from as string | undefined
+  if (from === 'intro') return '返回社团介绍'
+  if (from && from !== '全部') return `返回${from}`
+  return '返回社团介绍'
+})
+
 function openJoinModal() { joinModal.value = true }
 function closeJoinModal() { joinModal.value = false; joinCopyOk.value = false }
 async function copyJoinQQ() {
@@ -280,13 +288,13 @@ onMounted(() => {
 <template>
   <div v-if="loading" class="cd-loading"><AppSpinner :color="'#4a8c5c'" /></div>
 
-  <div v-else-if="club || isNew" class="club-detail" style="--tc: #4a8c5c; --tcl: #e8f5e9">
+  <div v-else-if="club || isNew" class="club-detail" :class="{ 'club-detail--editing': editing }" style="--tc: #4a8c5c; --tcl: #e8f5e9">
     <!-- Hero Banner -->
     <div class="cd-hero-wrapper">
       <div class="cd-hero">
-        <button class="cd-back" @click="goBack">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-          返回
+        <button type="button" class="cd-back" :aria-label="backLabel" @click="goBack">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+          {{ backLabel }}
         </button>
         <img v-if="club?.hero_image || (editing && editForm.hero_image)" :src="(editing && editForm.hero_image) || club?.hero_image!" class="cd-hero-bg"
           @error="($event.target as HTMLImageElement).style.display='none'" />
@@ -460,7 +468,7 @@ onMounted(() => {
               <div class="cd-recruit-right">
                 <p class="cd-join-title">期待你的加入</p>
                 <p class="cd-join-desc">一起用双手创建美好校园吧！</p>
-                <button class="cd-join-btn" @click="openJoinModal">立即报名</button>
+                <button class="cd-join-btn" @click="openJoinModal">如何加入</button>
               </div>
             </div>
           </div>
@@ -561,8 +569,36 @@ onMounted(() => {
 .cd-hero-gradient { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.25) 55%, rgba(0,0,0,.65) 100%); z-index: 1 }
 .cd-hero-actions { position: absolute; top: 16px; right: 24px; z-index: 3; display: flex; align-items: center; gap: 8px }
 .cd-hero-content { position: absolute; left: 0; top: 0; right: 0; z-index: 2; padding: 40px 28px 0 32px; display: flex; align-items: flex-start; gap: 16px }
-.cd-back { position: absolute; top: 16px; left: 16px; z-index: 3; display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border: 1px solid rgba(255,255,255,.15); border-radius: 8px; background: rgba(0,0,0,.42); color: rgba(255,255,255,.85); font-size: .82rem; cursor: pointer; font-family: inherit; transition: background .2s }
-.cd-back:hover { background: rgba(0,0,0,.4); color: #fff }
+.cd-back {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 16px 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #3c3028;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+.cd-back:hover {
+  background: #fff;
+  color: #4a8c5c;
+  border-color: rgba(74, 140, 92, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+}
+.cd-back:active { transform: scale(0.98); }
 
 .cd-badge-upload { position: absolute; inset: 0; z-index: 5; border-radius: 50%; background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .2s }
 .cd-badge-upload::after { content: '↑'; color: #fff; font-size: 1.2rem; font-weight: 700 }
@@ -714,52 +750,181 @@ onMounted(() => {
 @media(max-width: 768px) {
   .club-detail {
     min-height: auto;
-    background: #f0f0f0;
-    /* 抵消 HomePage .section-card 内边距，Hero 贴边更干净 */
-    margin: -14px -14px 0;
+    margin: 0;
+    background: #f3f3f5;
   }
-  .cd-hero-wrapper { padding: 0 }
-  .cd-main { padding: 12px 12px calc(20px + env(safe-area-inset-bottom, 0px)) }
 
-  /* Hero：封面 + 下方信息流式排版，避免元素叠在一起 */
+  .club-detail--editing .cd-main {
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .cd-hero-wrapper { padding: 0 }
+
   .cd-hero {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'cover'
+      'toolbar'
+      'content'
+      'meta';
+    gap: 0;
+    position: relative;
     height: auto;
     overflow: visible;
     background: #fff;
-    border-radius: 0 0 14px 14px;
-    box-shadow: 0 2px 10px rgba(0,0,0,.05);
+    border-radius: 0;
+    box-shadow: none;
   }
+
   .cd-hero-bg {
+    grid-area: cover;
     position: relative;
     inset: auto;
-    height: 152px;
+    width: 100%;
+    height: 148px;
     display: block;
+    object-fit: cover;
+    object-position: center;
   }
+
   .cd-hero-gradient {
-    inset: auto;
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 152px;
+    height: 148px;
+    z-index: 1;
+    pointer-events: none;
   }
-  .cd-back { top: 10px; left: 10px }
-  .cd-hero-actions { top: 10px; right: 10px; max-width: 55%; flex-wrap: wrap; justify-content: flex-end; gap: 6px }
+
+  .cd-back {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 6;
+    min-height: 40px;
+    max-width: min(46vw, 168px);
+    padding: 0 12px 0 10px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cd-back svg { flex-shrink: 0; }
+
+  .cd-hero-actions {
+    grid-area: toolbar;
+    position: static;
+    top: auto;
+    right: auto;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    max-width: none;
+    padding: 10px 14px 0;
+  }
+
   .cd-hero-content {
+    grid-area: content;
     position: relative;
     left: auto;
     top: auto;
     right: auto;
-    padding: 0 14px 12px;
-    margin-top: -30px;
-    align-items: flex-end;
+    margin-top: 0;
+    padding: 12px 14px 10px;
+    align-items: flex-start;
     gap: 12px;
   }
-  .cd-hero-badge-ring { width: 72px; height: 72px }
-  .cd-hero-badge-text { font-size: 1.6rem }
-  .cd-hero-info .cd-hero-name { font-size: 1.15rem; color: #1a1a1a; text-shadow: none; margin-bottom: 4px }
-  .cd-hero-info .cd-hero-intro { font-size: .82rem; color: #666; margin-bottom: 8px; line-height: 1.45 }
-  .cd-tag-category { background: rgba(74,140,92,.12); color: #3d7a4e; border: none }
+
+  .cd-hero-badge-ring {
+    width: 64px;
+    height: 64px;
+    margin-top: 2px;
+  }
+
+  .cd-hero-badge-text { font-size: 1.45rem }
+
+  .cd-hero-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .cd-hero-info .cd-hero-name {
+    font-size: 1.12rem;
+    color: #1a1a1a;
+    text-shadow: none;
+    margin-bottom: 6px;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  .cd-hero-info .cd-hero-intro {
+    font-size: 0.82rem;
+    color: #666;
+    margin-bottom: 8px;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .cd-hero-info .cd-hero-name-input,
+  .cd-hero-info .cd-hero-intro-input,
+  .cd-hero-info .cd-hero-cat-select {
+    color: #1a1a1a;
+    background: #f7f7f7;
+    border: 1px solid #e0e0e0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .cd-hero-info .cd-hero-name-input {
+    font-size: 1.05rem;
+    font-weight: 700;
+    padding: 8px 10px;
+  }
+
+  .cd-hero-info .cd-hero-intro-input {
+    font-size: 0.84rem;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+
+  .cd-hero-info .cd-hero-name-input::placeholder,
+  .cd-hero-info .cd-hero-intro-input::placeholder {
+    color: #aaa;
+  }
+
+  .cd-hero-info .cd-hero-cat-select {
+    font-size: 0.78rem;
+    padding: 6px 12px;
+    color: #333;
+  }
+
+  .cd-tag-category {
+    background: rgba(74, 140, 92, 0.12);
+    color: #3d7a4e;
+    border: none;
+  }
+
+  .cd-tag-edit,
+  .cd-tag-cancel,
+  .cd-tag-status-select {
+    background: #f4f4f6;
+    color: #333;
+    border: 1px solid #dedee3;
+  }
+
+  .cd-tag-save {
+    min-height: 34px;
+    padding: 6px 14px;
+  }
+
   .cd-hero-meta {
+    grid-area: meta;
     position: relative;
     left: auto;
     bottom: auto;
@@ -772,72 +937,248 @@ onMounted(() => {
     border: 1px solid #ebebeb;
     border-radius: 12px;
   }
-  .cd-hero-meta-item { padding: 0 }
-  .cd-hero-meta-label { font-size: .68rem; color: #999 }
-  .cd-hero-meta-value { font-size: .82rem; color: #333; white-space: normal; font-weight: 600 }
-  .cd-hero-meta-note { color: #aaa; white-space: normal; font-size: .58rem }
-  .cd-meta-input { width: 100%; max-width: none; color: #333; background: #fff; border-color: #ddd }
+
+  .cd-hero-meta-item { padding: 0; min-width: 0; }
+
+  .cd-hero-meta-label { font-size: 0.68rem; color: #999 }
+
+  .cd-hero-meta-value {
+    font-size: 0.82rem;
+    color: #333;
+    white-space: normal;
+    word-break: break-word;
+    font-weight: 600;
+  }
+
+  .cd-meta-input {
+    width: 100%;
+    max-width: none;
+    height: 32px;
+    color: #333;
+    background: #fff;
+    border-color: #ddd;
+    font-size: 0.8rem;
+  }
+
   .cd-meta-input::placeholder { color: #aaa }
-  .cd-hero-bg-upload { bottom: auto; top: 118px; font-size: .72rem; padding: 4px 10px }
-  .cd-upload-toast { top: 44px; right: 10px; font-size: .68rem }
 
-  .cd-tabs { margin: 10px 12px 0; padding: 4px; border-radius: 12px }
-  .cd-tab-btn { height: 40px; font-size: .86rem }
+  .cd-hero-bg-upload {
+    position: absolute;
+    top: auto;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 6;
+    font-size: 0.72rem;
+    padding: 5px 12px;
+  }
 
-  .cd-section { padding: 16px 14px; border-radius: 12px; margin-bottom: 12px }
-  .cd-section-title { margin-bottom: 10px }
+  .cd-upload-toast {
+    position: fixed;
+    top: auto;
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    z-index: 200;
+    padding: 8px 14px;
+    font-size: 0.78rem;
+    background: rgba(26, 26, 26, 0.88);
+    color: #fff;
+    border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  }
+
+  .cd-tabs {
+    margin: 10px 12px 0;
+    padding: 4px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  .cd-tab-btn { height: 40px; font-size: 0.86rem }
+
+  .cd-main {
+    padding: 12px 12px calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .cd-section {
+    padding: 16px 14px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    background: #fff;
+    border: 1px solid #ebebeb;
+  }
+
+  .cd-section-title { margin-bottom: 10px; font-size: 0.92rem }
+
   .cd-section--intro,
   .cd-info-card--honor { min-height: unset }
+
   .cd-section--intro::after,
   .cd-info-card--recruit::after,
   .cd-info-card--honor::after { display: none }
+
   .cd-desc-body,
-  .cd-honor-text { max-width: 100% }
-  .cd-edit-textarea--sm { max-width: 100% }
-  .cd-info-card { padding: 18px 14px }
-  .cd-cards-row { grid-template-columns: 1fr; gap: 12px }
+  .cd-honor-text {
+    max-width: 100%;
+    font-size: 0.86rem;
+    line-height: 1.65;
+    word-break: break-word;
+  }
+
+  .cd-desc-body :deep(img) { max-width: 100%; height: auto }
+
+  .cd-edit-textarea {
+    min-height: 160px;
+    font-size: 16px;
+  }
+
+  .cd-edit-textarea--sm {
+    max-width: 100%;
+    min-height: 120px;
+    font-size: 16px;
+  }
+
+  .cd-info-card {
+    padding: 16px 14px;
+    background: #fff;
+    border: 1px solid #ebebeb;
+    border-radius: 12px;
+  }
+
+  .cd-info-card-head { font-size: 0.88rem; margin-bottom: 10px }
+
+  .cd-cards-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 0;
+  }
+
+  .cd-info-row { gap: 4px }
+
+  .cd-info-val {
+    font-size: 0.86rem;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+
   .cd-recruit-split { flex-direction: column; gap: 0 }
+
   .cd-recruit-right {
     width: 100%;
-    margin: 16px 0 0;
+    margin: 14px 0 0;
     padding-top: 14px;
-    border-top: 1px solid rgba(0,0,0,.06);
+    border-top: 1px solid #f0f0f0;
     align-items: stretch;
     text-align: center;
   }
-  .cd-join-btn { width: 100%; height: 44px; font-size: .9rem }
-  .cd-edit-dates { flex-wrap: wrap; max-width: 100% }
-  .cd-edit-input { max-width: 100% }
+
+  .cd-join-btn {
+    width: 100%;
+    height: 44px;
+    font-size: 0.9rem;
+  }
+
+  .cd-edit-input {
+    width: 100%;
+    max-width: none;
+    height: 40px;
+    font-size: 16px;
+  }
+
+  .cd-edit-dates {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    max-width: 100%;
+  }
+
+  .cd-edit-dates span { display: none }
+
+  .cd-qr-edit {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .cd-qr-upload-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 40px;
+  }
 }
+
 @media(max-width: 480px) {
-  .club-detail { margin: -14px -12px 0 }
-  .cd-main { padding: 10px 10px calc(16px + env(safe-area-inset-bottom, 0px)) }
+  .club-detail { margin: 0 }
+
+  .cd-main { padding: 10px 10px calc(14px + env(safe-area-inset-bottom, 0px)) }
+
   .cd-hero-bg,
-  .cd-hero-gradient { height: 128px }
-  .cd-back { top: 8px; left: 8px; font-size: .72rem; padding: 4px 10px; min-height: 36px }
-  .cd-hero-actions { top: 8px; right: 8px; gap: 4px }
-  .cd-hero-content { padding: 0 12px 10px; margin-top: -26px; gap: 10px }
-  .cd-hero-badge-ring { width: 60px; height: 60px }
-  .cd-hero-badge-text { font-size: 1.35rem }
+  .cd-hero-gradient { height: 132px }
+
+  .cd-back {
+    top: 8px;
+    left: 8px;
+    min-height: 38px;
+    font-size: 0.76rem;
+    max-width: min(44vw, 150px);
+  }
+
+  .cd-hero-actions { padding: 8px 12px 0; gap: 6px }
+
+  .cd-hero-content { padding: 10px 12px 8px; gap: 10px }
+
+  .cd-hero-badge-ring { width: 56px; height: 56px }
+
+  .cd-hero-badge-text { font-size: 1.25rem }
+
   .cd-hero-info .cd-hero-name { font-size: 1.02rem }
-  .cd-hero-info .cd-hero-intro { font-size: .76rem }
-  .cd-tag { font-size: .64rem; padding: 3px 8px }
-  .cd-hero-meta { margin: 0 10px 12px; padding: 10px 12px; gap: 8px 10px; border-radius: 10px }
-  .cd-hero-meta-label { font-size: .62rem }
-  .cd-hero-meta-value { font-size: .76rem }
+
+  .cd-hero-info .cd-hero-intro { font-size: 0.78rem }
+
+  .cd-tag { font-size: 0.68rem; padding: 4px 10px }
+
+  .cd-hero-meta {
+    margin: 0 12px 12px;
+    padding: 10px 12px;
+    gap: 8px 10px;
+    border-radius: 10px;
+  }
+
+  .cd-hero-meta-label { font-size: 0.62rem }
+
+  .cd-hero-meta-value { font-size: 0.78rem }
+
   .cd-tabs { margin: 8px 10px 0 }
-  .cd-tab-btn { height: 38px; font-size: .82rem }
-  .cd-section { padding: 12px 10px; border-radius: 10px; margin-bottom: 10px }
-  .cd-section-title { font-size: .86rem; gap: 6px; margin-bottom: 8px }
+
+  .cd-tab-btn { height: 38px; font-size: 0.82rem }
+
+  .cd-section {
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+
+  .cd-section-title { font-size: 0.86rem; gap: 6px; margin-bottom: 8px }
+
   .cd-desc-body,
-  .cd-honor-text { font-size: .82rem; line-height: 1.65 }
-  .cd-info-card { padding: 14px 12px }
-  .cd-info-card-head { font-size: .82rem; margin-bottom: 8px }
+  .cd-honor-text { font-size: 0.82rem }
+
+  .cd-info-card { padding: 12px }
+
+  .cd-info-card-head { font-size: 0.82rem; margin-bottom: 8px }
+
   .cd-recruit-right { margin-top: 12px; padding-top: 12px }
-  .cd-join-title { font-size: .92rem }
-  .cd-join-desc { font-size: .72rem; margin-bottom: 10px }
-  .cd-join-btn { height: 42px; font-size: .86rem }
-  .cd-hero-bg-upload { top: 96px; font-size: .66rem; padding: 3px 8px }
+
+  .cd-join-title { font-size: 0.92rem }
+
+  .cd-join-desc { font-size: 0.72rem; margin-bottom: 10px }
+
+  .cd-join-btn { height: 42px; font-size: 0.86rem }
+
+  .cd-hero-bg-upload { bottom: 8px; font-size: 0.66rem; padding: 4px 10px }
 }
 
 /* 联系方式编辑卡片 */

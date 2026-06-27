@@ -15,7 +15,8 @@ const props = defineProps<{
 interface ContentBlock { id?: string; title: string; content: string }
 
 const blocks = ref<ContentBlock[]>([])
-const faculty = ref<FacultyCard[]>([])
+const facultyProfiles = ref<FacultyCard[]>([])
+const facultyProse = ref<ContentBlock[]>([])
 const loading = ref(true)
 const { isAdmin } = useAuth()
 
@@ -52,13 +53,24 @@ async function load() {
     ])
     blocks.value = overviewRaw
       ? overviewRaw.map((x: ContentBlock) => ({ id: x.id, title: x.title, content: x.content }))
-      : props.overviewFallback
-    faculty.value = facultyRaw
-      ? mapFaculty(facultyRaw)
-      : mapFaculty(props.facultyFallback)
+      : [...props.overviewFallback]
+    if (facultyRaw) {
+      facultyProfiles.value = mapFaculty(facultyRaw)
+      facultyProse.value = []
+    } else {
+      facultyProfiles.value = []
+      facultyProse.value = props.facultyFallback.map((x) => ({
+        title: x.title,
+        content: x.content,
+      }))
+    }
   } catch {
-    blocks.value = props.overviewFallback
-    faculty.value = mapFaculty(props.facultyFallback)
+    blocks.value = [...props.overviewFallback]
+    facultyProfiles.value = []
+    facultyProse.value = props.facultyFallback.map((x) => ({
+      title: x.title,
+      content: x.content,
+    }))
   } finally {
     loading.value = false
   }
@@ -90,9 +102,19 @@ onMounted(load)
           <span class="module-section-idx">师资</span>
           <h3 class="module-section-title">师资队伍</h3>
         </header>
-        <IntroFacultyGrid :cards="faculty">
+        <IntroFacultyGrid v-if="facultyProfiles.length" :cards="facultyProfiles">
           <template #loading><AppSpinner /></template>
         </IntroFacultyGrid>
+        <div v-else class="faculty-prose">
+          <article
+            v-for="(item, i) in facultyProse"
+            :key="i"
+            class="faculty-prose-block"
+          >
+            <h4 v-if="facultyProse.length > 1" class="faculty-prose-title">{{ item.title }}</h4>
+            <div class="module-section-body" v-html="item.content" />
+          </article>
+        </div>
       </section>
 
       <p v-if="isAdmin" class="college-admin-hint">
@@ -121,6 +143,21 @@ onMounted(load)
 .module-section--faculty {
   border-top: none;
   padding-top: 14px;
+}
+.faculty-prose {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.faculty-prose-block + .faculty-prose-block {
+  padding-top: 12px;
+  border-top: 1px dashed var(--intro-line, #f0e8dc);
+}
+.faculty-prose-title {
+  margin: 0 0 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--intro-ink, #3c3028);
 }
 .module-section-head {
   display: flex; align-items: center; gap: 8px; margin-bottom: 10px;

@@ -119,7 +119,7 @@ export const INTRO_CAMPUSES: IntroCampusConfig[] = [
     cardImage: '/campus-official/campus-yingcai-gate.webp',
     tagline: '商科底蕴 · 应用型培养',
     summary:
-      '英才校区延续原河南商业高等专科学校办学积淀，商科与应用型人才培养特色鲜明；信息工程学院（软件学院）日常教学与实验实训主要在此，学子广场与风景湖是标志性景观。',
+      '英才校区延续原河南商业高等专科学校办学积淀，商科与应用型人才培养特色鲜明；信息工程学院日常教学与实验实训主要在此，学子广场与风景湖是标志性景观。',
     stats: [
       { label: '所在区域', value: '惠济区' },
       { label: '前身渊源', value: '商专' },
@@ -127,11 +127,11 @@ export const INTRO_CAMPUSES: IntroCampusConfig[] = [
     ],
     overview:
       '英才校区位于郑州市惠济区英才街146号，保留了原河南商业高等专科学校（1960年建校）的教学与生活传统，在商贸、经管等学科方向积淀深厚。' +
-      '校区与龙子湖、北林校区共同构成学校「一校三区」布局。信息工程学院（软件学院）及多数信工类新生的课程、实验、竞赛与社团活动主要在此校区完成。' +
+      '校区与龙子湖、北林校区共同构成学校「一校三区」布局。信息工程学院及多数信工类新生的课程、实验、竞赛与社团活动主要在此校区完成。' +
       '学子广场、风景湖、教学楼群与实验楼共同构成日常学习动线，周边高校聚集，餐饮、购物与公交出行较为方便。',
     features: [
       '商科与应用型人才培养的重要基地，经管类学科在此有长期办学传统',
-      '信息工程学院（软件学院）日常教学、60 余个实验实训室及华为 ICT 学院等产教平台主要在此',
+      '信息工程学院日常教学、60 余个实验实训室及华为 ICT 学院等产教平台主要在此',
       '学子广场是集会、社团活动与课余交流的核心场所，风景湖为校园标志性水景',
       'A/B 栋教学楼、综合实验楼与图书馆支撑日常上课、上机与自习需求',
       '惠济区英才街沿线高校与生活配套丰富，适合新生快速熟悉校园周边',
@@ -297,15 +297,15 @@ export interface IntroCollegeConfig {
 export const INTRO_COLLEGES: IntroCollegeConfig[] = [
   {
     id: 'sie',
-    college: '信息工程学院（软件学院）',
+    college: '信息工程学院',
     shortName: '信工',
     tagline: '河南省特色化示范性软件学院',
     summary:
-      '位于英才校区，开设软件工程、物联网工程等 5 个本科专业，建有 60 余个实验实训室，与华为共建 ICT 学院，注重项目驱动教学与学科竞赛，培养能落地、能协作的信息技术应用型人才。',
+      '位于英才校区，开设软件工程、物联网工程、数据科学与大数据技术、数字媒体技术 4 个本科专业，建有 60 余个实验实训室，与华为共建 ICT 学院，注重项目驱动教学与学科竞赛，培养能落地、能协作的信息技术应用型人才。',
     coverImage: '/campus-official/campus-yingcai-lake.webp',
     officialUrl: 'https://xxdz.hnuahe.edu.cn',
     stats: [
-      { label: '本科专业', value: '5个' },
+      { label: '本科专业', value: '4个' },
       { label: '实验实训室', value: '60余个' },
       { label: '产教融合', value: '华为ICT学院' },
     ],
@@ -370,10 +370,3 @@ export const INTRO_TABS = [
   { id: 'colleges', label: '学院介绍', shortLabel: '学院', path: '/intro/colleges' },
   { id: 'clubs', label: '社团介绍', shortLabel: '社团', path: '/intro/clubs' },
 ] as const
-
-/** @deprecated */
-export const INTRO_COLLEGE = INTRO_COLLEGES[0]
-export const INTRO_CATEGORY_OVERVIEW = INTRO_COLLEGE.overviewCategory
-export const INTRO_CATEGORY_FACULTY = INTRO_COLLEGE.facultyCategory
-export const INTRO_FALLBACK_OVERVIEW = INTRO_COLLEGE.overviewFallback
-export const INTRO_FALLBACK_FACULTY = INTRO_COLLEGE.facultyFallback

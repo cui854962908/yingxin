@@ -142,10 +142,11 @@ export function useXinChat(
     nextTick(() => scrollBottom())
   }
 
-  function scheduleNextChar(idx: number, i: number) {
+  function scheduleNextChar(idx: number, i: number, onComplete?: () => void) {
     const msg = messages.value[idx]
     if (!msg || i >= msg.text.length) {
       if (msg) msg.done = true
+      onComplete?.()
       return
     }
     msg.displayText = msg.text.slice(0, i + 1)
@@ -153,7 +154,7 @@ export function useXinChat(
     let delay = 10 + Math.random() * 10
     const ch = msg.text[i]
     if ('，。！？、；：\n'.includes(ch)) delay = 40 + Math.random() * 50
-    const timer = setTimeout(() => scheduleNextChar(idx, i + 1), delay)
+    const timer = setTimeout(() => scheduleNextChar(idx, i + 1, onComplete), delay)
     typeQueue.push({ idx, timer })
   }
 
@@ -167,9 +168,17 @@ export function useXinChat(
     stopSpeak()
   }
 
-  function revealXinMsg(idx: number, text: string) {
+  function revealXinMsg(idx: number, text: string, onComplete?: () => void) {
     const msg = messages.value[idx]
-    if (!msg) return
+    if (!msg) {
+      onComplete?.()
+      return
+    }
+    if (!text) {
+      msg.done = true
+      onComplete?.()
+      return
+    }
     if (autoSpeak.value) {
       void speakSynced(
         text,
@@ -177,19 +186,25 @@ export function useXinChat(
           msg.displayText = partial
           scrollBottom()
         },
-        () => { msg.displayText = text; msg.done = true },
+        () => {
+          msg.displayText = text
+          msg.done = true
+          onComplete?.()
+        },
       )
     } else {
-      scheduleNextChar(idx, 0)
+      scheduleNextChar(idx, 0, onComplete)
     }
   }
 
-  function pushXinMsg(text: string, source?: string) {
-    messages.value.push({ role: 'xin', text, time: now(), displayText: '', done: false, source })
-    const idx = messages.value.length - 1
-    nextTick(() => {
-      scrollBottom()
-      revealXinMsg(idx, text)
+  function pushXinMsg(text: string, source?: string): Promise<void> {
+    return new Promise((resolve) => {
+      messages.value.push({ role: 'xin', text, time: now(), displayText: '', done: false, source })
+      const idx = messages.value.length - 1
+      nextTick(() => {
+        scrollBottom()
+        revealXinMsg(idx, text, resolve)
+      })
     })
   }
 
@@ -226,12 +241,12 @@ export function useXinChat(
     const reply: string = data.data.reply
     const source: string = data.data.source || 'agent'
 
-    pushXinMsg(reply, source)
+    await pushXinMsg(reply, source)
 
     const agentLinks = linksAfterAgent(source, q, !!token)
     if (agentLinks) {
       const wallAsk = source === 'fallback'
-      setTimeout(() => pushLinkMsg(agentLinks, wallAsk), 300)
+      pushLinkMsg(agentLinks, wallAsk)
     }
 
     sending.value = false
@@ -290,20 +305,24 @@ export function useXinChat(
     const SENTENCE_END = /[。！？\n]/
 
     return new Promise((resolve) => {
+      function finishStream() {
+        if (ttsStream && sentenceBuf.trim()) {
+          enqueueSpeak(sentenceBuf.trim())
+          sentenceBuf = ''
+        }
+        messages.value[idx].done = true
+        if (doneLinks?.length) {
+          const resolved = applyWallAskToLinks(doneLinks, q, !!authToken())
+          const wallAsk = resolved.some(l => l.to.startsWith('/wall/new'))
+          pushLinkMsg(resolved, wallAsk)
+        }
+        resolve(true)
+      }
+
       function drain() {
         if (tokenBuffer.length === 0) {
           if (streamDone) {
-            if (ttsStream && sentenceBuf.trim()) {
-              enqueueSpeak(sentenceBuf.trim())
-              sentenceBuf = ''
-            }
-            messages.value[idx].done = true
-            if (doneLinks?.length) {
-              const resolved = applyWallAskToLinks(doneLinks, q, !!authToken())
-              const wallAsk = resolved.some(l => l.to.startsWith('/wall/new'))
-              pushLinkMsg(resolved, wallAsk)
-            }
-            resolve(true)
+            finishStream()
             return
           }
           setTimeout(drain, 30)
@@ -393,14 +412,12 @@ export function useXinChat(
     }
 
     const { answer, links } = findAnswer(q)
-    setTimeout(() => {
-      sending.value = false
-      pushXinMsg(answer, 'local')
-      if (links && links.length > 0) {
-        const wallAsk = links.some(l => l.to.startsWith('/wall/new'))
-        setTimeout(() => pushLinkMsg(links, wallAsk), 300)
-      }
-    }, 300)
+    sending.value = false
+    await pushXinMsg(answer, 'local')
+    if (links && links.length > 0) {
+      const wallAsk = links.some(l => l.to.startsWith('/wall/new'))
+      pushLinkMsg(links, wallAsk)
+    }
   }
 
   async function send() {

@@ -1,5 +1,9 @@
 import type { CampusPlace, CategoryKey } from './types'
 
+function escapeHtmlAttr(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+}
+
 export interface CampusMarkerLayer {
   clear: () => void
   render: (places: CampusPlace[], selectedId: string) => void
@@ -37,7 +41,7 @@ export function createCampusMarkerLayer(options: MarkerLayerOptions): CampusMark
         anchor: 'center',
         draggable,
         cursor: draggable ? 'move' : 'pointer',
-        content: `<button type="button" class="${dotClass}" style="--poi:${options.categoryColor(place.category)}" aria-label="${place.name}"></button>`,
+        content: `<button type="button" class="${dotClass}" style="--poi:${options.categoryColor(place.category)}" aria-label="${escapeHtmlAttr(place.name)}"></button>`,
         zIndex: selectedId === place.id ? 150 : 120,
       })
       marker.on('click', () => options.onSelect(place))

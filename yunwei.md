@@ -37,6 +37,7 @@ uv sync
 |------|------|
 | `DATABASE_URL` | PostgreSQL 连接串（须含 pgvector） |
 | `JWT_SECRET_KEY` | 生产环境替换为 ≥32 位随机串 |
+| `REQUIRE_SECURE_SETTINGS` | **生产建议 `true`**：弱 JWT / 默认 SALT 时拒绝启动 |
 | `DEEPSEEK_API_KEY` | 小信对话必填 |
 
 **本机开发**（仅 DB 容器）：
@@ -52,6 +53,12 @@ DATABASE_URL=postgresql+psycopg://welcome:welcome@db:5432/welcome_db
 ```
 
 完整变量说明见 `backend/.env.example` 与 `backend/app/core/config.py`。
+
+**生产环境额外建议：**
+
+- 设置 `REQUIRE_SECURE_SETTINGS=true`（弱密钥/默认 SALT 时进程拒绝启动）
+- `BACKEND_CORS_ORIGINS` 只填正式前端域名；`BACKEND_CORS_ORIGIN_REGEX` 留空或收窄，勿用宽泛 LAN 匹配
+- 密钥通过环境变量或 secrets 注入，勿将含真密钥的 `.env` 打进 Docker 镜像
 
 ### 2.3 PostgreSQL + pgvector
 

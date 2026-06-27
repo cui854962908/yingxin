@@ -189,31 +189,6 @@
   grid-row: 1;
 }
 
-.campus-route-dock {
-  position: absolute;
-  z-index: 12;
-  top: var(--campus-float-top);
-  left: 50%;
-  width: min(380px, calc(100% - 40px));
-  transform: translateX(-50%);
-}
-
-.campus-route-dock .route-planner {
-  position: static;
-  top: auto;
-  left: auto;
-  width: 100%;
-  transform: none;
-}
-
-.route-planner__mobile {
-  display: none;
-}
-
-.route-pick-hint {
-  display: none;
-}
-
 .campus-sidebar {
   position: relative;
   z-index: 15;
@@ -543,7 +518,6 @@
 }
 
 .map-toolstack > .locate-dorm,
-.map-toolstack > .locate-mark,
 .map-toolstack > .locate-me {
   position: static;
   top: auto;
@@ -571,7 +545,6 @@
 }
 
 .locate-dorm,
-.locate-mark,
 .locate-me {
   height: 40px;
   padding: 0 14px;
@@ -593,18 +566,6 @@
   background: rgba(255, 255, 255, .96);
   color: #1a5fb4;
   font-weight: 600;
-}
-
-.locate-mark {
-  border: 1px solid #c8ddd4;
-  background: rgba(255, 255, 255, .96);
-  color: #278b70;
-  font-weight: 600;
-}
-
-.locate-mark--active {
-  border-color: #278b70;
-  background: #eef8f3;
 }
 
 .locate-me:disabled {
@@ -666,7 +627,6 @@
 
 .map-legend,
 .map-coordinate,
-.route-planner,
 .data-card {
   position: absolute;
   z-index: 12;
@@ -706,7 +666,6 @@
   font-size: 10px;
 }
 
-.route-planner,
 .data-card {
   top: var(--campus-float-top);
   left: 50%;
@@ -714,13 +673,6 @@
   padding: 16px;
   border-radius: 11px;
   transform: translateX(-50%);
-}
-
-.campus-route-dock > .route-planner {
-  position: relative;
-  transform: none;
-  left: auto;
-  top: auto;
 }
 
 .data-card--inline {
@@ -742,76 +694,6 @@
   transform: translateX(-50%);
 }
 
-.route-planner header { display: flex; justify-content: space-between; gap: 10px; }
-.route-planner header span { overflow: hidden; color: #8b838d; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-
-.route-points { display: grid; margin-top: 12px; gap: 8px; }
-.route-point {
-  display: grid;
-  align-items: center;
-  padding: 8px 10px;
-  border: 1px solid #ebe6ec;
-  border-radius: 7px;
-  background: #faf8fa;
-  grid-template-columns: 24px 1fr auto;
-  gap: 8px;
-}
-.route-point-tag {
-  display: flex;
-  width: 22px;
-  height: 22px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-}
-.route-point--start .route-point-tag { background: #278b70; }
-.route-point--end .route-point-tag { background: var(--brand-red); }
-.route-point-label { overflow: hidden; color: #4a434b; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.route-point button {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--brand-red);
-  cursor: pointer;
-  font-size: 11px;
-}
-.route-hint {
-  margin: 10px 0 0;
-  color: #8b838d;
-  font-size: 11px;
-  line-height: 1.45;
-}
-.route-hint--active { color: #278b70; }
-.route-gps {
-  width: 100%;
-  height: 32px;
-  margin-top: 8px;
-  border: 1px solid #ddd8df;
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
-  font-size: 12px;
-}
-.route-actions { display: grid; margin-top: 10px; grid-template-columns: 72px 1fr; gap: 8px; }
-.route-reset {
-  height: 36px;
-  border: 1px solid #ddd8df;
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
-}
-.route-submit { width: 100%; height: 36px; border: 0; border-radius: 6px; background: var(--brand-red); color: #fff; cursor: pointer; }
-.route-submit:disabled { cursor: not-allowed; opacity: .55; }
-
-.route-meta {
-  margin: 10px 0 0;
-  color: #776f79;
-  font-size: 11px;
-  line-height: 1.45;
-}
 .data-card strong { color: var(--brand-red); }
 .data-card p { margin: 9px 0 0; color: #6d6670; font-size: 12px; line-height: 1.7; }
 
@@ -1214,177 +1096,12 @@
     --campus-sheet-offset: var(--campus-sheet-expanded-max);
   }
 
-  .route-planner__desktop {
-    display: none;
-  }
-
-  .route-planner__mobile {
-    display: block;
-  }
-
-  .route-pick-hint {
-    display: block;
-    position: absolute;
-    z-index: 14;
-    top: 10px;
-    left: 10px;
-    right: 118px;
-    margin: 0;
-    padding: 9px 12px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, .94);
-    border: 1px solid #ddd8df;
-    box-shadow: 0 2px 12px rgba(39, 30, 43, .12);
-    color: #635c65;
-    font-size: 12px;
-    line-height: 1.45;
-    pointer-events: none;
-  }
-
-  .route-pick-hint--active {
-    border-color: #9fd4c4;
-    background: rgba(238, 248, 243, .96);
-    color: #1f6b55;
-    font-weight: 600;
-  }
-
   .campus-map-center {
     display: flex;
     flex-direction: column;
     flex: 1;
     min-height: 0;
     height: auto;
-  }
-
-  .campus-route-dock {
-    position: static;
-    flex-shrink: 0;
-    left: auto;
-    top: auto;
-    width: 100%;
-    transform: none;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    border-top: 1px solid #e7e4e8;
-    background: #fff;
-    box-shadow: 0 -4px 18px rgba(44, 35, 47, .08);
-  }
-
-  .campus-route-dock .route-planner {
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-    background: transparent;
-    padding: 10px 12px 12px;
-  }
-
-  .route-mobile-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 8px;
-  }
-
-  .route-mobile-head strong {
-    color: var(--brand-red);
-    font-size: 15px;
-  }
-
-  .route-mobile-head span {
-    overflow: hidden;
-    color: #8b838d;
-    font-size: 11px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .route-mobile-points {
-    display: grid;
-    gap: 6px;
-  }
-
-  .route-mobile-point {
-    display: grid;
-    align-items: center;
-    width: 100%;
-    min-height: 40px;
-    padding: 8px 10px;
-    border: 1px solid #ebe6ec;
-    border-radius: 9px;
-    background: #faf8fa;
-    grid-template-columns: 28px 1fr auto;
-    gap: 8px;
-    text-align: left;
-    font: inherit;
-    cursor: pointer;
-    touch-action: manipulation;
-  }
-
-  .route-mobile-point--active {
-    border-color: #9fd4c4;
-    background: #eef8f3;
-    box-shadow: inset 0 0 0 1px rgba(39, 139, 112, .18);
-  }
-
-  .route-mobile-point--start .route-point-tag { background: #278b70; }
-  .route-mobile-point--end .route-point-tag { background: var(--brand-red); }
-
-  .route-mobile-point__label {
-    overflow: hidden;
-    color: #4a434b;
-    font-size: 13px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .route-mobile-point__action {
-    color: var(--brand-red);
-    font-size: 12px;
-    font-weight: 650;
-  }
-
-  .route-mobile-bar {
-    display: grid;
-    margin-top: 8px;
-    grid-template-columns: auto auto 1fr;
-    gap: 8px;
-  }
-
-  .route-mobile-bar__ghost,
-  .route-mobile-bar__primary {
-    min-height: 40px;
-    border-radius: 9px;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 650;
-    cursor: pointer;
-    touch-action: manipulation;
-  }
-
-  .route-mobile-bar__ghost {
-    padding: 0 12px;
-    border: 1px solid #ddd8df;
-    background: #fff;
-    color: #514b53;
-  }
-
-  .route-mobile-bar__primary {
-    border: 0;
-    background: var(--brand-red);
-    color: #fff;
-  }
-
-  .route-mobile-bar__primary:disabled {
-    opacity: .55;
-    cursor: not-allowed;
-  }
-
-  .route-mobile-meta {
-    margin: 8px 0 0;
-    color: #776f79;
-    font-size: 11px;
-    line-height: 1.45;
-    text-align: center;
   }
 
   .map-toolstack {

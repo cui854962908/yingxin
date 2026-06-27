@@ -23,7 +23,6 @@
   display: none;
 }
 
-.intro-body .detail-anchors,
 .intro-body .campus-anchors {
   z-index: 10;
 }
@@ -31,6 +30,7 @@
 @media (max-width: 768px) {
   .intro-page {
     --intro-page-pad: 12px;
+    --intro-wiki-pad: 6px;
     --intro-radius: 12px;
     --intro-radius-sm: 10px;
   }
@@ -65,7 +65,6 @@
       0 4px 14px rgba(21, 21, 26, 0.05);
   }
 
-  .intro-body .detail-anchors,
   .intro-body .campus-anchors {
     top: var(--intro-sticky-h, 0px);
   }
@@ -87,8 +86,19 @@
   /* ===== 牧院大百科 · 移动端卡片流布局 ===== */
   .intro-body .school-wiki {
     gap: 12px;
-    padding: 12px var(--intro-page-pad) calc(16px + env(safe-area-inset-bottom, 0px));
+    /* 抵消 main--intro 8px 边距，内容区更贴边 */
+    margin-inline: -8px;
+    width: calc(100% + 16px);
+    padding: 10px var(--intro-wiki-pad, 6px) calc(16px + env(safe-area-inset-bottom, 0px));
     background: #f3f3f5;
+  }
+
+  /* Hero / 数据条贴满 wiki 容器宽度 */
+  .intro-body .school-wiki > .wiki-lead > .wiki-hero,
+  .intro-body .school-wiki > .wiki-stats {
+    margin-inline: calc(-1 * var(--intro-wiki-pad, 6px));
+    width: calc(100% + 2 * var(--intro-wiki-pad, 6px));
+    border-radius: 0;
   }
 
   .wiki-lead {
@@ -105,56 +115,83 @@
     box-shadow: 0 1px 3px rgba(21, 21, 26, 0.06);
   }
 
-  .wiki-hero {
-    aspect-ratio: 2 / 1;
+  .intro-body .wiki-hero {
+    aspect-ratio: unset;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+    background: #fff;
   }
 
-  .wiki-hero__img {
-    object-position: center 68%;
+  .intro-body .wiki-hero__img {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 172px;
+    flex-shrink: 0;
+    object-position: center 62%;
   }
 
-  .wiki-hero__shade {
+  .intro-body .wiki-hero__shade {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 172px;
     background: linear-gradient(
       180deg,
-      rgba(0, 0, 0, 0.08) 0%,
-      rgba(0, 0, 0, 0.55) 52%,
-      rgba(0, 0, 0, 0.82) 100%
+      rgba(0, 0, 0, 0.12) 0%,
+      rgba(0, 0, 0, 0.02) 42%,
+      rgba(0, 0, 0, 0.28) 100%
     );
+    pointer-events: none;
   }
 
-  .wiki-hero__copy {
-    justify-content: flex-end;
+  .intro-body .wiki-hero__copy {
+    position: relative;
+    inset: auto;
+    z-index: 1;
+    flex: none;
+    justify-content: flex-start;
     min-height: 0;
     max-width: none;
-    padding: 16px;
+    padding: 14px 16px 16px;
+    color: var(--intro-ink, #15151a);
+    background: #fff;
   }
 
-  .wiki-hero__copy h3 {
-    margin-bottom: 6px;
-    font-size: 1.25rem;
-    line-height: 1.25;
+  .intro-body .wiki-hero__copy h3 {
+    margin-bottom: 8px;
+    font-size: 1.18rem;
+    line-height: 1.3;
+    color: var(--intro-accent-strong, #b51f2d);
   }
 
-  .wiki-hero__copy p {
-    display: -webkit-box;
+  .intro-body .wiki-hero__copy p {
+    display: block;
     margin-bottom: 12px;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-    font-size: 0.8125rem;
-    line-height: 1.6;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    font-size: 0.84rem;
+    line-height: 1.65;
     font-weight: 500;
+    color: var(--intro-muted, #4b4b52);
   }
 
-  .wiki-hero__copy a {
+  .intro-body .wiki-hero__copy a {
     align-self: flex-start;
-    height: 34px;
-    padding: 0 14px;
+    height: 36px;
+    padding: 0 16px;
     font-size: 0.8125rem;
+    border-color: var(--intro-line, #dedee3);
+    background: #fff;
+    color: var(--intro-accent, #b51f2d);
   }
 
-  .wiki-overview {
-    padding: 16px;
+  .intro-body .school-wiki .wiki-overview,
+  .intro-body .school-wiki .wiki-text-card,
+  .intro-body .school-wiki .wiki-strength__copy {
+    padding: 14px;
   }
 
   .wiki-kicker {
@@ -189,47 +226,49 @@
     word-break: break-all;
   }
 
-  .wiki-stats {
+  .intro-body .wiki-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .intro-body .wiki-stat {
     display: flex;
     flex-direction: column;
-    gap: 0;
-    overflow: hidden;
-  }
-
-  .wiki-stat {
-    display: grid;
     align-items: center;
-    grid-template-columns: 40px 1fr auto;
-    gap: 10px;
+    justify-content: flex-start;
+    gap: 6px;
     min-height: 0;
-    padding: 14px 16px;
-    border-right: 0;
-    border-bottom: 1px solid var(--intro-line);
-    text-align: left;
+    padding: 14px 8px 12px;
+    border-right: 1px solid var(--intro-line);
+    border-bottom: 0;
+    text-align: center;
   }
 
-  .wiki-stat:last-child {
+  .intro-body .wiki-stat:last-child {
+    border-right: 0;
     border-bottom: 0;
   }
 
-  .wiki-stat__index {
+  .intro-body .wiki-stat__index {
     position: static;
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     margin: 0;
-    font-size: 0.6875rem;
+    font-size: 0.65rem;
   }
 
-  .wiki-stat__label {
+  .intro-body .wiki-stat__label {
     margin: 0;
-    font-size: 0.875rem;
+    font-size: 0.7rem;
     line-height: 1.35;
   }
 
-  .wiki-stat strong {
-    font-size: 1.0625rem;
-    line-height: 1.2;
-    white-space: nowrap;
+  .intro-body .wiki-stat strong {
+    font-size: 1rem;
+    line-height: 1.15;
+    white-space: normal;
+    word-break: keep-all;
   }
 
   .wiki-section {
@@ -325,16 +364,12 @@
   .wiki-gallery-card footer {
     border-left: 0;
     border-top: 1px solid var(--intro-line);
-    padding: 14px 16px;
+    padding: 12px 14px;
   }
 
   .wiki-gallery-card footer p {
     font-size: 0.8125rem;
     line-height: 1.55;
-  }
-
-  .wiki-text-card {
-    padding: 16px;
   }
 
   .wiki-facts {
@@ -445,30 +480,48 @@
     gap: 6px;
   }
 
-  /* ===== 社团招新（嵌入 intro）· 移动端吸顶 ===== */
+  /* ===== 社团招新（嵌入 intro）· 移动端：工具栏占文档流，仅 Intro 顶栏吸顶 ===== */
   .intro-body .clubs--intro-embed {
-    padding: 0 var(--intro-page-pad, 12px) 12px;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    gap: 12px;
+    margin-inline: -8px;
+    width: calc(100% + 16px);
+    padding: 0 var(--intro-wiki-pad, 6px) calc(12px + env(safe-area-inset-bottom, 0px));
+    gap: 0;
+    background: #f3f3f5;
   }
 
   .intro-body .clubs--intro-embed .clubs-toolbar--embed {
-    position: sticky;
-    top: var(--intro-sticky-h, 118px);
-    z-index: 11;
+    position: static;
+    top: auto;
+    z-index: 1;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    margin: 0 calc(-1 * var(--intro-page-pad, 12px)) !important;
-    padding: 10px var(--intro-page-pad, 12px) 12px !important;
+    margin: 0 calc(-1 * var(--intro-wiki-pad, 6px)) 0 !important;
+    padding: 10px var(--intro-wiki-pad, 6px) 12px !important;
     background: #fff;
     border-top: 1px solid var(--intro-line, #dedee3);
-    box-shadow: 0 4px 12px rgba(21, 21, 26, 0.06);
+    border-bottom: 1px solid var(--intro-line, #dedee3);
+    box-shadow: none;
   }
 
   .intro-body .clubs--intro-embed .clubs-toolbar--embed::before,
   .intro-body .clubs--intro-embed .clubs-toolbar--embed::after {
     display: none;
+  }
+
+  .intro-body .clubs--intro-embed .clubs-main {
+    padding-top: 12px;
+    gap: 12px;
+  }
+
+  .intro-body .clubs--intro-embed .intro-subnav {
+    margin: 0;
+    gap: 8px;
+  }
+
+  .intro-body .clubs--intro-embed .intro-subnav__title {
+    font-size: 0.88rem;
   }
 
   .intro-body .clubs--intro-embed .clubs-search {
@@ -503,6 +556,42 @@
   .intro-body .clubs--intro-embed .clubs-grid {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+
+  /* 社团详情（intro 路由内）· 与大百科同宽 */
+  .intro-body > .club-detail {
+    margin-inline: -8px;
+    width: calc(100% + 16px);
+  }
+
+  .intro-body > .club-detail .cd-main {
+    padding-inline: var(--intro-wiki-pad, 6px);
+  }
+
+  .intro-body > .club-detail .cd-tabs {
+    margin-inline: var(--intro-wiki-pad, 6px);
+  }
+
+  .intro-body > .club-detail .cd-hero-meta {
+    margin-inline: var(--intro-wiki-pad, 6px);
+  }
+
+  .intro-body .intro-pagination,
+  .intro-body .clubs-pagination {
+    column-gap: 6px;
+    padding-bottom: 4px;
+  }
+
+  .intro-body .intro-pagination__edge {
+    height: 36px;
+    padding: 0 8px;
+    font-size: 0.74rem;
+  }
+
+  .intro-body .intro-pagination__pages {
+    justify-content: flex-start;
+    padding-left: 2px;
+    padding-right: 2px;
   }
 
   /* ===== 学院详情 ===== */
@@ -552,14 +641,24 @@
 @media (max-width: 480px) {
   .intro-page {
     --intro-page-pad: 10px;
+    --intro-wiki-pad: 4px;
   }
 
-  .wiki-hero {
-    aspect-ratio: 16 / 9;
+  .intro-body .wiki-hero__img,
+  .intro-body .wiki-hero__shade {
+    height: 148px;
   }
 
-  .wiki-hero__copy p {
-    -webkit-line-clamp: 2;
+  .intro-body .wiki-hero__copy {
+    padding: 12px 14px 14px;
+  }
+
+  .intro-body .wiki-hero__copy h3 {
+    font-size: 1.08rem;
+  }
+
+  .intro-body .wiki-hero__copy p {
+    font-size: 0.8rem;
   }
 
   .wiki-campus--link {
@@ -569,5 +668,24 @@
 
   .wiki-campus__image {
     min-height: 88px;
+  }
+
+  .intro-body .wiki-stat {
+    padding: 12px 4px 10px;
+    gap: 4px;
+  }
+
+  .intro-body .wiki-stat__index {
+    width: 30px;
+    height: 30px;
+    font-size: 0.6rem;
+  }
+
+  .intro-body .wiki-stat__label {
+    font-size: 0.65rem;
+  }
+
+  .intro-body .wiki-stat strong {
+    font-size: 0.92rem;
   }
 }

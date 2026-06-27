@@ -2,6 +2,7 @@
 import { ref, inject, computed, watch, nextTick, onMounted, onUnmounted, type Ref, type ComputedRef } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppNavigate } from '../composables/useAppNavigate'
+import { useBreakpoint } from '../composables/useBreakpoint'
 import ProfileCard from './ProfileCard.vue'
 import AdminSidebar from './AdminSidebar.vue'
 import MobileBottomNav from './MobileBottomNav.vue'
@@ -33,6 +34,7 @@ const logout = inject<() => void>('logout', () => {
 
 const route = useRoute()
 const { appNavigate } = useAppNavigate()
+const { isMobile } = useBreakpoint()
 const isGuest = computed(() => isGuestRole(student.value.role))
 const isAdmin = computed(() => student.value.role === 'admin')
 const isClubAdmin = computed(() => student.value.role === 'club_admin')
@@ -54,9 +56,12 @@ watch(() => route.path, (path) => {
   }
 })
 
-/** 登录/游客均展示身份卡片（问牧墙/社团全屏页除外） */
+/** 登录/游客均展示身份卡片（问牧墙/社团全屏页除外；认识牧院移动端不展示） */
 const showProfileCard = computed(
-  () => !isFullBleedModule.value && (isAuthenticated.value || isGuest.value),
+  () =>
+    !isFullBleedModule.value
+    && (isAuthenticated.value || isGuest.value)
+    && !(isIntroModule.value && isMobile.value),
 )
 
 // 侧边栏显隐（桌面常驻，移动端 v-model 控制；状态提升至 App.vue 以供 XiaoXin 感知）
@@ -342,7 +347,31 @@ onUnmounted(() => {
   .section-card--fullbleed {
     padding: 0;
     border-radius: 10px;
+    overflow-x: hidden;
+  }
+}
+@media (max-width: 768px) {
+  .main--fullbleed {
+    height: calc(var(--vh, 1vh) * 100);
+    max-height: calc(var(--vh, 1vh) * 100);
     overflow: hidden;
+  }
+
+  .main--fullbleed .bottom-section--full {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .main--fullbleed .section-card--fullbleed {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }
 @media(max-width:480px){ .section-card { border-radius: 10px; padding: 14px 12px } }

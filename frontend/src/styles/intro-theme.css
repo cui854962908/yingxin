@@ -287,6 +287,30 @@
   font-size: 0.76rem;
 }
 
+/* 组织子列表顶栏：醒目返回 + 当前组织名 */
+.intro-subnav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  flex-wrap: wrap;
+}
+
+.intro-subnav__back {
+  flex-shrink: 0;
+}
+
+.intro-subnav__title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: var(--intro-ink);
+  font-family: 'Noto Serif SC', Georgia, serif;
+  letter-spacing: 0.02em;
+}
+
 .intro-org-crumb button {
   padding: 0;
   border: 0;
@@ -307,14 +331,65 @@
 }
 
 .intro-pagination {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  align-items: center;
+  column-gap: 8px;
   margin-top: 12px;
+  max-width: 100%;
+  overflow: visible;
+  padding: 4px 0 8px;
 }
 
-.intro-pagination button {
+.intro-pagination__edge {
+  flex-shrink: 0;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--intro-line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--intro-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  z-index: 2;
+}
+
+.intro-pagination__edge:hover:not(:disabled) {
+  border-color: var(--intro-accent);
+  color: var(--intro-accent);
+}
+
+.intro-pagination__edge:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.intro-pagination__pages {
+  grid-column: 2;
+  min-width: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  justify-content: flex-start;
+  padding: 2px 4px;
+}
+
+.intro-pagination__pages::-webkit-scrollbar {
+  display: none;
+}
+
+.intro-pagination__pages button {
+  flex-shrink: 0;
   min-width: 34px;
   height: 34px;
   padding: 0 10px;
@@ -328,20 +403,15 @@
   transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 
-.intro-pagination button:hover:not(:disabled):not(.active) {
+.intro-pagination__pages button:hover:not(:disabled):not(.active) {
   border-color: var(--intro-accent);
   color: var(--intro-accent);
 }
 
-.intro-pagination button.active {
+.intro-pagination__pages button.active {
   background: var(--intro-accent);
   border-color: var(--intro-accent);
   color: #fff;
-}
-
-.intro-pagination button:disabled {
-  opacity: 0.35;
-  cursor: default;
 }
 
 /* 认识牧院 · 详情页返回按钮（学院/校区等共用） */

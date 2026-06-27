@@ -5,6 +5,7 @@ import type { Club } from '../types/club'
 import { resolveIntroTabGroups, filterClubsByIntroGroupId } from '../constants/intro'
 import type { IntroClubGroup } from '../constants/intro'
 import { authHeaders, useAuth } from '../composables/useAuth'
+import { useBreakpoint } from '../composables/useBreakpoint'
 import AppSpinner from './AppSpinner.vue'
 import ClubCard from './ClubCard.vue'
 import IntroOrgGroupCard from './IntroOrgGroupCard.vue'
@@ -26,7 +27,10 @@ const currentPage = ref(Number(route.query.page) || 1)
 const categories = ['全部', '信工团学会', '校级组织', '兴趣社团']
 
 const { isAdmin, isClubAdmin, student } = useAuth()
+const { isMobile } = useBreakpoint()
 const isAnyAdmin = computed(() => isAdmin.value || isClubAdmin.value)
+
+const pageSize = computed(() => (isMobile.value ? 6 : props.perPage))
 
 const introGroupMode = computed(
   () => props.hideHeader && !route.query.cat && !searchQuery.value.trim(),
@@ -64,16 +68,16 @@ const filteredClubs = computed(() => {
   return result
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredClubs.value.length / props.perPage)))
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredClubs.value.length / pageSize.value)))
 const pagedClubs = computed(() => {
-  const start = (currentPage.value - 1) * props.perPage
-  return filteredClubs.value.slice(start, start + props.perPage)
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredClubs.value.slice(start, start + pageSize.value)
 })
 function goToPage(p: number) { currentPage.value = p }
 function prevPage() { if (currentPage.value > 1) currentPage.value-- }
 function nextPage() { if (currentPage.value < totalPages.value) currentPage.value++ }
 
-watch([filteredClubs, () => props.perPage], () => {
+watch([filteredClubs, pageSize], () => {
   if (currentPage.value > totalPages.value) currentPage.value = totalPages.value
 })
 watch(searchQuery, () => { currentPage.value = 1 })
@@ -148,7 +152,7 @@ onMounted(loadClubs)
 
 <template>
   <div class="clubs" :class="{ 'clubs--intro-embed': hideHeader }">
-    <!-- 吸顶区：标题 + 搜索 + 分类 -->
+    <!-- 工具栏：添加 / 返回 / 搜索（Intro 顶栏单独吸顶，此处占文档流） -->
     <div class="clubs-toolbar" :class="{ 'clubs-toolbar--embed': hideHeader }">
       <div v-if="!hideHeader" class="clubs-header">
         <h3 class="clubs-title">社团介绍</h3>
@@ -157,11 +161,13 @@ onMounted(loadClubs)
       <div v-else-if="isAnyAdmin" class="clubs-header clubs-header--compact">
         <button class="clubs-add-btn" @click="goAdd">+ 添加社团</button>
       </div>
-      <nav v-if="hideHeader && route.query.cat && activeIntroGroup" class="intro-org-crumb clubs-intro-crumb" aria-label="组织导航">
-        <button type="button" @click="backToIntroGroups">全部组织</button>
-        <span class="intro-org-crumb__sep" aria-hidden="true">/</span>
-        <span class="intro-org-crumb__current">{{ activeIntroGroup.label }}</span>
-      </nav>
+      <div v-if="hideHeader && route.query.cat && activeIntroGroup" class="intro-subnav" aria-label="组织导航">
+        <button type="button" class="intro-back-btn intro-subnav__back" @click="backToIntroGroups">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+          返回全部组织
+        </button>
+        <h4 class="intro-subnav__title">{{ activeIntroGroup.label }}</h4>
+      </div>
       <div v-if="!hideHeader || !route.query.cat" class="clubs-search">
         <svg class="clubs-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input
@@ -180,6 +186,7 @@ onMounted(loadClubs)
       </div>
     </div>
 
+    <div class="clubs-main">
     <div v-if="introGroupMode" class="intro-org-list">
       <IntroOrgGroupCard
         v-for="group in introGroups"
@@ -213,15 +220,17 @@ onMounted(loadClubs)
       :class="{ 'intro-pagination': hideHeader }"
       aria-label="社团分页"
     >
-      <button type="button" :disabled="currentPage === 1" @click="prevPage">&lt;</button>
-      <button
-        v-for="p in totalPages"
-        :key="p"
-        type="button"
-        :class="{ active: p === currentPage }"
-        @click="goToPage(p)"
-      >{{ p }}</button>
-      <button type="button" :disabled="currentPage === totalPages" @click="nextPage">&gt;</button>
+      <button type="button" class="intro-pagination__edge" :disabled="currentPage === 1" @click="prevPage">上一页</button>
+      <div class="intro-pagination__pages" role="group" aria-label="页码">
+        <button
+          v-for="p in totalPages"
+          :key="p"
+          type="button"
+          :class="{ active: p === currentPage }"
+          @click="goToPage(p)"
+        >{{ p }}</button>
+      </div>
+      <button type="button" class="intro-pagination__edge" :disabled="currentPage === totalPages" @click="nextPage">下一页</button>
     </nav>
 
     <div v-if="loading" class="clubs-loading">
@@ -229,6 +238,7 @@ onMounted(loadClubs)
     </div>
     <p v-else-if="!introGroupMode && clubs.length === 0" class="clubs-empty">暂无社团信息</p>
     <p v-else-if="!introGroupMode && pagedClubs.length === 0" class="clubs-empty">未找到匹配的社团</p>
+    </div>
   </div>
 </template>
 
@@ -252,9 +262,16 @@ onMounted(loadClubs)
   margin: 0;
   padding: 0;
   box-shadow: none;
-  /* position / 白底吸顶由 intro-mobile.css .clubs--intro-embed 控制 */
+  position: static;
+  top: auto;
 }
 .clubs-toolbar--embed::before { display: none }
+.clubs-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
 .clubs-header--compact { justify-content: flex-end }
 .clubs-title { font-size: 1.15rem; font-weight: 700; color: #2c2c2c; letter-spacing: .06em; margin: 0 }
 .clubs-add-btn {
@@ -293,34 +310,61 @@ onMounted(loadClubs)
 
 .clubs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px }
 
-.clubs-intro-crumb {
-  margin: 0;
-}
-
 .clubs-empty { text-align: center; color: #b0a090; padding: 40px 0 24px; font-size: .88rem }
 .clubs-loading { display: flex; align-items: center; justify-content: center; padding: 40px 0 }
 
-.clubs-pagination { display: flex; justify-content: center; gap: 6px; padding: 8px 0 }
-.clubs-pagination button {
-  min-width: 36px; height: 36px; border: 1px solid #e5dbcc; border-radius: 8px;
-  background: #fefcf9; color: #6b5e4e; font-size: .82rem; cursor: pointer;
-  font-family: inherit; transition: all .2s;
+.clubs-pagination {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  align-items: center;
+  column-gap: 8px;
+  padding: 8px 0;
+  max-width: 100%;
+  overflow: visible;
 }
-.clubs-pagination button:hover:not(:disabled):not(.active) { border-color: #4a8c5c; color: #4a8c5c }
-.clubs-pagination button.active { background: #4a8c5c; color: #fff; border-color: #4a8c5c }
-.clubs-pagination button:disabled { opacity: .3; cursor: default }
+
+.clubs-pagination .intro-pagination__pages button {
+  flex-shrink: 0;
+  min-width: 36px;
+  height: 36px;
+  border: 1px solid #e5dbcc;
+  border-radius: 8px;
+  background: #fefcf9;
+  color: #6b5e4e;
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.clubs-pagination .intro-pagination__pages button:hover:not(:disabled):not(.active) {
+  border-color: #4a8c5c;
+  color: #4a8c5c;
+}
+
+.clubs-pagination .intro-pagination__pages button.active {
+  background: #4a8c5c;
+  color: #fff;
+  border-color: #4a8c5c;
+}
 
 @media(max-width: 1024px) {
   .clubs-grid { gap: 16px }
 }
 @media(max-width: 768px) {
-  .clubs-toolbar { padding: 6px 14px 8px; margin: 0 -14px; gap: 8px; border-radius: 0 0 10px 10px; box-shadow: 0 1px 3px rgba(0,0,0,.06) }
-  .clubs-toolbar::before { left: -14px; right: -14px }
+  .clubs-toolbar:not(.clubs-toolbar--embed) {
+    padding: 6px 14px 8px;
+    margin: 0 -14px;
+    gap: 8px;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .clubs-toolbar:not(.clubs-toolbar--embed)::before { left: -14px; right: -14px }
   .clubs-grid { grid-template-columns: 1fr; gap: 16px }
 }
 @media(max-width: 480px) {
-  .clubs-toolbar { padding: 6px 12px 8px; margin: 0 -12px }
-  .clubs-toolbar::before { left: -12px; right: -12px }
+  .clubs-toolbar:not(.clubs-toolbar--embed) { padding: 6px 12px 8px; margin: 0 -12px }
+  .clubs-toolbar:not(.clubs-toolbar--embed)::before { left: -12px; right: -12px }
   .clubs-search { max-width: 100% }
   .clubs-search-input { height: 38px; font-size: .84rem }
   .clubs-grid { grid-template-columns: 1fr; gap: 14px }

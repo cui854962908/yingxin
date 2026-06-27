@@ -26,10 +26,6 @@ function goBack() {
   appNavigate(INTRO_COLLEGES.length > 1 ? '/intro/colleges' : '/intro/wiki')
 }
 
-function scrollTo(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
-
 </script>
 
 <template>
@@ -60,12 +56,6 @@ function scrollTo(id: string) {
           <span class="intro-stat-chip__label">{{ s.label }}</span>
         </div>
       </div>
-
-      <nav class="intro-pill-nav detail-anchors" aria-label="页面章节">
-        <button type="button" @click="scrollTo('section-overview')">学院简介</button>
-        <button type="button" @click="scrollTo('section-faculty')">师资队伍</button>
-        <button type="button" @click="scrollTo('section-clubs')">社团招新</button>
-      </nav>
     </section>
 
     <IntroCollegeModule
@@ -159,11 +149,6 @@ function scrollTo(id: string) {
   word-break: keep-all;
 }
 
-.detail-anchors {
-  margin: 0;
-  padding: 2px 0 4px;
-}
-
 @media (max-width: 768px) {
   .college-detail {
     gap: 10px;
@@ -188,41 +173,6 @@ function scrollTo(id: string) {
   .detail-stats .intro-stat-chip__label {
     font-size: 0.62rem;
     line-height: 1.3;
-  }
-
-  .detail-anchors {
-    position: sticky;
-    top: var(--intro-sticky-h, 0px);
-    z-index: 6;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0;
-    padding: 3px;
-    overflow: visible;
-    background: #f4f4f6;
-    border: 1px solid var(--intro-line, #dedee3);
-    border-radius: 10px;
-    backdrop-filter: blur(6px);
-  }
-
-  .detail-anchors button {
-    width: 100%;
-    min-width: 0;
-    height: 34px;
-    min-height: 34px;
-    padding: 0 4px;
-    border: 0;
-    border-radius: 8px;
-    background: transparent;
-    font-size: 0.76rem;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .detail-anchors button:hover {
-    transform: none;
   }
 }
 </style>

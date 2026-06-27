@@ -1,5 +1,6 @@
 import type { CampusCategory, CampusPlace } from './types'
 import { campusXzToLngLat, haversineMeters } from './campusGeo'
+import { createDormPlaces } from './campusPlaceDorms'
 
 function xz(x: number, z: number): [number, number] {
   return campusXzToLngLat(x, z)
@@ -37,48 +38,14 @@ function p(d: PlaceDraft): CampusPlace {
   return { ...rest, location: xz(x, z), ...(review ? needsReview : verified) }
 }
 
-/** 1–18 号学生公寓（3D 模型坐标） */
-const DORM_LAYOUT: Array<{ x: number; z: number; area: CampusPlace['area'] }> = [
-  { x: -36.53, z: -11.55, area: '北区' },
-  { x: -32.65, z: -25.29, area: '北区' },
-  { x: -27.90, z: -41.49, area: '北区' },
-  { x: -19.02, z: -70.79, area: '北区' },
-  { x: -13.01, z: -93.62, area: '北区' },
-  { x: -16.66, z: -10.04, area: '中区' },
-  { x: -12.99, z: -24.78, area: '中区' },
-  { x: -8.50, z: -41.73, area: '中区' },
-  { x: 1.13, z: -74.46, area: '中区' },
-  { x: 6.15, z: -94.86, area: '中区' },
-  { x: -3.20, z: -19.59, area: '中区' },
-  { x: 1.76, z: -39.68, area: '中区' },
-  { x: 6.34, z: -56.64, area: '中区' },
-  { x: 10.93, z: -74.12, area: '北区' },
-  { x: 17.53, z: -96.19, area: '北区' },
-  { x: -32.64, z: -69.02, area: '西区' },
-  { x: -26.31, z: -91.57, area: '西区' },
-  { x: -53.23, z: -86.24, area: '西区' },
-]
-
-const dormPlaces: CampusPlace[] = DORM_LAYOUT.map((item, index) =>
-  p({
-    id: `dorm-${index + 1}`,
-    name: `学生公寓 ${index + 1} 号楼`,
-    address: `英才校区学生宿舍区 · ${item.area}`,
-    description: '新生住宿以学院安排为准，报到后可在公寓管理科确认具体楼栋与房间。',
-    category: 'service',
-    x: item.x,
-    z: item.z,
-    area: item.area,
-    tags: ['学生公寓', '宿舍'],
-  }),
-)
+const dormPlaces = createDormPlaces(p)
 
 export const campusPlaces: CampusPlace[] = [
   ...dormPlaces,
   p({
     id: 'bathhouse',
     name: '澡堂',
-    address: '西北宿舍区中部',
+    address: '生活区西部，16—18 号学生公寓与公共浴室组团',
     description: '公共浴室，开放时段以公寓管理通知为准。',
     category: 'service',
     x: -46.08,
@@ -89,7 +56,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'sewing-dry-clean',
     name: '牧院缝纫干洗店',
-    address: '西北生活配套区、商业街附近',
+    address: '生活区中部，3 号学生公寓东南侧、商业街入口附近',
     description: '提供缝纫、干洗等日常衣物护理服务。',
     category: 'service',
     x: -23.14,
@@ -100,7 +67,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'w-building',
     name: 'W 教学楼',
-    address: '中心风景湖北侧 · 教学中轴西段',
+    address: '中心风景湖北侧，西侧主教学楼（W 楼）',
     description: '教学中轴西侧主楼，与 E 楼、综合实验楼连通成教学带。',
     category: 'teaching',
     x: 25.32,
@@ -111,7 +78,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'e-building',
     name: 'E 教学楼',
-    address: '中心风景湖北侧 · 教学中轴东段',
+    address: '中心风景湖北侧，东侧主教学楼（E 楼）',
     description: '教学中轴东侧教学楼，与 W 楼、综合实验楼形成一字教学带。',
     category: 'teaching',
     x: 58.41,
@@ -122,7 +89,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 's-building',
     name: '综合实验楼',
-    address: '中心风景湖北侧 · 教学中轴中部',
+    address: '中心风景湖北侧，W 楼与 E 楼之间',
     description: '综合实验与上机教学场所，信工等专业实验课程常在此进行。',
     category: 'teaching',
     x: 38.35,
@@ -133,7 +100,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'a-building',
     name: 'A 教学楼',
-    address: '校园东南部 · 连体教学楼群',
+    address: '校区东南部，A/B 连体教学楼东段',
     description: '东南教学区 A 楼，与 B 楼内部连通。',
     category: 'teaching',
     x: 1.02,
@@ -144,7 +111,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'library',
     name: '图书馆',
-    address: '校园南部 · 东南连体建筑群西侧',
+    address: '校区东南部，A/B 教学楼东侧；自南门进入后沿路前行左侧',
     description: '从南门进入校园后右手边。借书、自习请携带学生证；平日 21:30 闭馆，每周四 14:30—17:30 闭馆维护。',
     category: 'teaching',
     x: 39.41,
@@ -156,7 +123,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'b-building',
     name: 'B 教学楼',
-    address: '校园东南部 · 连体教学楼群',
+    address: '校区东南部，A/B 连体教学楼西段',
     description: '东南教学区 B 楼，与 A 楼内部连通。',
     category: 'teaching',
     x: 7.78,
@@ -167,7 +134,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'canteen-mei',
     name: '梅餐厅',
-    address: '西北餐饮区 · 美食广场一带',
+    address: '生活区西北部，美食广场西端（梅园二楼）',
     description: '梅兰桃菊四座餐厅之一，梅园位于二楼，日常三餐均可在此就餐。',
     category: 'dining',
     x: -58,
@@ -179,7 +146,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'canteen-lan',
     name: '兰餐厅',
-    address: '西北餐饮区 · 美食广场一带',
+    address: '生活区西北部，梅园东侧（兰园二楼）',
     description: '梅兰桃菊四座餐厅之一，兰园位于二楼。',
     category: 'dining',
     x: -38.34,
@@ -191,7 +158,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'canteen-tao',
     name: '桃餐厅',
-    address: '西北餐饮区 · 美食广场一带',
+    address: '生活区西北部，兰园南侧（桃园一楼）',
     description: '梅兰桃菊四座餐厅之一，桃园位于一楼。',
     category: 'dining',
     x: -38.55,
@@ -204,7 +171,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'canteen-ju',
     name: '菊餐厅',
-    address: '西北餐饮区 · 美食广场一带',
+    address: '生活区西北部，桃园西侧（菊园一楼）',
     description: '梅兰桃菊四座餐厅之一，菊园位于一楼。',
     category: 'dining',
     x: -53.74,
@@ -216,7 +183,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'food-plaza',
     name: '美食广场',
-    address: '西北生活区',
+    address: '生活区西北部，梅兰菊餐厅北侧',
     description: '档口与小食聚集区，适合快餐、小吃与课后简餐。',
     category: 'dining',
     x: -60.16,
@@ -228,7 +195,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'express-station',
     name: '快递站',
-    address: '菊园餐厅西侧 · 紧邻商业街',
+    address: '生活区西北部，菊园餐厅西侧、商业街旁',
     description: '位于菊园餐厅西侧、紧邻商业街。凭淘宝或短信取件码到对应货架找件，扫码取走即可。',
     category: 'service',
     x: -64.22,
@@ -240,7 +207,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'dorm-admin-office',
     name: '宿管科',
-    address: '学生宿舍区南侧 · 公寓管理办公点',
+    address: '生活区中部，8 号学生公寓南侧',
     description: '公寓管理科（宿管科），负责住宿登记、调宿与日常管理，具体办公时间与窗口以公寓管理通知为准。',
     category: 'service',
     x: -20.40,
@@ -252,7 +219,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'hospital',
     name: '校医院',
-    address: '校园北部',
+    address: '校区东南部，图书馆以南',
     description: '校内医疗服务点，日常就诊与迎新体检等以校医院通知为准。',
     category: 'service',
     x: 48.00,
@@ -264,7 +231,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'scenery-lake',
     name: '风景湖',
-    address: '校园中心',
+    address: '校区中心偏东，主景观湖泊',
     description: '英才校区中心湖泊，周边为教学区与广场，新生报到常在此熟悉路线。',
     category: 'scenery',
     x: 61.10,
@@ -275,7 +242,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'scenery-pigu-lake',
     name: '屁股湖',
-    address: '校园东部',
+    address: '校区中心东侧，小型景观湖',
     description: '校园东侧景观湖，同学常以此昵称指代，正式导览以现场标识为准。',
     category: 'scenery',
     x: 29.63,
@@ -286,7 +253,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'red-flower',
     name: '红色花蕊',
-    address: '风景湖北岸',
+    address: '中心湖北侧，「红色花蕊」雕塑广场',
     description: '校园地标雕塑，红色金属花瓣造型，适合新生合影打卡。',
     category: 'scenery',
     x: -10.40,
@@ -297,7 +264,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'track-field',
     name: '田径场',
-    address: '校园西南部',
+    address: '校区西南角，400 米塑胶跑道与足球场',
     description: '400 米标准塑胶跑道与足球场，体育课与课余锻炼使用。',
     category: 'sports',
     x: -88.67,
@@ -308,7 +275,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'natural-grass-field',
     name: '天然足球场',
-    address: '校园东北部',
+    address: '校区东北部，天然草皮足球场',
     description: '天然草皮足球场，含 400 米标准跑道，体育课与课余足球活动使用。',
     category: 'sports',
     x: 39.45,
@@ -319,7 +286,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'basketball-courts',
     name: '篮球场',
-    address: '东北教学运动区',
+    address: '校区中西部，室外篮球场群',
     description: '室外篮球场群，晚间使用请注意安全。',
     category: 'sports',
     x: -58.18,
@@ -330,7 +297,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'volleyball-courts',
     name: '排球场',
-    address: '校园西部',
+    address: '校区西南部，田径场北侧',
     description: '室外排球场，可进行排球课与业余练习。',
     category: 'sports',
     x: -76.20,
@@ -341,7 +308,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'tennis-courts',
     name: '网球场',
-    address: '东北教学运动区',
+    address: '校区中西部，篮球场南侧',
     description: '室外网球场，使用规则以体育部安排为准。',
     category: 'sports',
     x: -30.32,
@@ -352,7 +319,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'auditorium',
     name: '大礼堂',
-    address: '风景湖西侧 · 文体区',
+    address: '校区西南部，室内体育馆以北',
     description: '校园大礼堂，大型集会与文体活动场地，与室内体育馆相邻。',
     category: 'sports',
     x: -54.76,
@@ -364,7 +331,7 @@ export const campusPlaces: CampusPlace[] = [
   p({
     id: 'gymnasium',
     name: '室内体育馆',
-    address: '风景湖南侧 · 文体区',
+    address: '校区西南部，大礼堂以南',
     description: '室内篮球、羽毛球等活动场地，二楼设有社团活动空间。',
     category: 'sports',
     x: -42.61,

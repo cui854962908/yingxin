@@ -9,7 +9,6 @@ import CampusMapSidebar from './campus-map/CampusMapSidebar.vue'
 import {
   applyPoiOverrides,
   clearPoiOverrides,
-  fetchPublishedPoiOverrides,
   isCampusCalibrateMode,
   loadPoiOverrides,
   resolveDisplayPoiOverrides,
@@ -29,16 +28,17 @@ import './campus-map/campus-map.css'
 
 const router = useRouter()
 const route = useRoute()
-const calibrateMode = computed(() => isCampusCalibrateMode(route.query))
+const { isAdmin, student } = useAuth()
+const calibrateMode = computed(() =>
+  isCampusCalibrateMode(route.query, {
+    isDev: import.meta.env.DEV,
+    isAdmin: isAdmin.value,
+  }),
+)
 const showMapCoordinate = computed(() => calibrateMode.value || import.meta.env.DEV)
 const localPoiOverrides = ref<Record<string, [number, number]>>(loadPoiOverrides())
-const publishedPoiOverrides = ref<Record<string, [number, number]>>({})
 const poiOverrides = computed(() =>
-  resolveDisplayPoiOverrides(
-    calibrateMode.value,
-    localPoiOverrides.value,
-    publishedPoiOverrides.value,
-  ),
+  resolveDisplayPoiOverrides(calibrateMode.value, localPoiOverrides.value),
 )
 const allPlaces = computed(() => applyPoiOverrides(campusPlaces, poiOverrides.value))
 const campusBounds = computed(() =>
@@ -87,22 +87,17 @@ const {
   calibrateMode,
 })
 
-const { student } = useAuth()
-
 const location = useCampusMapLocation({
   getMap: () => map,
   getAMap: () => AMapRef,
   allPlaces,
-  getCampusCenter: () => campusCenter,
   getCampusBounds: () => campusBounds.value,
-  isLocationPickAllowed: () => !calibrateMode.value,
   getProfileDormitory: () => student.value?.dormitory,
 })
 
 const {
   status: geoStatus, message: geoMessage, position: userLocation,
-  profileDormLabel, locationPickActive,
-  beginLocationPick, syncLocationPickBinding, cleanupLocationPick,
+  profileDormLabel,
   locateMyPosition, locateAtProfileDorm, refreshMarker, clearMarker: clearUserMarker,
 } = location
 
@@ -125,10 +120,16 @@ function selectPlace(place: CampusPlace) {
   map?.setZoom(Math.max(map.getZoom(), 17))
 }
 
+function dismissMobileSheets() {
+  if (useMobileDetailSheet()) {
+    placeDetailOpen.value = false
+    placeSheetExpanded.value = false
+  }
+}
+
 function pickDestination(place: CampusPlace) {
   selected.value = place
-  placeDetailOpen.value = false
-  placeSheetExpanded.value = false
+  dismissMobileSheets()
   planRouteToPlace(place)
 }
 
@@ -182,12 +183,6 @@ function onPoiMergedToSource() {
   renderMarkers(filteredPlaces.value)
 }
 
-async function onPoiPublished() {
-  publishedPoiOverrides.value = await fetchPublishedPoiOverrides()
-  syncSelectedFromPlaces(allPlaces.value)
-  renderMarkers(filteredPlaces.value)
-}
-
 function clearRoute() {
   if (routeLine && map) map.remove(routeLine)
   routeLine = null
@@ -216,7 +211,7 @@ function drawRouteLine(result: CampusRouteResult) {
 function planRouteToPlace(place: CampusPlace) {
   if (!AMapRef || !map || routePlanning.value) return
   if (!userLocation.value) {
-    geoMessage.value = '尚未获取当前位置，请等待 GPS 或手动标记当前位置'
+    geoMessage.value = '尚未获取当前位置，请使用 GPS 定位或稍后再试'
     return
   }
   routePlanning.value = true
@@ -231,6 +226,7 @@ function planRouteToPlace(place: CampusPlace) {
 }
 
 function goToSelectedPlace() {
+  dismissMobileSheets()
   planRouteToPlace(selected.value)
 }
 
@@ -247,7 +243,6 @@ async function initMap() {
     applyCampusViewport()
     renderMarkers(filteredPlaces.value)
     refreshRoadOverlay()
-    syncLocationPickBinding()
     if (!calibrateMode.value) await locateMyPosition()
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '地图初始化失败'
@@ -256,14 +251,10 @@ async function initMap() {
   }
 }
 
-watch(calibrateMode, async () => {
+watch(calibrateMode, () => {
   localPoiOverrides.value = loadPoiOverrides()
-  if (!calibrateMode.value) {
-    publishedPoiOverrides.value = await fetchPublishedPoiOverrides()
-  }
   reloadRoadOverrides()
   renderMarkers(filteredPlaces.value)
-  syncLocationPickBinding()
 })
 
 watch(calibrateTool, () => {
@@ -289,16 +280,12 @@ watch(drawnRoadSegments, () => {
 })
 
 onMounted(async () => {
-  if (!calibrateMode.value) {
-    publishedPoiOverrides.value = await fetchPublishedPoiOverrides()
-  }
   await initMap()
 })
 
 onUnmounted(() => {
   markerLayer.clear()
   cleanupRoadLayer()
-  cleanupLocationPick()
   clearRoute()
   clearUserMarker(map)
   map?.destroy()
@@ -314,6 +301,7 @@ onUnmounted(() => {
       'campus-map-page--calibrate': calibrateMode,
       'campus-map-page--sheet-expanded': placeSheetExpanded,
       'campus-map-page--detail-open': placeDetailOpen,
+      'campus-map-page--route': !!activeRouteTarget && !placeDetailOpen,
     }"
   >
     <CampusMapHeader @back="router.push('/campus')" />
@@ -346,7 +334,6 @@ onUnmounted(() => {
             :pending-road="!!pendingRoadStart"
             @clear-poi="clearSavedOverrides"
             @merged="onPoiMergedToSource"
-            @published="onPoiPublished"
             @undo-road="undoRoadSegment"
             @clear-road="clearRoadSegments"
           />
@@ -360,16 +347,6 @@ onUnmounted(() => {
             >
               <span class="map-tool-btn__icon" aria-hidden="true">◎</span>
               <span class="map-tool-btn__label">我的宿舍</span>
-            </button>
-            <button
-              class="locate-mark map-tool-btn"
-              :class="{ 'locate-mark--active': locationPickActive }"
-              type="button"
-              :aria-label="locationPickActive ? '请在地图上点击标注位置' : '点击标注当前位置'"
-              @click="beginLocationPick()"
-            >
-              <span class="map-tool-btn__icon" aria-hidden="true">⌖</span>
-              <span class="map-tool-btn__label">{{ locationPickActive ? '请点击地图' : '标记当前位置' }}</span>
             </button>
             <button
               class="locate-me map-tool-btn"

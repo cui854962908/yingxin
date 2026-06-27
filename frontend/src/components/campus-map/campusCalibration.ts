@@ -2,7 +2,6 @@ import { campusLngLatToXz } from './campusGeo'
 import type { CampusPlace } from './types'
 
 export const POI_OVERRIDES_STORAGE_KEY = 'campus-map-poi-overrides'
-export const PUBLISHED_POI_OVERRIDES_URL = '/campus-map/poi-overrides.json'
 
 export type PoiOverrides = Record<string, [number, number]>
 
@@ -15,31 +14,29 @@ export function parsePoiOverrides(raw: unknown): PoiOverrides {
   ) as PoiOverrides
 }
 
-/** 普通地图只读 campusPlaces.ts；校准页用本机 localStorage */
+/** 校准模式下使用本机 localStorage 覆盖；正式地图直读 campusPlaces.ts（POI 修正通过 merge → commit 流程合入源文件） */
 export function resolveDisplayPoiOverrides(
   calibrateMode: boolean,
   local: PoiOverrides,
-  _published: PoiOverrides,
 ): PoiOverrides {
   return calibrateMode ? local : {}
 }
 
-export async function fetchPublishedPoiOverrides(): Promise<PoiOverrides> {
-  try {
-    const res = await fetch(`${PUBLISHED_POI_OVERRIDES_URL}?t=${Date.now()}`)
-    if (!res.ok) return {}
-    return parsePoiOverrides(await res.json())
-  } catch {
-    return {}
-  }
-}
-
-export function isCampusCalibrateMode(
+export function hasCampusCalibrateQuery(
   query: Record<string, string | string[] | null | undefined>,
 ): boolean {
   const value = query.calibrate
   if (Array.isArray(value)) return value.includes('1') || value.includes('true')
   return value === '1' || value === 'true'
+}
+
+/** 开发环境或已登录 admin 才允许进入校准模式（生产普通用户带 ?calibrate=1 无效） */
+export function isCampusCalibrateMode(
+  query: Record<string, string | string[] | null | undefined>,
+  access: { isDev: boolean; isAdmin: boolean },
+): boolean {
+  if (!hasCampusCalibrateQuery(query)) return false
+  return access.isDev || access.isAdmin
 }
 
 export function loadPoiOverrides(): PoiOverrides {

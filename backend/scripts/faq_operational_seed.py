@@ -140,8 +140,8 @@ OPERATIONAL_FAQ: list[dict[str, str]] = [
     },
     {
         "question": "学校的校训是什么？",
-        "answer": "尚学崇实、善知敏行。",
-        "keywords": "校训,尚学崇实,善知敏行",
+        "answer": "尚严崇实、善知敏行。",
+        "keywords": "校训,尚严崇实,善知敏行",
         "category": "学校概况",
     },
     {

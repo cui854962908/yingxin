@@ -184,17 +184,25 @@ onUnmounted(() => document.removeEventListener('keyup', onLightboxKey))
 @keyframes lbOut { to{opacity:0} }
 
 @media(max-width: 768px) {
-  .cd-section { padding: 18px 16px; border-radius: 12px }
-  .cd-photos-wall { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 170px; gap: 10px }
-  .cd-photo-card:not(.cd-photo-card-add):nth-child(1) { grid-column: span 2; grid-row: span 2 }
-  .cd-photo-card:not(.cd-photo-card-add):nth-child(7) { grid-column: span 1 }
-  .cd-photo-card-add { font-size: .76rem }
+  .cd-section {
+    padding: 16px 14px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    background: #fff;
+    border: 1px solid #ebebeb;
+  }
+  .cd-section-title { font-size: 0.92rem; margin-bottom: 12px }
+  .cd-photos-wall { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 140px; gap: 10px }
+  .cd-photo-card:not(.cd-photo-card-add):nth-child(1) { grid-column: span 2; grid-row: span 1; max-height: 180px }
+  .cd-photo-card:not(.cd-photo-card-add):nth-child(4) { grid-row: span 1 }
+  .cd-photo-card:not(.cd-photo-card-add):nth-child(7) { grid-column: span 2; grid-row: span 1 }
+  .cd-photo-card:not(.cd-photo-card-add):not(.is-editing):nth-child(n) { transform: none }
+  .cd-photo-card-add { min-height: 120px; font-size: .76rem }
 }
 @media(max-width: 480px) {
-  .cd-section { padding: 14px 12px; border-radius: 10px; margin-bottom: 14px }
-  .cd-section-title { font-size: .88rem; gap: 6px; margin-bottom: 10px }
-  .cd-photos-wall { grid-template-columns: 1fr 1fr; grid-auto-rows: 150px; gap: 8px }
-  .cd-photo-card:not(.cd-photo-card-add):nth-child(1) { grid-column: span 2 }
-  .cd-photo-card-add { font-size: .72rem }
+  .cd-section { padding: 12px; border-radius: 10px; margin-bottom: 10px }
+  .cd-section-title { font-size: 0.86rem; gap: 6px; margin-bottom: 10px }
+  .cd-photos-wall { grid-auto-rows: 128px; gap: 8px }
+  .cd-photo-card-add { font-size: .72rem; min-height: 108px }
 }
 </style>

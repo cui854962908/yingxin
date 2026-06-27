@@ -143,7 +143,7 @@ async function copyQQ() {
     <!-- ====== 底部：操作按钮 ====== -->
     <div class="card-actions">
       <button class="card-btn-detail" @click.stop="emit('click')">查看详情</button>
-      <button class="card-btn-join" @click.stop="openJoin($event)">立即报名</button>
+      <button class="card-btn-join" @click.stop="openJoin($event)">如何加入</button>
     </div>
 
     <!-- 加入弹窗 -->

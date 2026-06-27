@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
@@ -119,7 +119,7 @@ class FAQReorderItem(BaseModel):
 
 
 class FAQReorderBody(BaseModel):
-    items: list[FAQReorderItem]
+    items: list[FAQReorderItem] = Field(..., max_length=500)
 
 
 @router_admin.patch("/faq/reorder")

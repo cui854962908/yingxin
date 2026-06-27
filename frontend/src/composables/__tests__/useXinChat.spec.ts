@@ -207,6 +207,7 @@ describe('useXinChat', () => {
 
     it('agent fallback 时推送问牧墙跳转链接', async () => {
       localStorage.setItem('token', 'test-token')
+      autoSpeak.value = false
       const { send, input, messages } = createChat()
       input.value = '食堂几点开门'
 
@@ -219,9 +220,11 @@ describe('useXinChat', () => {
       } as Response)
 
       send()
-      await vi.advanceTimersByTimeAsync(400)
+      await vi.runAllTimersAsync()
 
+      const answerMsg = messages.value.find(m => m.role === 'xin' && m.text.includes('答不上'))
       const linkMsg = messages.value.find(m => m.links?.some(l => l.to.startsWith('/wall/new')))
+      expect(answerMsg?.done).toBe(true)
       expect(linkMsg).toBeDefined()
       expect(linkMsg!.links![0].label).toContain('问牧墙')
       expect(decodeURIComponent(linkMsg!.links![0].to)).toContain('食堂几点开门')

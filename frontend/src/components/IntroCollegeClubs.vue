@@ -7,12 +7,14 @@ import {
   filterClubsByIntroGroup,
   resolveIntroClubGroups,
 } from '../constants/intro'
+import { useBreakpoint } from '../composables/useBreakpoint'
 import AppSpinner from './AppSpinner.vue'
 import ClubCard from './ClubCard.vue'
 import IntroOrgGroupCard from './IntroOrgGroupCard.vue'
 import '../styles/intro-theme.css'
 
-const PAGE_SIZE = 10
+const PAGE_SIZE_DESKTOP = 10
+const PAGE_SIZE_MOBILE = 6
 
 const props = defineProps<{
   collegeName: string
@@ -20,6 +22,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const { isMobile } = useBreakpoint()
 const clubs = ref<Club[]>([])
 const loading = ref(true)
 const expandedGroupId = ref<string | null>(null)
@@ -36,18 +39,20 @@ const visible = computed(() => {
   return filterClubsByIntroGroup(clubs.value, props.clubFilter, expandedGroupId.value)
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(visible.value.length / PAGE_SIZE)))
+const pageSize = computed(() => (isMobile.value ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP))
+
+const totalPages = computed(() => Math.max(1, Math.ceil(visible.value.length / pageSize.value)))
 
 const pagedClubs = computed(() => {
-  const start = (currentPage.value - 1) * PAGE_SIZE
-  return visible.value.slice(start, start + PAGE_SIZE)
+  const start = (currentPage.value - 1) * pageSize.value
+  return visible.value.slice(start, start + pageSize.value)
 })
 
 function clubCountForGroup(groupId: string): number {
   return filterClubsByIntroGroup(clubs.value, props.clubFilter, groupId).length
 }
 
-watch(visible, () => {
+watch([visible, pageSize], () => {
   if (currentPage.value > totalPages.value) currentPage.value = totalPages.value
 })
 
@@ -120,11 +125,13 @@ onMounted(load)
     </div>
 
     <template v-else>
-      <nav class="intro-org-crumb" aria-label="组织导航">
-        <button type="button" @click="backToGroups">全部组织</button>
-        <span class="intro-org-crumb__sep" aria-hidden="true">/</span>
-        <span class="intro-org-crumb__current">{{ expandedGroup.label }}</span>
-      </nav>
+      <div class="intro-subnav" aria-label="组织导航">
+        <button type="button" class="intro-back-btn intro-subnav__back" @click="backToGroups">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+          返回全部组织
+        </button>
+        <h4 class="intro-subnav__title">{{ expandedGroup.label }}</h4>
+      </div>
       <p v-if="visible.length === 0" class="college-clubs-empty">该组织下暂无社团展示。</p>
       <template v-else>
         <div class="college-clubs-grid">
@@ -139,17 +146,19 @@ onMounted(load)
           />
         </div>
         <nav v-if="totalPages > 1" class="intro-pagination" aria-label="社团分页">
-          <button type="button" :disabled="currentPage === 1" @click="prevPage">上一页</button>
-          <button
-            v-for="page in totalPages"
-            :key="page"
-            type="button"
-            :class="{ active: page === currentPage }"
-            @click="goToPage(page)"
-          >
-            {{ page }}
-          </button>
-          <button type="button" :disabled="currentPage === totalPages" @click="nextPage">下一页</button>
+          <button type="button" class="intro-pagination__edge" :disabled="currentPage === 1" @click="prevPage">上一页</button>
+          <div class="intro-pagination__pages" role="group" aria-label="页码">
+            <button
+              v-for="page in totalPages"
+              :key="page"
+              type="button"
+              :class="{ active: page === currentPage }"
+              @click="goToPage(page)"
+            >
+              {{ page }}
+            </button>
+          </div>
+          <button type="button" class="intro-pagination__edge" :disabled="currentPage === totalPages" @click="nextPage">下一页</button>
         </nav>
       </template>
     </template>

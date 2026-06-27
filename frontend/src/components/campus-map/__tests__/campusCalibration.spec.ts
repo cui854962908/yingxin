@@ -3,6 +3,7 @@ import { campusLngLatToXz } from '../campusGeo'
 import {
   applyPoiOverrides,
   formatOverridesForSource,
+  hasCampusCalibrateQuery,
   isCampusCalibrateMode,
   parsePoiOverrides,
   resolveDisplayPoiOverrides,
@@ -11,9 +12,17 @@ import { campusPlaces, parseDormPlaceId } from '../campusPlaces'
 
 describe('campusCalibration', () => {
   it('detects calibrate query flag', () => {
-    expect(isCampusCalibrateMode({ calibrate: '1' })).toBe(true)
-    expect(isCampusCalibrateMode({ calibrate: 'true' })).toBe(true)
-    expect(isCampusCalibrateMode({})).toBe(false)
+    expect(hasCampusCalibrateQuery({ calibrate: '1' })).toBe(true)
+    expect(hasCampusCalibrateQuery({ calibrate: 'true' })).toBe(true)
+    expect(hasCampusCalibrateQuery({})).toBe(false)
+  })
+
+  it('gates calibrate mode to dev or admin', () => {
+    const q = { calibrate: '1' }
+    expect(isCampusCalibrateMode(q, { isDev: true, isAdmin: false })).toBe(true)
+    expect(isCampusCalibrateMode(q, { isDev: false, isAdmin: true })).toBe(true)
+    expect(isCampusCalibrateMode(q, { isDev: false, isAdmin: false })).toBe(false)
+    expect(isCampusCalibrateMode({}, { isDev: true, isAdmin: true })).toBe(false)
   })
 
   it('applies lng/lat overrides onto places', () => {

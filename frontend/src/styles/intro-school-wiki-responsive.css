@@ -58,9 +58,10 @@
   }
 
   .wiki-strength__copy,
-  .wiki-overview,
-  .wiki-text-card {
-    padding: 16px;
+  .intro-body .school-wiki .wiki-overview,
+  .intro-body .school-wiki .wiki-text-card,
+  .intro-body .school-wiki .wiki-strength__copy {
+    padding: 14px;
   }
 
   .wiki-highlight-card {
@@ -69,8 +70,53 @@
   }
 
   .wiki-admin-hint {
-    margin: 0 var(--intro-page-pad, 12px);
+    margin: 0;
     border-radius: var(--intro-radius-sm, 10px);
     font-size: 0.8125rem;
+  }
+
+  .wiki-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .wiki-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    min-height: 0;
+    padding: 14px 8px 12px;
+    border-right: 1px solid var(--intro-line);
+    border-bottom: 0;
+    text-align: center;
+  }
+
+  .wiki-stat:last-child {
+    border-right: 0;
+  }
+
+  .wiki-stat__index {
+    position: static;
+    left: auto;
+    top: auto;
+    width: 34px;
+    height: 34px;
+    font-size: 0.65rem;
+  }
+
+  .wiki-stat__label {
+    margin-bottom: 0;
+    font-size: 0.7rem;
+    line-height: 1.35;
+  }
+
+  .wiki-stat strong {
+    font-size: 1rem;
+    line-height: 1.15;
+    white-space: normal;
+    word-break: keep-all;
   }
 }
