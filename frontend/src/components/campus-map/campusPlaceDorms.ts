@@ -4,7 +4,7 @@ export const DORM_HOURS = '06:00—22:30'
 
 type DormLayout = { x: number; z: number; area: CampusPlace['area'] }
 
-type DormPlaceDraft = Omit<CampusPlace, 'location'> & {
+type DormPlaceDraft = Omit<CampusPlace, 'location' | 'coordinateSystem' | 'coordinateSource' | 'calibrationStatus' | 'calibrationNote'> & {
   x: number
   z: number
   review?: boolean

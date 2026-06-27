@@ -30,7 +30,7 @@ const router = useRouter()
 const route = useRoute()
 const { isAdmin, student } = useAuth()
 const calibrateMode = computed(() =>
-  isCampusCalibrateMode(route.query, {
+  isCampusCalibrateMode(route.query as Record<string, string | string[] | null | undefined>, {
     isDev: import.meta.env.DEV,
     isAdmin: isAdmin.value,
   }),
@@ -216,7 +216,7 @@ function planRouteToPlace(place: CampusPlace) {
   }
   routePlanning.value = true
   routeMessage.value = `正在规划前往${place.name}…`
-  const result = planCampusRoute(userLocation.value, place.location, drawnRoadSegments)
+  const result = planCampusRoute(userLocation.value, place.location, drawnRoadSegments.value)
   if (routeLine && map) map.remove(routeLine)
   routeLine = null
   drawRouteLine(result)

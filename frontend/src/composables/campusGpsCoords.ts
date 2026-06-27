@@ -36,7 +36,7 @@ export function pickGcjLngLat(
   }
 
   return new Promise((resolve) => {
-    AMap.convertFrom(raw, 'gps', (status: string, result: { locations?: Array<{ lng: number; lat: number }> }) => {
+    AMap.convertFrom!(raw, 'gps', (status: string, result: { locations?: Array<{ lng: number; lat: number }> }) => {
       const converted = result?.locations?.[0]
       if (status !== 'complete' || !converted) {
         resolve(raw)
