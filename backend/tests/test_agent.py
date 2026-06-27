@@ -100,18 +100,21 @@ def test_normalize_text():
 
 
 def test_find_best_faq_hit(db: Session):
-    faq = FAQ(question="宿舍在哪里查询？", answer="登录后点击'个人档案'查看。")
+    faq = FAQ(
+        question="宿舍有哪些管理规定？",
+        answer="英才校区宿舍全天通电，水电全免；22:30 起无特殊情况禁止进出。",
+    )
     db.add(faq)
     db.commit()
 
-    result = find_best_faq(db, "我的宿舍在哪查")
+    result = find_best_faq(db, "宿舍几点熄灯")
     assert result is not None
-    assert result.faq.question == "宿舍在哪里查询？"
+    assert result.faq.question == "宿舍有哪些管理规定？"
     assert result.score > 0
 
 
 def test_find_best_faq_miss(db: Session):
-    faq = FAQ(question="如何取快递？", answer="北苑菜鸟驿站。")
+    faq = FAQ(question="快递站在哪里？怎么取快递？", answer="菊园餐厅西侧。")
     db.add(faq)
     db.commit()
 
@@ -143,19 +146,22 @@ async def test_route_chat_irrelevant(db: Session):
 
 @pytest.mark.asyncio
 async def test_route_chat_faq_hit(db: Session):
-    faq = FAQ(question="宿舍在哪里查询？", answer="登录后点击'个人档案'查看。")
+    faq = FAQ(
+        question="宿舍有哪些管理规定？",
+        answer="英才校区宿舍全天通电，水电全免；22:30 起无特殊情况禁止进出。",
+    )
     db.add(faq)
     db.commit()
 
     out = await route_chat_async(
         db=db,
-        message="宿舍在哪查",
+        message="宿舍几点熄灯",
         is_authenticated=True,
         current_student_id="20260901001",
         role="student",
     )
     assert out["source"] == "faq"
-    assert "个人档案" in out["reply"]
+    assert "22:30" in out["reply"]
 
 
 @pytest.mark.asyncio
@@ -174,10 +180,13 @@ async def test_route_chat_privacy_block(db: Session):
 @pytest.mark.asyncio
 async def test_route_chat_faq_before_rag(db: Session):
     """FAQ 命中时不应走到 RAG 路径。"""
-    faq = FAQ(question="快递站在哪里？", answer="北苑菜鸟驿站，南苑京东快递柜。")
+    faq = FAQ(
+        question="快递站在哪里？怎么取快递？",
+        answer="菊园餐厅西侧紧邻商业街，凭取件码扫码取件。",
+    )
     db.add(faq)
     db.commit()
 
     out = await route_chat_async(db=db, message="快递站在哪")
     assert out["source"] == "faq"
-    assert "菜鸟" in out["reply"]
+    assert "菊园" in out["reply"]

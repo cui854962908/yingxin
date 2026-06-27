@@ -29,7 +29,7 @@ export const REGISTER_DATE = '2026-09-06'
 // ===== 功能入口 =====
 export const SERVICE_CARDS: ServiceCard[] = [
   { id: 'notice',  icon: 'notice',  title: '报到须知',   desc: '报到流程、所需材料及注意事项' },
-  { id: 'dorm',    icon: 'dorm',    title: '宿舍选择',   desc: '在线选择宿舍楼栋及床位' },
+  { id: 'dorm',    icon: 'dorm',    title: '宿舍选择',   desc: '在线选择宿舍楼栋及床位', link: 'http://51.weihouqin.cn:51806/ybd/' },
   { id: 'fee',     icon: 'fee',     title: '新生缴费',   desc: '统一支付平台缴纳学杂费', link: 'http://cwcpt.hnuahe.edu.cn/xysf/aAppPage/index.aspx?mac=5E4A28FDB3CE185F0ED09BF017CC1CEB#/loginTemp/loginIng' },
   { id: 'course',  icon: 'course',  title: '选课系统',   desc: '教务管理系统选课与课表', link: 'http://jiaowu.hnuahe.edu.cn/' },
   { id: 'map',     icon: 'map',     title: '校园导览',   desc: '教学楼、食堂、宿舍位置' },

@@ -30,3 +30,8 @@ export const GUEST_ROLE_LABEL = '访客 · 迎新门户'
 /** 游客身份卡片状态文案 */
 export const GUEST_PROFILE_STATUS = '正在游客浏览中'
 export const GUEST_PROFILE_HINT = '登录后可查看学号、宿舍与联系人信息'
+
+/** 3D 校园漫游标注试用版；2D / 3D 由用户在导览入口自行选择 */
+export const CAMPUS_3D_TRIAL_LABEL = '试用版'
+export const CAMPUS_3D_TRIAL_NOTE =
+  '功能持续完善中，建议在 Wi‑Fi 与较新浏览器下体验'

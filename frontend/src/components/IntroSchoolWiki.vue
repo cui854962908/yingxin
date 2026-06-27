@@ -6,6 +6,7 @@ import {
   INTRO_WIKI_CAMPUSES,
   INTRO_WIKI_CATEGORY,
   INTRO_WIKI_FALLBACK,
+  INTRO_WIKI_HIGHLIGHTS,
   INTRO_WIKI_HERO_IMAGE,
   INTRO_WIKI_OFFICIAL_URL,
   INTRO_WIKI_STATS,
@@ -41,9 +42,11 @@ const strengthBlock = computed(() => parsedBlocks.value[2])
 const overviewBody = computed(() =>
   removeOfficialUrlEntry(overviewBlock.value?.body || overviewBlock.value?.content || ''),
 )
-const sceneryImage = computed(
-  () => strengthBlock.value?.image || cultureBlock.value?.image || INTRO_WIKI_CAMPUSES[0].image,
+const strengthBody = computed(() => strengthBlock.value?.body || strengthBlock.value?.content || '')
+const strengthImage = computed(
+  () => strengthBlock.value?.image || INTRO_WIKI_CAMPUSES[0].image,
 )
+const cultureImage = computed(() => cultureBlock.value?.image || '')
 
 function splitBlockMedia(html: string): { image: string; body: string } {
   const match = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i)
@@ -142,26 +145,53 @@ onMounted(load)
     <section class="wiki-feature-grid panel-reveal__item">
       <article class="wiki-gallery-card">
         <div class="wiki-gallery-card__image">
-          <img :src="sceneryImage" alt="校园风光" loading="lazy" />
-          <span>校园风光</span>
+          <img :src="cultureImage || INTRO_WIKI_CAMPUSES[1].image" alt="校园风光" loading="lazy" />
+          <span>校园文化</span>
         </div>
         <footer>
-          <p>绿树成荫的校园环境与「尚严崇实、善知敏行」的校训相得益彰</p>
-          <b>校园风光</b>
+          <p>「尚严崇实、善知敏行」——课堂教学、实验实训与学科竞赛并重</p>
+          <b>{{ cultureBlock?.title || '校训与校风' }}</b>
         </footer>
       </article>
 
       <article class="wiki-text-card">
-        <span class="wiki-kicker">{{ cultureBlock?.title || '学校简介' }}</span>
-        <h3>学校简介</h3>
+        <span class="wiki-kicker">{{ cultureBlock?.title || '校训与校风' }}</span>
+        <h3>{{ cultureBlock?.title || '校训与校风' }}</h3>
         <div class="wiki-text-card__body" v-html="cultureBlock?.body || overviewBlock?.body" />
         <a :href="INTRO_WIKI_OFFICIAL_URL" target="_blank" rel="noopener">了解更多学校信息</a>
         <div class="wiki-facts">
-          <span>办学层次<br /><strong>本科</strong></span>
-          <span>主管部门<br /><strong>河南省教育厅</strong></span>
-          <span>学校类型<br /><strong>应用型</strong></span>
+          <span>校庆日<br /><strong>9月19日</strong></span>
+          <span>合并组建<br /><strong>2013年</strong></span>
+          <span>校区布局<br /><strong>一校三区</strong></span>
         </div>
       </article>
+    </section>
+
+    <section class="wiki-strength panel-reveal__item">
+      <div class="wiki-strength__copy">
+        <span class="wiki-kicker">{{ strengthBlock?.title || '办学实力' }}</span>
+        <h3>{{ strengthBlock?.title || '办学实力' }}</h3>
+        <div class="wiki-strength__body" v-html="strengthBody" />
+      </div>
+      <div class="wiki-strength__media">
+        <img :src="strengthImage" :alt="strengthBlock?.title || '办学实力'" loading="lazy" />
+        <span class="wiki-strength__badge">牧工商一体 · 应用型本科</span>
+      </div>
+    </section>
+
+    <section class="wiki-highlights panel-reveal__item" aria-label="办学特色亮点">
+      <header class="wiki-section__head">
+        <h3>开放办学与服务</h3>
+        <span>对接区域发展与行业需求</span>
+      </header>
+      <div class="wiki-highlight-grid">
+        <article v-for="(item, index) in INTRO_WIKI_HIGHLIGHTS" :key="item.kicker" class="wiki-highlight-card">
+          <span class="wiki-highlight-card__index">{{ String(index + 1).padStart(2, '0') }}</span>
+          <span class="wiki-highlight-card__kicker">{{ item.kicker }}</span>
+          <h4>{{ item.title }}</h4>
+          <p>{{ item.body }}</p>
+        </article>
+      </div>
     </section>
 
     <div v-if="loading" class="wiki-loading" aria-label="正在加载认识牧院内容">

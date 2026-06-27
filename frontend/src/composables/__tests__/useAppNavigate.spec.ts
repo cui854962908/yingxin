@@ -28,6 +28,8 @@ describe('shouldMobileBackToHome', () => {
     expect(shouldMobileBackToHome('/intro/colleges')).toBe(true)
     expect(shouldMobileBackToHome('/intro/sie')).toBe(true)
     expect(shouldMobileBackToHome('/campus')).toBe(true)
+    expect(shouldMobileBackToHome('/campus/2d')).toBe(true)
+    expect(shouldMobileBackToHome('/campus/3d')).toBe(true)
     expect(shouldMobileBackToHome('/guide')).toBe(true)
   })
 

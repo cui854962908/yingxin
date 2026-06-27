@@ -2,16 +2,13 @@
 import { campusCategories } from './campusPlaces'
 import type { CampusPlace } from './types'
 
-const props = defineProps<{
-  place: CampusPlace
-  favorite: boolean
-}>()
+defineProps<{ place: CampusPlace; sheet?: boolean; routePlanning?: boolean }>()
 
-const emit = defineEmits<{ favorite: []; route: []; locate: [] }>()
+const emit = defineEmits<{ go: []; locate: []; close: [] }>()
 </script>
 
 <template>
-  <aside class="campus-detail">
+  <aside class="campus-detail" :class="{ 'campus-detail--sheet': sheet }">
     <div class="detail-heading">
       <i :style="{ background: campusCategories.find((item) => item.key === place.category)?.color }">
         {{ campusCategories.find((item) => item.key === place.category)?.label[0] }}
@@ -20,29 +17,39 @@ const emit = defineEmits<{ favorite: []; route: []; locate: [] }>()
         <small>{{ campusCategories.find((item) => item.key === place.category)?.label }} · {{ place.tags[0] }}</small>
         <h2>{{ place.name }}</h2>
       </span>
-      <button type="button" :class="{ active: favorite }" aria-label="收藏地点" @click="emit('favorite')">☆</button>
+      <button
+        v-if="sheet"
+        type="button"
+        class="detail-close"
+        aria-label="关闭地点详情"
+        @click="emit('close')"
+      >
+        ×
+      </button>
     </div>
     <div class="photo-placeholder">
       <span>▧</span><strong>地点图片</strong><small>可后续补充英才校区实景照片</small>
     </div>
-    <div class="verify-row"><span>数据：校内导览</span><span>底图：高德地图</span></div>
     <dl>
       <div><dt>⌖ 位置说明</dt><dd>{{ place.address }}</dd></div>
       <div><dt>◷ 开放时间</dt><dd>{{ place.openTime || '以学校实际安排为准' }}</dd></div>
-      <div><dt>ⓘ 使用说明</dt><dd>地点信息将持续根据学校实际情况更新。</dd></div>
     </dl>
     <section>
       <h3>地点简介</h3>
       <p>{{ place.description }}</p>
       <h3>标签</h3>
       <div class="tag-list"><span v-for="tag in place.tags" :key="tag">{{ tag }}</span></div>
-      <h3>数据来源</h3>
-      <p class="source">高德地图公开底图<br />河南牧业经济学院英才校区校内导览数据</p>
     </section>
     <footer>
-      <button class="primary" type="button" @click="emit('locate')">⌖ 定位到地图</button>
-      <button type="button" @click="emit('favorite')">☆ {{ favorite ? '已收藏' : '收藏' }}</button>
-      <button type="button" @click="emit('route')">⌁ 路线规划</button>
+      <button v-if="!sheet" type="button" class="detail-locate-btn" @click="emit('locate')">⌖ 在地图中查看</button>
+      <button
+        class="primary detail-go-btn"
+        type="button"
+        :disabled="routePlanning"
+        @click="emit('go')"
+      >
+        {{ routePlanning ? '规划中…' : '我要去这' }}
+      </button>
     </footer>
   </aside>
 </template>

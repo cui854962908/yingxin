@@ -81,8 +81,16 @@ const subtitle = computed(() => {
 })
 
 function goTab(path: string) {
-  const target = path === '/intro/colleges' ? collegeTabPath.value : path
-  if (route.path !== target) router.push(target)
+  if (path === '/intro/colleges') {
+    const target = collegeTabPath.value
+    if (route.path !== target) router.push(target)
+    return
+  }
+  if (path === '/intro/clubs') {
+    router.push('/intro/clubs')
+    return
+  }
+  if (route.path !== path) router.push(path)
 }
 </script>
 
@@ -131,6 +139,18 @@ function goTab(path: string) {
           <p class="intro-sub">{{ detailCollege.tagline }}</p>
         </div>
       </div>
+      <nav class="intro-tabs" aria-label="介绍分类">
+        <button
+          v-for="t in INTRO_TABS" :key="t.id"
+          type="button"
+          class="intro-tab"
+          :class="{ 'intro-tab--on': activeTab === t.id }"
+          @click="goTab(t.path)"
+        >
+          <span class="intro-tab__text intro-tab__text--full">{{ t.label }}</span>
+          <span class="intro-tab__text intro-tab__text--short">{{ t.shortLabel }}</span>
+        </button>
+      </nav>
     </header>
     <header v-else-if="detailCampus" ref="introHeadRef" class="intro-head intro-head--detail intro-head--sticky">
       <div class="intro-head__veil" aria-hidden="true" />

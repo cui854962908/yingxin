@@ -10,7 +10,7 @@ const xinOpen = inject<Ref<boolean>>('xinOpen')
 function openChat() { if (xinOpen) xinOpen.value = true }
 function handleServiceClick(id: string) {
   if (id === 'ai') { openChat(); return }
-  if (id === 'map') { router.push('/campus'); return }
+  if (id === 'map') { router.push('/campus').catch(() => {}); return }
   if (id === 'notice') { router.push('/guide'); return }
   if (id === 'tips') { router.push('/tips'); return }
   // 有外链的卡片 → 新标签页打开

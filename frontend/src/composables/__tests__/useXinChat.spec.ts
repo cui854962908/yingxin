@@ -115,7 +115,7 @@ describe('useXinChat', () => {
   })
 
   describe('quickList', () => {
-    it('buildQuickTagsFromFaq 按 FAQ 顺序取前 6 条', () => {
+    it('buildQuickTagsFromFaq 按 FAQ 顺序取前 3 条', () => {
       const tags = buildQuickTagsFromFaq([
         { question: '快递在哪' },
         { question: '宿舍几点熄灯' },
@@ -125,9 +125,9 @@ describe('useXinChat', () => {
         { question: '食堂开放时间' },
         { question: '多余条目' },
       ])
-      expect(tags).toHaveLength(6)
+      expect(tags).toHaveLength(3)
       expect(tags[0]).toEqual({ label: '快递在哪', text: '快递在哪' })
-      expect(tags[5].text).toBe('食堂开放时间')
+      expect(tags[2].text).toBe('学费怎么交')
     })
 
     it('过长问题截断展示、点击仍发完整问题', () => {

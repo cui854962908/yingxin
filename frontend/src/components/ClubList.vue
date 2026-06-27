@@ -1,50 +1,109 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { Club } from '../types/club'
+import { resolveIntroTabGroups, filterClubsByIntroGroupId } from '../constants/intro'
+import type { IntroClubGroup } from '../constants/intro'
 import { authHeaders, useAuth } from '../composables/useAuth'
 import AppSpinner from './AppSpinner.vue'
 import ClubCard from './ClubCard.vue'
+import IntroOrgGroupCard from './IntroOrgGroupCard.vue'
+import '../styles/intro-theme.css'
 
-const props = withDefaults(defineProps<{ hideHeader?: boolean }>(), { hideHeader: false })
+const props = withDefaults(
+  defineProps<{ hideHeader?: boolean; perPage?: number }>(),
+  { hideHeader: false, perPage: 10 },
+)
 const route = useRoute()
 const router = useRouter()
 const clubs = ref<Club[]>([])
 const loading = ref(true)
 const searchQuery = ref('')
-const activeCategory = ref((route.query.cat as string) || '信工团学会')
+const activeCategory = ref(typeof route.query.cat === 'string' ? route.query.cat : '全部')
 const statusMenuClubId = ref<string | null>(null)
 const currentPage = ref(Number(route.query.page) || 1)
-const perPage = 10
 
 const categories = ['全部', '信工团学会', '校级组织', '兴趣社团']
 
 const { isAdmin, isClubAdmin, student } = useAuth()
 const isAnyAdmin = computed(() => isAdmin.value || isClubAdmin.value)
 
+const introGroupMode = computed(
+  () => props.hideHeader && !route.query.cat && !searchQuery.value.trim(),
+)
+
+const introGroups = computed(() =>
+  resolveIntroTabGroups(clubs.value).map((group) => ({
+    ...group,
+    count:
+      group.kind === 'club'
+        ? 1
+        : clubs.value.filter((club) => club.category === group.id).length,
+  })),
+)
+
+const activeIntroGroup = computed(() => {
+  const cat = route.query.cat
+  if (typeof cat !== 'string' || !cat) return null
+  return introGroups.value.find((group) => group.id === cat) ?? null
+})
+
 const filteredClubs = computed(() => {
   let result = clubs.value
   const q = searchQuery.value.trim().toLowerCase()
   if (q) {
-    // 搜索时忽略分类，全局匹配
     result = result.filter(c =>
       c.name.toLowerCase().includes(q)
       || (c.advisor_name && c.advisor_name.toLowerCase().startsWith(q)),
     )
+  } else if (props.hideHeader && route.query.cat) {
+    result = filterClubsByIntroGroupId(result, String(route.query.cat))
   } else if (activeCategory.value !== '全部') {
     result = result.filter(c => c.category === activeCategory.value)
   }
   return result
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredClubs.value.length / perPage)))
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredClubs.value.length / props.perPage)))
 const pagedClubs = computed(() => {
-  const start = (currentPage.value - 1) * perPage
-  return filteredClubs.value.slice(start, start + perPage)
+  const start = (currentPage.value - 1) * props.perPage
+  return filteredClubs.value.slice(start, start + props.perPage)
 })
 function goToPage(p: number) { currentPage.value = p }
 function prevPage() { if (currentPage.value > 1) currentPage.value-- }
 function nextPage() { if (currentPage.value < totalPages.value) currentPage.value++ }
+
+watch([filteredClubs, () => props.perPage], () => {
+  if (currentPage.value > totalPages.value) currentPage.value = totalPages.value
+})
+watch(searchQuery, () => { currentPage.value = 1 })
+
+watch(
+  () => route.query.cat,
+  (cat) => {
+    if (typeof cat === 'string' && categories.includes(cat)) {
+      activeCategory.value = cat
+      currentPage.value = 1
+    } else if (!cat && props.hideHeader) {
+      activeCategory.value = '全部'
+    } else if (typeof cat === 'string' && cat === '校级组织' && props.hideHeader) {
+      router.replace({ path: '/intro/clubs' })
+    }
+  },
+  { immediate: true },
+)
+
+function openIntroGroup(group: IntroClubGroup & { count: number }) {
+  if (group.kind === 'club') {
+    goDetail(group.id.slice(5))
+    return
+  }
+  router.replace({ path: '/intro/clubs', query: { cat: group.id } })
+}
+
+function backToIntroGroups() {
+  router.replace({ path: '/intro/clubs' })
+}
 
 async function loadClubs() {
   loading.value = true
@@ -98,7 +157,12 @@ onMounted(loadClubs)
       <div v-else-if="isAnyAdmin" class="clubs-header clubs-header--compact">
         <button class="clubs-add-btn" @click="goAdd">+ 添加社团</button>
       </div>
-      <div class="clubs-search">
+      <nav v-if="hideHeader && route.query.cat && activeIntroGroup" class="intro-org-crumb clubs-intro-crumb" aria-label="组织导航">
+        <button type="button" @click="backToIntroGroups">全部组织</button>
+        <span class="intro-org-crumb__sep" aria-hidden="true">/</span>
+        <span class="intro-org-crumb__current">{{ activeIntroGroup.label }}</span>
+      </nav>
+      <div v-if="!hideHeader || !route.query.cat" class="clubs-search">
         <svg class="clubs-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input
           v-model="searchQuery"
@@ -107,7 +171,7 @@ onMounted(loadClubs)
           placeholder="搜索社团名称、介绍、指导老师…"
         />
       </div>
-      <div class="clubs-categories">
+      <div v-if="!hideHeader" class="clubs-categories">
         <button
           v-for="cat in categories" :key="cat"
           class="clubs-cat-btn" :class="{ active: activeCategory === cat }"
@@ -116,7 +180,19 @@ onMounted(loadClubs)
       </div>
     </div>
 
-    <div v-if="pagedClubs.length > 0" class="clubs-grid">
+    <div v-if="introGroupMode" class="intro-org-list">
+      <IntroOrgGroupCard
+        v-for="group in introGroups"
+        :key="group.id"
+        :label="group.label"
+        :subtitle="group.subtitle"
+        :count="group.count"
+        :show-count="group.kind !== 'club'"
+        @click="openIntroGroup(group)"
+      />
+    </div>
+
+    <div v-else-if="pagedClubs.length > 0" class="clubs-grid">
       <ClubCard
         v-for="club in pagedClubs" :key="club.id"
         :club="club"
@@ -131,21 +207,28 @@ onMounted(loadClubs)
       />
     </div>
 
-    <div v-if="totalPages > 1" class="clubs-pagination">
-      <button :disabled="currentPage === 1" @click="prevPage">&lt;</button>
+    <nav
+      v-if="!introGroupMode && totalPages > 1"
+      class="clubs-pagination"
+      :class="{ 'intro-pagination': hideHeader }"
+      aria-label="社团分页"
+    >
+      <button type="button" :disabled="currentPage === 1" @click="prevPage">&lt;</button>
       <button
-        v-for="p in totalPages" :key="p"
+        v-for="p in totalPages"
+        :key="p"
+        type="button"
         :class="{ active: p === currentPage }"
         @click="goToPage(p)"
       >{{ p }}</button>
-      <button :disabled="currentPage === totalPages" @click="nextPage">&gt;</button>
-    </div>
+      <button type="button" :disabled="currentPage === totalPages" @click="nextPage">&gt;</button>
+    </nav>
 
     <div v-if="loading" class="clubs-loading">
       <AppSpinner />
     </div>
-    <p v-else-if="clubs.length === 0" class="clubs-empty">暂无社团信息</p>
-    <p v-else-if="pagedClubs.length === 0" class="clubs-empty">未找到匹配的社团</p>
+    <p v-else-if="!introGroupMode && clubs.length === 0" class="clubs-empty">暂无社团信息</p>
+    <p v-else-if="!introGroupMode && pagedClubs.length === 0" class="clubs-empty">未找到匹配的社团</p>
   </div>
 </template>
 
@@ -209,6 +292,10 @@ onMounted(loadClubs)
 .clubs-cat-btn.active { background: #4a8c5c; color: #fff; border-color: #4a8c5c }
 
 .clubs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px }
+
+.clubs-intro-crumb {
+  margin: 0;
+}
 
 .clubs-empty { text-align: center; color: #b0a090; padding: 40px 0 24px; font-size: .88rem }
 .clubs-loading { display: flex; align-items: center; justify-content: center; padding: 40px 0 }

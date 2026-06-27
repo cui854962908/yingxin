@@ -33,6 +33,8 @@ backend/agent_data_only.sql
 *.db
 database_dump.sql
 frontend/test-results/
+frontend/data/campus-poi-overrides.json
+frontend/data/campus-road-overrides.json
 
 # Uploaded media (user-generated, not source code)
 backend/static/uploads/

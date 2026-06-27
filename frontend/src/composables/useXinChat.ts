@@ -71,7 +71,7 @@ function linksAfterAgent(
   return null
 }
 
-const QUICK_TAG_MAX = 6
+const QUICK_TAG_MAX = 3
 const QUICK_TAG_LABEL_MAX = 12
 
 /** 从 FAQ 排序生成快捷标签（与后台拖拽顺序一致） */

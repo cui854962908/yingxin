@@ -2,6 +2,8 @@
   .wiki-hero__img,
   .wiki-campus__image img,
   .wiki-gallery-card__image img,
+  .wiki-strength__media img,
+  .wiki-highlight-card,
   .wiki-hero__copy a,
   .wiki-text-card > a,
   .wiki-overview::before,
@@ -13,7 +15,17 @@
 
 @media (max-width: 1180px) {
   .wiki-lead,
-  .wiki-feature-grid {
+  .wiki-feature-grid,
+  .wiki-strength {
+    grid-template-columns: 1fr;
+  }
+
+  .wiki-strength__media {
+    min-height: 180px;
+    max-height: 220px;
+  }
+
+  .wiki-highlight-grid {
     grid-template-columns: 1fr;
   }
 
@@ -40,12 +52,25 @@
 @media (max-width: 768px) {
   .wiki-lead,
   .wiki-campus-grid,
-  .wiki-feature-grid {
+  .wiki-feature-grid,
+  .wiki-highlight-grid {
     grid-template-columns: 1fr;
   }
 
+  .wiki-strength__copy,
   .wiki-overview,
   .wiki-text-card {
-    padding: 14px;
+    padding: 16px;
+  }
+
+  .wiki-highlight-card {
+    min-height: 0;
+    padding: 16px 14px 14px 50px;
+  }
+
+  .wiki-admin-hint {
+    margin: 0 var(--intro-page-pad, 12px);
+    border-radius: var(--intro-radius-sm, 10px);
+    font-size: 0.8125rem;
   }
 }

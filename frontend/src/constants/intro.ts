@@ -1,5 +1,11 @@
 /** 认识牧院 · 学院介绍配置 */
 
+import {
+  INTRO_SIE_FACULTY_FALLBACK,
+  INTRO_SIE_OVERVIEW_FALLBACK,
+} from './intro-sie-fallbacks'
+export { INTRO_WIKI_FALLBACK, INTRO_WIKI_HIGHLIGHTS } from './intro-wiki-fallbacks'
+
 export const INTRO_SCHOOL = '河南牧业经济学院'
 
 /** 牧院大百科 · 学校级介绍 */
@@ -11,8 +17,8 @@ export const INTRO_WIKI_OFFICIAL_URL = 'https://www.hnuahe.edu.cn'
 /** 首页亮点数据 */
 export const INTRO_WIKI_STATS = [
   { label: '办学渊源', value: '1957年' },
-  { label: '校区', value: '3个' },
-  { label: '占地', value: '约191万㎡' },
+  { label: '本科专业', value: '53个' },
+  { label: '全日制在校生', value: '3万余' },
 ] as const
 
 export const INTRO_WIKI_CAMPUSES = [
@@ -27,7 +33,7 @@ export const INTRO_WIKI_CAMPUSES = [
     id: 'yingcai',
     name: '英才校区',
     tag: '惠济区',
-    address: '郑州市惠济区英才街2号',
+    address: '郑州市惠济区英才街146号',
     image: '/campus-official/campus-yingcai-gate.webp',
   },
   {
@@ -108,7 +114,7 @@ export const INTRO_CAMPUSES: IntroCampusConfig[] = [
     id: 'yingcai',
     name: '英才校区',
     tag: '惠济区',
-    address: '郑州市惠济区英才街2号',
+    address: '郑州市惠济区英才街146号',
     heroImage: '/campus-official/campus-yingcai-gate.webp',
     cardImage: '/campus-official/campus-yingcai-gate.webp',
     tagline: '商科底蕴 · 应用型培养',
@@ -120,7 +126,7 @@ export const INTRO_CAMPUSES: IntroCampusConfig[] = [
       { label: '标志景观', value: '风景湖' },
     ],
     overview:
-      '英才校区位于郑州市惠济区英才街2号，保留了原河南商业高等专科学校（1960年建校）的教学与生活传统，在商贸、经管等学科方向积淀深厚。' +
+      '英才校区位于郑州市惠济区英才街146号，保留了原河南商业高等专科学校（1960年建校）的教学与生活传统，在商贸、经管等学科方向积淀深厚。' +
       '校区与龙子湖、北林校区共同构成学校「一校三区」布局。信息工程学院（软件学院）及多数信工类新生的课程、实验、竞赛与社团活动主要在此校区完成。' +
       '学子广场、风景湖、教学楼群与实验楼共同构成日常学习动线，周边高校聚集，餐饮、购物与公交出行较为方便。',
     features: [
@@ -200,36 +206,76 @@ export function getIntroCampus(id: string): IntroCampusConfig | undefined {
   return INTRO_CAMPUSES.find((c) => c.id === id)
 }
 
-export const INTRO_WIKI_FALLBACK = [
-  {
-    title: '学校简介',
-    content:
-      '<p>河南牧业经济学院位于河南省郑州市，由原郑州牧业工程高等专科学校（1957年建校）与原河南商业高等专科学校（1960年建校）于2013年合并组建，是河南省人民政府举办的省属公办全日制普通本科院校。</p>' +
-      '<p>学校坚持「区域性、行业性、开放型、应用型」办学定位，立足河南、面向行业，紧密对接现代农牧业、食品加工业、商贸物流业与数字经济发展需要，培养能在一线岗位快速上手、持续成长的应用型人才。</p>' +
-      '<p>现设有龙子湖、英才、北林三个校区，总占地面积约191.3万平方米；学科专业覆盖农、经、管、工、文、法等多个门类，形成以牧业为特色、经管优势突出、多学科协调发展的办学格局。更多信息见官网：<a href="https://www.hnuahe.edu.cn" target="_blank" rel="noopener">www.hnuahe.edu.cn</a></p>' +
-      '<p><img src="/campus-official/campus-longzi-scenery.webp" alt="龙子湖校区校园风光" /></p>',
-  },
-  {
-    title: '校训与校风',
-    content:
-      '<p><strong>校训：尚严崇实，善知敏行。</strong></p>' +
-      '<p>「尚严」强调严密严谨的治学态度与管理规范，引导师生在学业与工作中追求标准与质量；「崇实」倡导求真务实、脚踏实地，反对浮躁与空谈；「善知敏行」鼓励主动求知、勤于实践，把课堂所学转化为解决实际问题的能力。</p>' +
-      '<p>学校注重课堂教学、实验实训、学科竞赛与社会实践相结合，鼓励同学们早进实验室、早进项目、早进团队，在真实场景中锻炼专业素养与协作能力。三校区各具特色：龙子湖开阔现代、英才商科底蕴深厚、北林牧科传统鲜明，共同构成牧院多元而统一的校园文化。</p>' +
-      '<p><img src="/campus-official/campus-yingcai-lake.webp" alt="英才校区风景湖" /></p>',
-  },
-  {
-    title: '办学实力',
-    content:
-      '<p>学校现有21个二级教学单位、53个本科专业，拥有动物科学国家级一流本科专业建设点，以及动物医学、食品科学与工程、财务管理等11个省级一流本科专业建设点。教学科研仪器设备总值约2.77亿元，馆藏纸质图书约299.7万册。</p>' +
-      '<p>学校与行业龙头企业共建智慧牧业、食品、预制菜、冷链物流、数智财金等产业学院，推进产教融合与校企协同育人；信息工程学院（软件学院）与华为等企业共建 ICT 学院，为信息技术类人才培养提供工程化平台。</p>' +
-      '<p>对新生而言，可先通过本模块了解三校区分工与到校路线，再按学院指引熟悉本专业主要上课与实验地点，报到前准备好证件、生活用品与常用 App（地图、校园服务类），能更从容地开启大学阶段。</p>' +
-      '<p><img src="/campus-official/campus-longzi-library.webp" alt="龙子湖校区图书馆" /></p>',
-  },
-]
-
 export interface IntroClubFilter {
   clubIds?: string[]
   categories?: string[]
+}
+
+export interface IntroClubGroup {
+  id: string
+  label: string
+  subtitle: string
+  kind?: 'category' | 'club'
+}
+
+export const INTRO_CLUB_GROUP_META: Record<string, { subtitle: string }> = {
+  信工团学会: { subtitle: '学院团学组织与各科室、社团' },
+  校级组织: { subtitle: '全校性学生组织' },
+  兴趣社团: { subtitle: '跨学院兴趣类社团' },
+}
+
+export function resolveIntroClubGroups(filter: IntroClubFilter): IntroClubGroup[] {
+  if (filter.categories?.length) {
+    return filter.categories.map((id) => ({
+      id,
+      label: id,
+      subtitle: INTRO_CLUB_GROUP_META[id]?.subtitle ?? '点击查看下属社团',
+      kind: 'category' as const,
+    }))
+  }
+  if (filter.clubIds?.length) {
+    return [{ id: '__college__', label: '本院社团', subtitle: '点击查看相关社团', kind: 'category' as const }]
+  }
+  return []
+}
+
+/** 社团介绍 Tab 顶层的组织卡片：信工团学会 + 各校级组织 + 兴趣社团 */
+export function resolveIntroTabGroups(
+  clubs: { id: string; name: string; category: string; intro?: string }[],
+): IntroClubGroup[] {
+  const groups: IntroClubGroup[] = [
+    {
+      id: '信工团学会',
+      label: '信工团学会',
+      subtitle: INTRO_CLUB_GROUP_META['信工团学会'].subtitle,
+      kind: 'category',
+    },
+  ]
+
+  const schoolOrgs = clubs
+    .filter((club) => club.category === '校级组织')
+    .sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
+
+  for (const club of schoolOrgs) {
+    const intro = club.intro?.trim() ?? ''
+    groups.push({
+      id: `club:${club.id}`,
+      label: club.name,
+      subtitle: intro
+        ? (intro.length > 40 ? `${intro.slice(0, 40)}…` : intro)
+        : INTRO_CLUB_GROUP_META['校级组织'].subtitle,
+      kind: 'club',
+    })
+  }
+
+  groups.push({
+    id: '兴趣社团',
+    label: '兴趣社团',
+    subtitle: INTRO_CLUB_GROUP_META['兴趣社团'].subtitle,
+    kind: 'category',
+  })
+
+  return groups
 }
 
 export interface IntroCollegeConfig {
@@ -265,48 +311,8 @@ export const INTRO_COLLEGES: IntroCollegeConfig[] = [
     ],
     overviewCategory: 'intro_sie_overview',
     facultyCategory: 'intro_sie_faculty',
-    overviewFallback: [
-      {
-        title: '学院简介',
-        content:
-          '<p>信息工程学院（软件学院）是河南牧业经济学院二级教学单位，学院官网：<a href="https://xxdz.hnuahe.edu.cn" target="_blank" rel="noopener">xxdz.hnuahe.edu.cn</a>。学院面向信息技术与数字经济，培养具备工程实践、团队协作与创新创业能力的应用型专门人才，是河南省特色化示范性软件学院建设依托单位。</p>' +
-          '<p>学院位于<strong>英才校区</strong>（郑州市惠济区英才街2号），信工类新生的专业课程、上机实验、课程设计、学科竞赛集训与多数团学活动均在此校区完成。日常动线一般为「教学楼 — 实验楼 — 图书馆/自习 — 学子广场」，开学第一周建议熟悉各楼栋位置与机房开放时间。</p>' +
-          '<p>学院现开设<strong>软件工程、物联网工程、数据科学与大数据技术、数字媒体技术、智慧牧业科学与工程</strong>等 5 个本科专业，兼顾通用信息技术能力与学校牧业学科交叉特色，便于同学们在就业时向软件开发、数据应用、物联网集成、数字内容或智慧农业信息化等方向拓展。</p>' +
-          '<p><img src="/campus-official/campus-yingcai-lake.webp" alt="英才校区风景湖" class="intro-inline-photo" /></p>',
-      },
-      {
-        title: '办学特色',
-        content:
-          '<ul>' +
-          '<li>被河南省教育厅确定为<strong>特色化示范性软件学院</strong>，软件人才培养方案强调工程化与项目化</li>' +
-          '<li>与华为技术有限公司、深圳市讯方技术股份有限公司联合成立<strong>华为 ICT 学院</strong>，开展认证培训与工程实践</li>' +
-          '<li>与黄河科技集团创新有限公司联合成立<strong>鲲鹏产业学院</strong>，对接国产化算力与软件开发生态</li>' +
-          '<li>建有 60 余个实验实训室，占地 5300 余平方米，仪器设备总值约 3000 万元，覆盖软件开发、网络、大数据、物联网、数字媒体等方向</li>' +
-          '<li>注重「课赛结合」：鼓励参与蓝桥杯、中国大学生计算机设计大赛、华为 ICT 大赛等，以赛促学、以赛促练</li>' +
-          '<li>校企协同：部分课程引入企业导师与真实项目案例，帮助同学们提前了解行业工作流程与交付标准</li>' +
-          '<li>结合牧院学科优势，智慧牧业科学与工程专业面向现代牧场、食品冷链、农业信息化等场景培养交叉型人才</li>' +
-          '</ul>',
-      },
-      {
-        title: '专业方向',
-        content:
-          '<p><strong>软件工程</strong>：面向 Web/移动端应用、企业信息化系统与软件项目管理，核心能力包括需求分析、架构设计、编码实现、测试与运维；适合希望从事后端、全栈或项目协调岗位的同学。</p>' +
-          '<p><strong>数据科学与大数据技术</strong>：聚焦数据采集、清洗、存储、分析与可视化，结合 Python/SQL/大数据组件完成业务分析任务；适合数据分析、数据开发、商业智能等方向。</p>' +
-          '<p><strong>物联网工程</strong>：融合嵌入式、传感器、通信网络与云平台，完成设备接入、数据采集与远程控制；适合智能硬件、工业互联网、智慧校园等场景。</p>' +
-          '<p><strong>数字媒体技术</strong>：涵盖图形图像、音视频、交互设计与前端呈现，培养数字内容制作与多媒体系统开发能力；适合 UI/UX、新媒体技术、游戏与互动展示等方向。</p>' +
-          '<p><strong>智慧牧业科学与工程</strong>：将信息技术应用于现代牧业生产与管理，涉及养殖环境监控、生产数据分析、牧业信息化系统等；体现学校办学特色，适合对「IT + 农牧」交叉领域感兴趣的同学。</p>' +
-          '<p>入学后可通过学院官网、辅导员与专业负责人介绍进一步了解各专业的培养方案、核心课程与毕业去向，第一学期重点打好数学、英语与编程基础。</p>',
-      },
-    ],
-    facultyFallback: [
-      {
-        title: '师资概况',
-        content:
-          '<p>学院拥有一支结构合理、工程经验丰富的师资队伍，涵盖软件工程、大数据、物联网、数字媒体与智慧牧业信息化等方向。许多教师具有企业研发或项目交付背景，承担专业课、课程设计、毕业设计与大学生创新创业项目指导。</p>' +
-          '<p>教学中强调「能讲清原理、能带队做项目」：既有理论讲授，也有实验、实训与竞赛辅导；同学们可在 office hour、实验室开放时间与导师沟通学习路径与竞赛选题。</p>' +
-          '<p>具体教师名单与研究方向以学院官网及开学后公布的信息为准；本页「师资队伍」栏目可在迎新期间持续更新。</p>',
-      },
-    ],
+    overviewFallback: [...INTRO_SIE_OVERVIEW_FALLBACK],
+    facultyFallback: [...INTRO_SIE_FACULTY_FALLBACK],
     clubFilter: { categories: ['信工团学会'] },
   },
 ]
@@ -337,10 +343,32 @@ export function filterClubsForCollege<T extends { id: string; category: string }
   return []
 }
 
+export function filterClubsByIntroGroup<T extends { id: string; category: string }>(
+  all: T[],
+  filter: IntroClubFilter,
+  groupId: string,
+): T[] {
+  return filterClubsByIntroGroupId(all, groupId, filter)
+}
+
+export function filterClubsByIntroGroupId<T extends { id: string; category: string }>(
+  all: T[],
+  groupId: string,
+  filter?: IntroClubFilter,
+): T[] {
+  if (groupId.startsWith('club:')) {
+    const clubId = groupId.slice(5)
+    return all.filter((club) => club.id === clubId)
+  }
+  const scoped = filter ? filterClubsForCollege(all, filter) : all
+  if (groupId === '__college__') return scoped
+  return scoped.filter((club) => club.category === groupId)
+}
+
 export const INTRO_TABS = [
   { id: 'wiki', label: '牧院大百科', shortLabel: '大百科', path: '/intro/wiki' },
-  { id: 'colleges', label: '学院概况', shortLabel: '学院', path: '/intro/colleges' },
-  { id: 'clubs', label: '社团招新', shortLabel: '社团', path: '/intro/clubs' },
+  { id: 'colleges', label: '学院介绍', shortLabel: '学院', path: '/intro/colleges' },
+  { id: 'clubs', label: '社团介绍', shortLabel: '社团', path: '/intro/clubs' },
 ] as const
 
 /** @deprecated */

@@ -151,6 +151,21 @@ onMounted(load)
 .module-section-body :deep(h4) {
   margin: 1em 0 .5em; font-size: .92rem; color: #3c3028;
 }
+.module-section-body :deep(ul) {
+  margin: 0; padding-left: 1.1em;
+}
+.module-section-body :deep(li) {
+  margin-bottom: .45em;
+}
+.module-section-body :deep(li)::marker {
+  color: var(--intro-accent, #b51f2d);
+}
+.module-section-body :deep(.intro-feature-grid) {
+  margin-top: 2px;
+}
+.module-section-body :deep(.intro-feature-note) {
+  margin-top: 10px;
+}
 .college-admin-hint {
   font-size: .72rem; color: #b0a090; margin: 0; line-height: 1.6;
 }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useAppNavigate } from '../composables/useAppNavigate'
+import { CAMPUS_3D_TRIAL_LABEL } from '../constants/product'
 
 const { appGoBackTo } = useAppNavigate()
 const loading = ref(true)
@@ -30,7 +31,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         </svg>
         <span class="back-label">返回首页</span>
       </button>
-      <span class="campus-title">校园导览 · 英才校区</span>
+      <span class="campus-title">
+        校园导览 · 英才校区
+        <span class="campus-trial">{{ CAMPUS_3D_TRIAL_LABEL }}</span>
+      </span>
       <span class="campus-hint">返回</span>
     </header>
 
@@ -100,6 +104,23 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.campus-trial {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(246, 239, 216, 0.16);
+  border: 1px solid rgba(230, 215, 168, 0.45);
+  color: #f6efd8;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
 .campus-hint {

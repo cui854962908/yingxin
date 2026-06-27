@@ -155,17 +155,17 @@ function isMobileViewport() {
   return window.innerWidth <= MOBILE_MAX
 }
 
-// 移动端：非首页模块按系统返回先回首页，在首页再按才退出站点
-router.afterEach((to) => {
-  if (!isMobileViewport() || !shouldMobileBackToHome(to.path)) return
-  history.pushState({ yxMobileBack: true }, '')
-})
-
+/** 勿在 afterEach 里 pushState — 会冲掉 Vue Router 的 history.state，移动端无法再 router.push */
 window.addEventListener('popstate', () => {
   if (!isMobileViewport() || getChatOpen()) return
-  const path = router.currentRoute.value.path
-  if (!shouldMobileBackToHome(path)) return
-  router.replace('/')
+  queueMicrotask(() => {
+    if (getChatOpen()) return
+    const path = router.currentRoute.value.path
+    if (path === '/') return
+    if (shouldMobileBackToHome(path)) {
+      router.replace('/')
+    }
+  })
 })
 
 export default router

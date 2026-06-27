@@ -208,7 +208,14 @@ yingxin/
 
 ### 4.6 校园导览
 
-桌面端加载 3D 校园模型（Three.js 嵌入页），移动端展示实景图册（田径场、篮球场、网球场、排球场）。
+入口 `/campus`，用户自行选择 2D 或 3D 导览：
+
+| 模式 | 路由 | 说明 |
+|------|------|------|
+| **2D 校园地图** | `/campus/2d` | 高德底图、POI 检索与分类、校内路网步行示意；坐标已与底图校准，维护时用 `?calibrate=1` 拖动微调 |
+| **3D 校园漫游** | `/campus/3d` | **试用版** · iframe 加载 `public/campus/`（Three.js + GLB 场景） |
+
+3D 源码在 `frontend/campus-app/`，构建产物输出至 `public/campus/`。当前运行路径为 `GlbCampus` + `RobotCharacter`；已删除的 `Building/Ground/Lake/Sky` 等为旧 procedural 实现，不影响试用版上线。
 
 ---
 

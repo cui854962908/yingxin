@@ -29,6 +29,7 @@ function goBack() {
 function scrollTo(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
+
 </script>
 
 <template>
@@ -38,36 +39,34 @@ function scrollTo(id: string) {
       返回{{ INTRO_COLLEGES.length > 1 ? '学院列表' : '牧院大百科' }}
     </button>
 
-    <div class="detail-hero-wrap">
-      <header class="detail-hero">
-        <img
-          v-if="college.coverImage"
-          class="detail-hero-img"
-          :src="college.coverImage"
-          :alt="college.college"
-          loading="eager"
-        />
-        <div class="detail-hero-bg" />
-        <div class="detail-hero-inner">
-          <span class="detail-hero-badge">{{ college.shortName }}</span>
-          <h2 class="detail-hero-title">{{ college.college }}</h2>
-          <p class="detail-hero-tagline">{{ college.tagline }}</p>
-        </div>
-      </header>
+    <header class="detail-hero">
+      <img
+        v-if="college.coverImage"
+        class="detail-hero-img"
+        :src="college.coverImage"
+        :alt="college.college"
+        loading="eager"
+      />
+      <div class="detail-hero-bg" />
+      <div class="detail-hero-inner">
+        <span class="detail-hero-badge">{{ college.shortName }}</span>
+      </div>
+    </header>
 
-      <div v-if="college.stats.length" class="intro-stat-row detail-stats-float">
+    <section class="detail-meta">
+      <div v-if="college.stats.length" class="intro-stat-row detail-stats">
         <div v-for="(s, i) in college.stats" :key="i" class="intro-stat-chip">
           <span class="intro-stat-chip__val">{{ s.value }}</span>
           <span class="intro-stat-chip__label">{{ s.label }}</span>
         </div>
       </div>
-    </div>
 
-    <nav class="intro-pill-nav detail-anchors" aria-label="页面章节">
-      <button type="button" @click="scrollTo('section-overview')">学院简介</button>
-      <button type="button" @click="scrollTo('section-faculty')">师资队伍</button>
-      <button type="button" @click="scrollTo('section-clubs')">社团招新</button>
-    </nav>
+      <nav class="intro-pill-nav detail-anchors" aria-label="页面章节">
+        <button type="button" @click="scrollTo('section-overview')">学院简介</button>
+        <button type="button" @click="scrollTo('section-faculty')">师资队伍</button>
+        <button type="button" @click="scrollTo('section-clubs')">社团招新</button>
+      </nav>
+    </section>
 
     <IntroCollegeModule
       :overview-category="college.overviewCategory"
@@ -91,17 +90,12 @@ function scrollTo(id: string) {
   padding: 4px 4px 0;
 }
 
-.detail-hero-wrap {
-  position: relative;
-  margin-bottom: 6px;
-}
-
 .detail-hero {
   position: relative;
   border-radius: var(--intro-radius, 14px);
   overflow: hidden;
-  min-height: 120px;
-  max-height: 168px;
+  min-height: 88px;
+  max-height: 112px;
   box-shadow: 0 6px 22px rgba(60, 48, 40, 0.12);
 }
 
@@ -127,7 +121,10 @@ function scrollTo(id: string) {
 .detail-hero-inner {
   position: relative;
   z-index: 1;
-  padding: 18px 16px 20px;
+  display: flex;
+  align-items: flex-end;
+  min-height: 88px;
+  padding: 12px 14px;
   color: #f2e6d0;
 }
 
@@ -142,61 +139,90 @@ function scrollTo(id: string) {
   border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
-.detail-hero-title {
-  margin: 8px 0 4px;
-  font-size: 1.22rem;
-  font-weight: 700;
-  font-family: 'Noto Serif SC', Georgia, serif;
-  letter-spacing: 0.06em;
+.detail-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.detail-hero-tagline {
+.detail-stats {
   margin: 0;
-  font-size: 0.78rem;
-  opacity: 0.9;
 }
 
-.detail-stats-float {
-  margin: -18px 8px 0;
-  position: relative;
-  z-index: 2;
+.detail-stats .intro-stat-chip {
+  min-width: 0;
+}
+
+.detail-stats .intro-stat-chip__val {
+  font-size: 0.95rem;
+  line-height: 1.25;
+  word-break: keep-all;
 }
 
 .detail-anchors {
-  padding: 4px 0 6px;
-  margin: 0 -2px;
+  margin: 0;
+  padding: 2px 0 4px;
 }
 
 @media (max-width: 768px) {
   .college-detail {
-    gap: 8px;
+    gap: 10px;
     padding: 0;
   }
 
   .detail-hero {
     border-radius: 12px;
-    min-height: 108px;
-    max-height: 148px;
+    min-height: 80px;
+    max-height: 96px;
   }
 
   .detail-hero-inner {
-    padding: 14px 14px 16px;
+    min-height: 80px;
+    padding: 10px 12px;
   }
 
-  .detail-hero-title {
-    font-size: 1.08rem;
+  .detail-stats .intro-stat-chip__val {
+    font-size: 0.82rem;
   }
 
-  .detail-stats-float {
-    margin: -14px 6px 0;
+  .detail-stats .intro-stat-chip__label {
+    font-size: 0.62rem;
+    line-height: 1.3;
   }
 
   .detail-anchors {
     position: sticky;
     top: var(--intro-sticky-h, 0px);
     z-index: 6;
-    background: rgba(250, 247, 243, 0.96);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    padding: 3px;
+    overflow: visible;
+    background: #f4f4f6;
+    border: 1px solid var(--intro-line, #dedee3);
+    border-radius: 10px;
     backdrop-filter: blur(6px);
+  }
+
+  .detail-anchors button {
+    width: 100%;
+    min-width: 0;
+    height: 34px;
+    min-height: 34px;
+    padding: 0 4px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 0.76rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .detail-anchors button:hover {
+    transform: none;
   }
 }
 </style>

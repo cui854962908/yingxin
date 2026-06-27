@@ -65,7 +65,7 @@ watch(open, (val) => {
   if (val) {
     nextTick(() => ensureWelcome())
     if (isMobile.value && !chatHistoryPushed) {
-      history.pushState({ xinChat: 1 }, '')
+      history.pushState({ ...(history.state ?? {}), xinChat: 1 }, '')
       chatHistoryPushed = true
     }
   } else if (isMobile.value) {

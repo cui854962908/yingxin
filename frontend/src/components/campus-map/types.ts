@@ -21,5 +21,3 @@ export interface CampusPlace {
   calibrationStatus: 'verified' | 'needs_review'
   calibrationNote: string
 }
-
-export type CampusTab = 'map' | 'route' | 'favorites' | 'data'

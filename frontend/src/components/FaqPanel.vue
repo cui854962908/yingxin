@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { usePreload } from '../composables/usePreload'
 import { authHeaders, useAuth } from '../composables/useAuth'
 import { useFaqSort } from '../composables/useFaqSort'
+import { faqMatchesSearch } from '../utils/faqSearch'
 import AppSpinner from './AppSpinner.vue'
 
 interface FaqItem { id: string; question: string; answer: string; keywords?: string; category?: string; sort_order?: number }
@@ -18,15 +19,13 @@ const currentPage = ref(1)
 const pageSize = 10
 
 const searchedItems = computed(() => {
-  const q = searchQ.value.trim().toLowerCase()
+  const q = searchQ.value.trim()
   if (!q) return allItems.value
-  return allItems.value.filter(
-    i =>
-      i.question.toLowerCase().includes(q) ||
-      i.answer.toLowerCase().includes(q) ||
-      (i.keywords || '').toLowerCase().includes(q) ||
-      (i.category || '').toLowerCase().includes(q),
-  )
+  return allItems.value.filter((i) => faqMatchesSearch(i, q))
+})
+
+watch(searchQ, () => {
+  currentPage.value = 1
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(searchedItems.value.length / pageSize)))
@@ -180,7 +179,7 @@ defineExpose({ refresh: loadAllFaq })
     </div>
     <!-- 搜索栏 -->
     <div v-if="!sortMode" class="faq-search-bar">
-      <input v-model="searchQ" type="text" class="faq-search-input" placeholder="搜索问题或答案关键词..." />
+      <input v-model="searchQ" type="text" class="faq-search-input" placeholder="搜索问题标题或关键词…" />
       <button class="faq-search-btn">搜索</button>
     </div>
 

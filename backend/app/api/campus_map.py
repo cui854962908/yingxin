@@ -56,12 +56,29 @@ async def amap_security_proxy(path: str, request: Request):
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail="高德地图代理请求失败") from exc
 
-    response_headers = {}
-    content_type = upstream.headers.get("content-type")
-    if content_type:
-        response_headers["content-type"] = content_type
+    # 检测是否为 JSONP 请求（高德 SDK 通过 JSONP 发起跨域安全请求）
+    is_jsonp = any(key == "callback" for key, _ in params)
+
+    # JSONP 响应必须返回 application/javascript，否则浏览器 strict MIME 检测会拒绝执行
+    response_headers: dict[str, str] = {}
+    if is_jsonp:
+        response_headers["content-type"] = "application/javascript; charset=utf-8"
+    else:
+        content_type = upstream.headers.get("content-type")
+        if content_type:
+            response_headers["content-type"] = content_type
+
+    response_content = upstream.content
+    # 上游可能返回纯 JSON 而非 JSONP 包裹，此时手动包裹 callback
+    if is_jsonp and response_content:
+        text = response_content.decode("utf-8", errors="replace").lstrip()
+        if not text.startswith("callback(") and not text.startswith("jsonp_"):
+            cb_param = [v for k, v in params if k == "callback"]
+            cb_name = cb_param[0] if cb_param else "callback"
+            response_content = f"/**/ {cb_name}({text});".encode("utf-8")
+
     return Response(
-        content=upstream.content,
+        content=response_content,
         status_code=upstream.status_code,
         headers=response_headers,
     )

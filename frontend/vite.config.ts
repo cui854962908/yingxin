@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import { campusPoiMergeDevPlugin } from './vite-plugins/campusPoiMergeDev'
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), campusPoiMergeDevPlugin()],
   server: {
     host: '0.0.0.0',
     port: 5173,

@@ -1,145 +1,211 @@
 <script setup lang="ts">
 import { computed, markRaw, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import CampusMapCalibratePanel from './campus-map/CampusMapCalibratePanel.vue'
 import CampusMapDetail from './campus-map/CampusMapDetail.vue'
 import CampusMapHeader from './campus-map/CampusMapHeader.vue'
+import CampusMapPoiSearch from './campus-map/CampusMapPoiSearch.vue'
 import CampusMapSidebar from './campus-map/CampusMapSidebar.vue'
-import { campusCategories, campusPlaces } from './campus-map/campusPlaces'
 import {
-  campusLimitBoundsFromLocations,
-  campusOrigin,
-  CAMPUS_DEFAULT_ZOOM,
-  CAMPUS_MAP_ZOOMS,
-} from './campus-map/campusGeo'
-import type { CampusPlace, CampusTab, CategoryKey } from './campus-map/types'
+  applyPoiOverrides,
+  clearPoiOverrides,
+  fetchPublishedPoiOverrides,
+  isCampusCalibrateMode,
+  loadPoiOverrides,
+  resolveDisplayPoiOverrides,
+  savePoiOverrides,
+} from './campus-map/campusCalibration'
+import { createCampusMarkerLayer } from './campus-map/campusMapMarkers'
+import { campusCategories, campusPlaces, filterCampusPlacesByQuery } from './campus-map/campusPlaces'
+import { campusFitBoundsFromLocations, campusOrigin } from './campus-map/campusGeo'
+import { initCampusAmapMap } from './campus-map/initCampusAmap'
+import type { CampusPlace, CategoryKey } from './campus-map/types'
+import { useCampusMapLocation } from '../composables/useCampusMapLocation'
+import { useCampusRoadCalibrate } from '../composables/useCampusRoadCalibrate'
+import { useAuth } from '../composables/useAuth'
+import { planCampusRoute } from './campus-map/campusPathfind'
+import type { CampusRouteResult } from './campus-map/campusPathfind'
 import './campus-map/campus-map.css'
 
-declare global {
-  interface Window {
-    AMap?: any
-    _AMapSecurityConfig?: { serviceHost: string }
-  }
-}
-
 const router = useRouter()
+const route = useRoute()
+const calibrateMode = computed(() => isCampusCalibrateMode(route.query))
+const showMapCoordinate = computed(() => calibrateMode.value || import.meta.env.DEV)
+const localPoiOverrides = ref<Record<string, [number, number]>>(loadPoiOverrides())
+const publishedPoiOverrides = ref<Record<string, [number, number]>>({})
+const poiOverrides = computed(() =>
+  resolveDisplayPoiOverrides(
+    calibrateMode.value,
+    localPoiOverrides.value,
+    publishedPoiOverrides.value,
+  ),
+)
+const allPlaces = computed(() => applyPoiOverrides(campusPlaces, poiOverrides.value))
+const campusBounds = computed(() =>
+  campusFitBoundsFromLocations(allPlaces.value.map((place) => place.location)),
+)
+
 const mapEl = ref<HTMLElement | null>(null)
 const loading = ref(true)
 const error = ref('')
 const query = ref('')
 const category = ref<CategoryKey | 'all'>('all')
-const activeTab = ref<CampusTab>('map')
 const selected = ref<CampusPlace>(
-  campusPlaces.find((place) => place.id === 'scenery-lake') ?? campusPlaces[0],
+  allPlaces.value.find((place) => place.id === 'scenery-lake') ?? allPlaces.value[0],
 )
-const favorites = ref<string[]>([])
 const zoom = ref(17)
 const centerText = ref('113.641689, 34.862226')
-const routeMode = ref<'walk' | 'ride' | 'drive'>('walk')
+const routeMessage = ref('')
+const routeDistance = ref(0)
+const routePlanning = ref(false)
+const placeSheetExpanded = ref(false)
+const placeDetailOpen = ref(false)
+const activeRouteTarget = ref<CampusPlace | null>(null)
+
+function useMobileDetailSheet(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia('(max-width: 1100px)').matches
+}
 
 let map: any = null
-let markers: any[] = []
+let AMapRef: any = null
 let routeLine: any = null
 let campusCenter: [number, number] = campusOrigin()
-let campusZoom = CAMPUS_DEFAULT_ZOOM
-let campusBounds: [[number, number], [number, number]] = campusLimitBoundsFromLocations(
-  campusPlaces.map((place) => place.location),
-)
 
-function applyCampusViewport() {
-  if (!map || !window.AMap) return
-  const bounds = new window.AMap.Bounds(campusBounds[0], campusBounds[1])
-  map.setLimitBounds(bounds)
-  map.setBounds(bounds, false, [48, 48, 48, 48])
-  const center = map.getCenter()
-  campusCenter = [center.lng, center.lat]
-  campusZoom = map.getZoom()
-  zoom.value = campusZoom
-}
-
-const filteredPlaces = computed(() => {
-  const text = query.value.trim().toLowerCase()
-  return campusPlaces.filter((place) => {
-    const matchesCategory = category.value === 'all' || place.category === category.value
-    const searchable = `${place.name} ${place.address} ${place.description} ${place.tags.join(' ')}`.toLowerCase()
-    const matchesText = !text || searchable.includes(text)
-    const matchesFavorite = activeTab.value !== 'favorites' || favorites.value.includes(place.id)
-    return matchesCategory && matchesText && matchesFavorite
-  })
+const {
+  calibrateTool,
+  roadOverrides,
+  pendingRoadStart,
+  drawnRoadSegments,
+  refreshRoadOverlay,
+  undoRoadSegment,
+  clearRoadSegments,
+  reloadRoadOverrides,
+  cleanupRoadLayer,
+} = useCampusRoadCalibrate({
+  getMap: () => map,
+  getAMap: () => AMapRef,
+  calibrateMode,
 })
 
-const selectedFavorite = computed(() => favorites.value.includes(selected.value.id))
+const { student } = useAuth()
 
-function loadAmap(key: string): Promise<any> {
-  if (window.AMap) return Promise.resolve(window.AMap)
-  window._AMapSecurityConfig = { serviceHost: `${window.location.origin}/_AMapService` }
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = `https://webapi.amap.com/maps?v=2.0&key=${encodeURIComponent(key)}&plugin=AMap.ToolBar`
-    script.async = true
-    script.onload = () => window.AMap ? resolve(window.AMap) : reject(new Error('高德地图加载失败'))
-    script.onerror = () => reject(new Error('高德地图脚本加载失败'))
-    document.head.appendChild(script)
-  })
-}
+const location = useCampusMapLocation({
+  getMap: () => map,
+  getAMap: () => AMapRef,
+  allPlaces,
+  getCampusCenter: () => campusCenter,
+  getCampusBounds: () => campusBounds.value,
+  isLocationPickAllowed: () => !calibrateMode.value,
+  getProfileDormitory: () => student.value?.dormitory,
+})
+
+const {
+  status: geoStatus, message: geoMessage, position: userLocation,
+  profileDormLabel, locationPickActive,
+  beginLocationPick, syncLocationPickBinding, cleanupLocationPick,
+  locateMyPosition, locateAtProfileDorm, refreshMarker, clearMarker: clearUserMarker,
+} = location
 
 function categoryColor(key: CategoryKey) {
   return campusCategories.find((item) => item.key === key)?.color || '#7b3294'
 }
 
-function clearMarkers() {
-  if (map && markers.length) map.remove(markers)
-  markers = []
+function saveMovedPlace(id: string, lnglat: [number, number]) {
+  localPoiOverrides.value = { ...localPoiOverrides.value, [id]: lnglat }
+  savePoiOverrides(localPoiOverrides.value)
+  if (selected.value.id === id) selected.value = { ...selected.value, location: lnglat }
 }
 
 function selectPlace(place: CampusPlace) {
   selected.value = place
+  clearRoute()
+  placeDetailOpen.value = useMobileDetailSheet()
+  placeSheetExpanded.value = false
   map?.panTo(place.location)
   map?.setZoom(Math.max(map.getZoom(), 17))
 }
 
+function pickDestination(place: CampusPlace) {
+  selected.value = place
+  placeDetailOpen.value = false
+  placeSheetExpanded.value = false
+  planRouteToPlace(place)
+}
+
+function closePlaceDetail() {
+  placeDetailOpen.value = false
+}
+
+const markerLayer = createCampusMarkerLayer({
+  getMap: () => map,
+  getAMap: () => AMapRef,
+  getPoiDraggable: () => calibrateMode.value && calibrateTool.value === 'poi',
+  categoryColor,
+  onSelect: selectPlace,
+  onMoved: saveMovedPlace,
+  refreshUserMarker: () => refreshMarker(map, AMapRef),
+})
+
+function syncSelectedFromPlaces(places: CampusPlace[]) {
+  const next = places.find((place) => place.id === selected.value.id) ?? places[0]
+  if (next) selected.value = next
+}
+
+function applyCampusViewport() {
+  if (!map || !AMapRef) return
+  const bounds = campusFitBoundsFromLocations(allPlaces.value.map((place) => place.location))
+  map.setBounds(new AMapRef.Bounds(bounds[0], bounds[1]), false, [48, 48, 48, 48])
+  const center = map.getCenter()
+  campusCenter = [center.lng, center.lat]
+  zoom.value = map.getZoom()
+}
+
+const filteredPlaces = computed(() =>
+  filterCampusPlacesByQuery(allPlaces.value, query.value, category.value),
+)
+
 function renderMarkers(places: CampusPlace[]) {
-  if (!map || !window.AMap) return
-  clearMarkers()
-  markers = places.map((place) => {
-    const marker = new window.AMap.Marker({
-      position: place.location,
-      anchor: 'center',
-      content: `<button class="campus-poi-dot" style="--poi:${categoryColor(place.category)}" aria-label="校园地点"></button>`,
-      zIndex: selected.value.id === place.id ? 150 : 120,
-    })
-    marker.on('click', () => selectPlace(place))
-    return marker
-  })
-  map.add(markers)
+  markerLayer.render(places, selected.value.id)
 }
 
-function resetView() {
-  clearRoute()
-  applyCampusViewport()
+function clearSavedOverrides() {
+  clearPoiOverrides()
+  localPoiOverrides.value = {}
+  syncSelectedFromPlaces(allPlaces.value)
+  renderMarkers(filteredPlaces.value)
 }
 
-function toggleFavorite() {
-  const id = selected.value.id
-  favorites.value = favorites.value.includes(id)
-    ? favorites.value.filter((item) => item !== id)
-    : [...favorites.value, id]
-  localStorage.setItem('campus-map-favorites', JSON.stringify(favorites.value))
+function onPoiMergedToSource() {
+  clearPoiOverrides()
+  localPoiOverrides.value = {}
+  syncSelectedFromPlaces(campusPlaces)
+  renderMarkers(filteredPlaces.value)
+}
+
+async function onPoiPublished() {
+  publishedPoiOverrides.value = await fetchPublishedPoiOverrides()
+  syncSelectedFromPlaces(allPlaces.value)
+  renderMarkers(filteredPlaces.value)
 }
 
 function clearRoute() {
   if (routeLine && map) map.remove(routeLine)
   routeLine = null
+  routeMessage.value = ''
+  routeDistance.value = 0
+  activeRouteTarget.value = null
 }
 
-function planRoute() {
-  if (!window.AMap || !map) return
-  clearRoute()
-  routeLine = new window.AMap.Polyline({
-    path: [campusCenter, selected.value.location],
-    strokeColor: routeMode.value === 'walk' ? '#7b3294' : routeMode.value === 'ride' ? '#278b70' : '#3579b8',
+function drawRouteLine(result: CampusRouteResult) {
+  if (!AMapRef || !map) return
+  routeDistance.value = result.distanceMeters
+  const solid = result.mode !== 'straight-fallback'
+  routeLine = new AMapRef.Polyline({
+    path: result.path,
+    strokeColor: '#7b3294',
     strokeWeight: 6,
     strokeOpacity: .9,
-    strokeStyle: routeMode.value === 'walk' ? 'dashed' : 'solid',
+    strokeStyle: solid ? 'solid' : 'dashed',
     showDir: true,
     lineJoin: 'round',
   })
@@ -147,52 +213,63 @@ function planRoute() {
   map.setFitView([routeLine], false, [80, 80, 80, 80])
 }
 
-function changeTab(tab: CampusTab) {
-  activeTab.value = tab
-  if (tab !== 'route') clearRoute()
+function planRouteToPlace(place: CampusPlace) {
+  if (!AMapRef || !map || routePlanning.value) return
+  if (!userLocation.value) {
+    geoMessage.value = '尚未获取当前位置，请等待 GPS 或手动标记当前位置'
+    return
+  }
+  routePlanning.value = true
+  routeMessage.value = `正在规划前往${place.name}…`
+  const result = planCampusRoute(userLocation.value, place.location, drawnRoadSegments)
+  if (routeLine && map) map.remove(routeLine)
+  routeLine = null
+  drawRouteLine(result)
+  activeRouteTarget.value = place
+  routeMessage.value = `前往 ${place.name}${result.message ? ` · ${result.message}` : ''}`
+  routePlanning.value = false
 }
 
-function openRoute() {
-  activeTab.value = 'route'
-  planRoute()
+function goToSelectedPlace() {
+  planRouteToPlace(selected.value)
 }
 
 async function initMap() {
   try {
-    const response = await fetch('/api/campus-map/config')
-    const payload = await response.json()
-    if (!response.ok || !payload.success) throw new Error(payload.message || '地图配置不可用')
-    campusCenter = payload.data.center
-    campusZoom = payload.data.zoom ?? CAMPUS_DEFAULT_ZOOM
-    const AMap = await loadAmap(payload.data.key)
     if (!mapEl.value) return
-    map = markRaw(new AMap.Map(mapEl.value, {
-      viewMode: '2D',
-      zoom: campusZoom,
-      zooms: CAMPUS_MAP_ZOOMS,
-      center: campusCenter,
-      mapStyle: 'amap://styles/normal',
-      resizeEnable: true,
-      dragEnable: true,
-      scrollWheel: true,
-      keyboardEnable: false,
-      showLabel: true,
-      features: ['bg', 'road', 'building', 'point'],
-    }))
-    applyCampusViewport()
-    map.addControl(new AMap.ToolBar({ position: { top: '16px', left: '16px' }, liteStyle: false }))
-    map.on('mapmove', () => {
-      const center = map.getCenter()
-      centerText.value = `${center.lng.toFixed(6)}, ${center.lat.toFixed(6)}`
+    const result = await initCampusAmapMap(mapEl.value, {
+      onCenterChange: (lng, lat) => { centerText.value = `${lng.toFixed(6)}, ${lat.toFixed(6)}` },
+      onZoomChange: (value) => { zoom.value = value },
     })
-    map.on('zoomchange', () => { zoom.value = map.getZoom() })
+    map = markRaw(result.map)
+    AMapRef = result.AMap
+    campusCenter = result.center
+    applyCampusViewport()
     renderMarkers(filteredPlaces.value)
+    refreshRoadOverlay()
+    syncLocationPickBinding()
+    if (!calibrateMode.value) await locateMyPosition()
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '地图初始化失败'
   } finally {
     loading.value = false
   }
 }
+
+watch(calibrateMode, async () => {
+  localPoiOverrides.value = loadPoiOverrides()
+  if (!calibrateMode.value) {
+    publishedPoiOverrides.value = await fetchPublishedPoiOverrides()
+  }
+  reloadRoadOverrides()
+  renderMarkers(filteredPlaces.value)
+  syncLocationPickBinding()
+})
+
+watch(calibrateTool, () => {
+  renderMarkers(filteredPlaces.value)
+  refreshRoadOverlay()
+})
 
 watch(filteredPlaces, (places) => {
   renderMarkers(places)
@@ -201,69 +278,140 @@ watch(filteredPlaces, (places) => {
   }
 })
 
-watch(selected, () => renderMarkers(filteredPlaces.value))
-
-onMounted(() => {
-  try {
-    favorites.value = JSON.parse(localStorage.getItem('campus-map-favorites') || '[]')
-  } catch {
-    favorites.value = []
+watch(selected, () => {
+  renderMarkers(filteredPlaces.value)
+})
+watch(poiOverrides, () => syncSelectedFromPlaces(allPlaces.value), { deep: true })
+watch(drawnRoadSegments, () => {
+  if (activeRouteTarget.value && userLocation.value) {
+    planRouteToPlace(activeRouteTarget.value)
   }
-  initMap()
+})
+
+onMounted(async () => {
+  if (!calibrateMode.value) {
+    publishedPoiOverrides.value = await fetchPublishedPoiOverrides()
+  }
+  await initMap()
 })
 
 onUnmounted(() => {
-  clearMarkers()
+  markerLayer.clear()
+  cleanupRoadLayer()
+  cleanupLocationPick()
   clearRoute()
+  clearUserMarker(map)
   map?.destroy()
   map = null
+  AMapRef = null
 })
 </script>
 
 <template>
-  <main class="campus-map-page">
-    <CampusMapHeader
-      :active-tab="activeTab"
-      :favorite-count="favorites.length"
-      @change="changeTab"
-      @back="router.push('/campus')"
-    />
+  <main
+    class="campus-map-page"
+    :class="{
+      'campus-map-page--calibrate': calibrateMode,
+      'campus-map-page--sheet-expanded': placeSheetExpanded,
+      'campus-map-page--detail-open': placeDetailOpen,
+    }"
+  >
+    <CampusMapHeader @back="router.push('/campus')" />
     <div class="campus-map-layout">
       <CampusMapSidebar
         v-model:query="query"
         v-model:category="category"
+        v-model:sheet-expanded="placeSheetExpanded"
         :places="filteredPlaces"
         :selected-id="selected.id"
         @select="selectPlace"
       />
-      <section class="campus-map-stage">
-        <div ref="mapEl" class="campus-map-canvas" />
-        <div v-if="loading" class="campus-map-state">正在加载真实高德校园地图…</div>
-        <div v-else-if="error" class="campus-map-state error">{{ error }}</div>
-        <button class="reset-campus" type="button" @click="resetView">↶ 重置校园视野</button>
-        <div v-if="activeTab === 'route'" class="route-planner">
-          <header><strong>路线规划</strong><span>校区中心 → {{ selected.name }}</span></header>
-          <div class="route-modes">
-            <button v-for="mode in ['walk', 'ride', 'drive'] as const" :key="mode" type="button" :class="{ active: routeMode === mode }" @click="routeMode = mode">
-              {{ mode === 'walk' ? '步行' : mode === 'ride' ? '骑行' : '驾车' }}
+      <div class="campus-map-center">
+        <section class="campus-map-stage">
+          <div ref="mapEl" class="campus-map-canvas" />
+          <CampusMapPoiSearch
+            v-if="!calibrateMode && !loading && !error"
+            :places="allPlaces"
+            @select="pickDestination"
+          />
+          <div v-if="loading" class="campus-map-state">正在加载真实高德校园地图…</div>
+          <div v-else-if="error" class="campus-map-state error">{{ error }}</div>
+          <CampusMapCalibratePanel
+            v-if="calibrateMode && !loading && !error"
+            v-model:tool="calibrateTool"
+            :selected="selected"
+            :overrides="localPoiOverrides"
+            :base-places="campusPlaces"
+            :road-segments="roadOverrides"
+            :pending-road="!!pendingRoadStart"
+            @clear-poi="clearSavedOverrides"
+            @merged="onPoiMergedToSource"
+            @published="onPoiPublished"
+            @undo-road="undoRoadSegment"
+            @clear-road="clearRoadSegments"
+          />
+          <div v-if="!calibrateMode" class="map-toolstack">
+            <button
+              v-if="profileDormLabel"
+              class="locate-dorm map-tool-btn"
+              type="button"
+              :aria-label="`定位到${profileDormLabel}`"
+              @click="locateAtProfileDorm"
+            >
+              <span class="map-tool-btn__icon" aria-hidden="true">◎</span>
+              <span class="map-tool-btn__label">我的宿舍</span>
+            </button>
+            <button
+              class="locate-mark map-tool-btn"
+              :class="{ 'locate-mark--active': locationPickActive }"
+              type="button"
+              :aria-label="locationPickActive ? '请在地图上点击标注位置' : '点击标注当前位置'"
+              @click="beginLocationPick()"
+            >
+              <span class="map-tool-btn__icon" aria-hidden="true">⌖</span>
+              <span class="map-tool-btn__label">{{ locationPickActive ? '请点击地图' : '标记当前位置' }}</span>
+            </button>
+            <button
+              class="locate-me map-tool-btn"
+              type="button"
+              :disabled="geoStatus === 'loading'"
+              aria-label="GPS 定位"
+              @click="locateMyPosition"
+            >
+              <span class="map-tool-btn__icon" aria-hidden="true">⊙</span>
+              <span class="map-tool-btn__label">{{ geoStatus === 'loading' ? '定位中' : 'GPS定位' }}</span>
             </button>
           </div>
-          <button class="route-submit" type="button" @click="planRoute">在地图中显示路线</button>
-        </div>
-        <div v-if="activeTab === 'data'" class="data-card">
-          <strong>数据说明</strong>
-          <p>底图由高德地图提供。地点坐标与 3D 导览模型对齐；拖动范围限制在英才校区内，个别点位仍建议现场复核。</p>
-        </div>
-        <div class="map-legend">
-          <span v-for="item in campusCategories" :key="item.key"><i :style="{ background: item.color }" />{{ item.label }}</span>
-        </div>
-        <div class="map-coordinate">中心 {{ centerText }} · 缩放 {{ zoom }}</div>
-      </section>
+          <p
+            v-if="routeDistance && !calibrateMode"
+            class="route-result-toast"
+            role="status"
+          >
+            {{ routeMessage }} · 约 {{ routeDistance }} 米
+          </p>
+          <p v-else-if="geoMessage && !calibrateMode" class="geo-toast" role="status">{{ geoMessage }}</p>
+          <div class="map-legend">
+            <span v-if="userLocation && !calibrateMode"><i class="legend-user-dot" />我的位置</span>
+            <span v-for="item in campusCategories" :key="item.key"><i :style="{ background: item.color }" />{{ item.label }}</span>
+          </div>
+          <div v-if="showMapCoordinate" class="map-coordinate">中心 {{ centerText }} · 缩放 {{ zoom }}</div>
+        </section>
+        <CampusMapDetail
+          v-if="!calibrateMode && placeDetailOpen"
+          sheet
+          :place="selected"
+          :route-planning="routePlanning"
+          @close="closePlaceDetail"
+          @go="goToSelectedPlace"
+          @locate="selectPlace(selected)"
+        />
+      </div>
       <CampusMapDetail
+        v-if="!calibrateMode"
+        class="campus-detail-desktop"
         :place="selected"
-        :favorite="selectedFavorite"
-        @favorite="toggleFavorite"
-        @route="openRoute"
+        :route-planning="routePlanning"
+        @go="goToSelectedPlace"
         @locate="selectPlace(selected)"
       />
     </div>
