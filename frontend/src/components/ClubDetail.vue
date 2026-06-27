@@ -568,7 +568,7 @@ onMounted(() => {
 .cd-hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 75% center }
 .cd-hero-gradient { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.25) 55%, rgba(0,0,0,.65) 100%); z-index: 1 }
 .cd-hero-actions { position: absolute; top: 16px; right: 24px; z-index: 3; display: flex; align-items: center; gap: 8px }
-.cd-hero-content { position: absolute; left: 0; top: 0; right: 0; z-index: 2; padding: 40px 28px 0 32px; display: flex; align-items: flex-start; gap: 16px }
+.cd-hero-content { position: absolute; left: 0; top: 0; right: 0; z-index: 2; padding: 76px 28px 0 32px; display: flex; align-items: flex-start; gap: 16px }
 .cd-back {
   position: absolute;
   top: 16px;
@@ -610,7 +610,7 @@ onMounted(() => {
 .cd-upload-toast { position: absolute; top: 48px; right: 24px; z-index: 3; padding: 4px 12px; border-radius: 8px; background: rgba(0,0,0,.5); color: rgba(255,255,255,.8); font-size: .74rem; pointer-events: none }
 .cd-upload-toast.ok { color: #a5d6a7 }
 
-.cd-hero-meta { position: absolute; left: 32px; bottom: 40px; z-index: 2; display: inline-flex; gap: 0; padding: 14px 28px; background: rgba(0,0,0,.52); border-radius: 14px; border: 1px solid rgba(255,255,255,.12) }
+.cd-hero-meta { position: absolute; left: 32px; bottom: 16px; z-index: 2; display: inline-flex; gap: 0; padding: 14px 28px; background: rgba(0,0,0,.52); border-radius: 14px; border: 1px solid rgba(255,255,255,.12) }
 .cd-hero-meta-item { display: flex; flex-direction: column; gap: 2px; padding: 0 24px }
 .cd-hero-meta-item:first-child { padding-left: 0 }
 .cd-hero-meta-label { font-size: .8rem; color: rgba(255,255,255,.55); letter-spacing: .04em }
@@ -782,7 +782,7 @@ onMounted(() => {
     position: relative;
     inset: auto;
     width: 100%;
-    height: 148px;
+    height: 172px;
     display: block;
     object-fit: cover;
     object-position: center;
@@ -793,7 +793,7 @@ onMounted(() => {
     top: 0;
     left: 0;
     right: 0;
-    height: 148px;
+    height: 172px;
     z-index: 1;
     pointer-events: none;
   }
@@ -826,6 +826,8 @@ onMounted(() => {
     align-items: center;
     gap: 8px;
     max-width: none;
+    min-height: 60px;
+    box-sizing: border-box;
     padding: 10px 14px 0;
   }
 
@@ -836,7 +838,7 @@ onMounted(() => {
     top: auto;
     right: auto;
     margin-top: 0;
-    padding: 12px 14px 10px;
+    padding: 8px 14px 12px;
     align-items: flex-start;
     gap: 12px;
   }
@@ -928,7 +930,7 @@ onMounted(() => {
     position: relative;
     left: auto;
     bottom: auto;
-    margin: 0 14px 14px;
+    margin: 8px 14px 14px;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px 12px;
@@ -990,7 +992,7 @@ onMounted(() => {
   }
 
   .cd-tabs {
-    margin: 10px 12px 0;
+    margin: 12px 12px 0;
     padding: 4px;
     border-radius: 12px;
     background: #fff;
@@ -1029,6 +1031,27 @@ onMounted(() => {
   }
 
   .cd-desc-body :deep(img) { max-width: 100%; height: auto }
+
+  .cd-desc-body :deep(h3) {
+    margin: 0.85em 0 0.35em;
+    line-height: 1.4;
+  }
+
+  .cd-desc-body :deep(p) { margin: 0.35em 0 0.65em }
+
+  .cd-desc-body :deep(ul),
+  .cd-desc-body :deep(ol) {
+    width: 100%;
+    margin: 0.3em 0 0.75em;
+    padding-left: 1.4rem;
+    box-sizing: border-box;
+  }
+
+  .cd-desc-body :deep(li) {
+    margin: 0.2em 0;
+    padding-left: 0.1rem;
+    overflow-wrap: anywhere;
+  }
 
   .cd-edit-textarea {
     min-height: 160px;
@@ -1116,7 +1139,7 @@ onMounted(() => {
   .cd-main { padding: 10px 10px calc(14px + env(safe-area-inset-bottom, 0px)) }
 
   .cd-hero-bg,
-  .cd-hero-gradient { height: 132px }
+  .cd-hero-gradient { height: 156px }
 
   .cd-back {
     top: 8px;
@@ -1126,9 +1149,9 @@ onMounted(() => {
     max-width: min(44vw, 150px);
   }
 
-  .cd-hero-actions { padding: 8px 12px 0; gap: 6px }
+  .cd-hero-actions { min-height: 56px; padding: 8px 12px 0; gap: 6px }
 
-  .cd-hero-content { padding: 10px 12px 8px; gap: 10px }
+  .cd-hero-content { padding: 6px 12px 10px; gap: 10px }
 
   .cd-hero-badge-ring { width: 56px; height: 56px }
 
@@ -1141,7 +1164,7 @@ onMounted(() => {
   .cd-tag { font-size: 0.68rem; padding: 4px 10px }
 
   .cd-hero-meta {
-    margin: 0 12px 12px;
+    margin: 6px 12px 12px;
     padding: 10px 12px;
     gap: 8px 10px;
     border-radius: 10px;
@@ -1156,12 +1179,12 @@ onMounted(() => {
   .cd-tab-btn { height: 38px; font-size: 0.82rem }
 
   .cd-section {
-    padding: 12px;
+    padding: 14px 12px;
     border-radius: 10px;
     margin-bottom: 10px;
   }
 
-  .cd-section-title { font-size: 0.86rem; gap: 6px; margin-bottom: 8px }
+  .cd-section-title { font-size: 0.86rem; gap: 6px; margin-bottom: 10px }
 
   .cd-desc-body,
   .cd-honor-text { font-size: 0.82rem }

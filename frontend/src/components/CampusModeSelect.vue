@@ -12,12 +12,21 @@ function enterCampus(path: '/campus/2d' | '/campus/3d') {
 <template>
   <main class="mode-page">
     <header class="mode-header">
-      <button class="back-button" type="button" @click="router.push('/')">返回首页</button>
-      <div>
-        <p>河南牧业经济学院 · 英才校区</p>
-        <h1>选择校园导览方式</h1>
-        <p class="mode-subtitle">可按习惯任选 2D 地图或 3D 漫游</p>
+      <div class="mode-header__bar">
+        <button class="back-button" type="button" @click="router.push('/')">
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M11.75 4.5 6.25 10l5.5 5.5M6.5 10h8" />
+          </svg>
+          返回首页
+        </button>
+        <div class="campus-identity">
+          <p class="campus-identity__name">
+            <span>河南牧业经济学院</span>
+            <strong>英才校区</strong>
+          </p>
+        </div>
       </div>
+      <h1>选择校园导览方式</h1>
     </header>
 
     <section class="mode-grid" aria-label="校园导览方式">
@@ -72,18 +81,83 @@ function enterCampus(path: '/campus/2d' | '/campus/3d') {
 .mode-header {
   max-width: 1180px;
   margin: 0 auto clamp(32px, 7vh, 72px);
-  display: grid;
-  grid-template-columns: 160px 1fr;
-  align-items: end;
   border-bottom: 1px solid #d7cec7;
-  padding-bottom: 24px;
+  padding-bottom: clamp(24px, 3vw, 34px);
 }
-.mode-header p { margin: 0 0 8px; color: #897c74; font-size: 14px; letter-spacing: .08em }
-.mode-header h1 { margin: 0; font-size: clamp(32px, 5vw, 64px); line-height: 1; letter-spacing: -.04em }
-.mode-subtitle { margin: 12px 0 0; color: #897c74; font-size: 15px; letter-spacing: 0 }
+.mode-header__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: clamp(24px, 4vw, 48px);
+}
+.campus-identity {
+  display: flex;
+  align-items: center;
+}
+.campus-identity__name {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  margin: 0;
+  padding-right: 14px;
+  border-right: 3px solid #b5343a;
+  color: #2f2926;
+  text-align: right;
+}
+.campus-identity__name span {
+  font-size: 17px;
+  font-weight: 750;
+  line-height: 1;
+  letter-spacing: .04em;
+}
+.campus-identity__name strong {
+  color: #b5343a;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: .04em;
+}
+.mode-header h1 {
+  max-width: 900px;
+  margin: 0;
+  font-size: clamp(42px, 6.2vw, 76px);
+  line-height: .94;
+  letter-spacing: -.055em;
+}
 .back-button {
-  justify-self: start; border: 0; padding: 0; color: #b5343a; background: transparent;
-  font: inherit; font-weight: 650; cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid #d7cec7;
+  border-radius: 999px;
+  color: #2f2926;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color .2s ease, border-color .2s ease, background-color .2s ease;
+}
+.back-button svg {
+  width: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 1.8;
+}
+.back-button:hover {
+  color: #fff;
+  border-color: #b5343a;
+  background: #b5343a;
+}
+.back-button:focus-visible {
+  outline: 3px solid rgba(181, 52, 58, .24);
+  outline-offset: 3px;
 }
 .mode-grid {
   max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -122,9 +196,19 @@ function enterCampus(path: '/campus/2d' | '/campus/3d') {
 .mode-copy--plain .mode-action { grid-column: 2 }
 @media (max-width: 760px) {
   .mode-page { padding: 18px 14px 28px }
-  .mode-header { grid-template-columns: 1fr; gap: 28px; margin-bottom: 24px }
+  .mode-header { margin-bottom: 24px }
+  .mode-header__bar { gap: 12px; margin-bottom: 32px }
+  .campus-identity__name { gap: 4px; padding-right: 10px }
+  .campus-identity__name span { font-size: 13px; letter-spacing: .02em }
+  .campus-identity__name strong { font-size: 18px }
+  .back-button { min-height: 40px; padding: 0 12px; font-size: 13px }
+  .back-button svg { width: 16px }
   .mode-grid { grid-template-columns: 1fr }
   .mode-card { min-height: 390px }
   .mode-visual { height: 220px }
+}
+@media (max-width: 420px) {
+  .campus-identity__name span { max-width: 150px }
+  .back-button { padding: 0 10px }
 }
 </style>

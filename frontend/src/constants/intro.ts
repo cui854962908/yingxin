@@ -343,14 +343,6 @@ export function filterClubsForCollege<T extends { id: string; category: string }
   return []
 }
 
-export function filterClubsByIntroGroup<T extends { id: string; category: string }>(
-  all: T[],
-  filter: IntroClubFilter,
-  groupId: string,
-): T[] {
-  return filterClubsByIntroGroupId(all, groupId, filter)
-}
-
 export function filterClubsByIntroGroupId<T extends { id: string; category: string }>(
   all: T[],
   groupId: string,

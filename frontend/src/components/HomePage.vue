@@ -112,18 +112,50 @@ function onResize() {
   if (window.innerWidth > 768) sidebarOpen.value = true
 }
 
-// 左边缘右划呼出侧边栏（document 级跟踪，真机滑出边缘后仍跟手）
+// 页面内容区右划呼出侧边栏（document 级跟踪，真机滑出区域后仍跟手）
 const edgeSwipe = ref({ startX: 0, startY: 0, active: false, dx: 0, dy: 0 })
 let edgePointerId: number | null = null
 let edgeCaptureEl: HTMLElement | null = null
 
 function onEdgeDown(e: PointerEvent) {
-  if (window.innerWidth > 768) return
-  if (e.clientX > 30) return
+  if (window.innerWidth > 768 || sidebarOpen.value || e.button !== 0) return
+  if (e.pointerType === 'touch') return
+  const target = e.target as HTMLElement
+  if (target.closest('button, a, input, textarea, select, [contenteditable="true"]')) return
   edgeSwipe.value = { startX: e.clientX, startY: e.clientY, active: true, dx: 0, dy: 0 }
   edgePointerId = e.pointerId
   edgeCaptureEl = e.currentTarget as HTMLElement
   edgeCaptureEl.setPointerCapture(e.pointerId)
+}
+
+const touchSwipe = ref({ startX: 0, startY: 0, dx: 0, dy: 0, active: false })
+
+function onPageTouchStart(e: TouchEvent) {
+  if (window.innerWidth > 768 || sidebarOpen.value || e.touches.length !== 1) return
+  const target = e.target as HTMLElement
+  if (target.closest('input, textarea, select, [contenteditable="true"]')) return
+  const touch = e.touches[0]
+  touchSwipe.value = { startX: touch.clientX, startY: touch.clientY, dx: 0, dy: 0, active: true }
+}
+
+function onPageTouchMove(e: TouchEvent) {
+  if (!touchSwipe.value.active || e.touches.length !== 1) return
+  const touch = e.touches[0]
+  touchSwipe.value.dx = touch.clientX - touchSwipe.value.startX
+  touchSwipe.value.dy = touch.clientY - touchSwipe.value.startY
+  if (touchSwipe.value.dx > 12 && touchSwipe.value.dx > Math.abs(touchSwipe.value.dy)) {
+    e.preventDefault()
+  }
+}
+
+function finishPageTouch() {
+  const { dx, dy, active } = touchSwipe.value
+  touchSwipe.value.active = false
+  if (active && dx > 70 && dx > Math.abs(dy) * 1.25) sidebarOpen.value = true
+}
+
+function cancelPageTouch() {
+  touchSwipe.value.active = false
 }
 
 function onEdgeMove(e: PointerEvent) {
@@ -140,7 +172,7 @@ function finishEdge(e: PointerEvent) {
   }
   edgeCaptureEl = null
   edgePointerId = null
-  if (edgeSwipe.value.dx > 50 && edgeSwipe.value.dx > Math.abs(edgeSwipe.value.dy)) {
+  if (edgeSwipe.value.dx > 70 && edgeSwipe.value.dx > Math.abs(edgeSwipe.value.dy) * 1.25) {
     sidebarOpen.value = true
   }
 }
@@ -160,12 +192,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="dashboard">
-    <!-- 左边缘右划呼出区域（仅移动端） -->
-    <div
-      class="edge-strip"
-      @pointerdown.prevent="onEdgeDown"
-    />
+  <div
+    class="dashboard"
+    @pointerdown.capture="onEdgeDown"
+    @touchstart.passive="onPageTouchStart"
+    @touchmove="onPageTouchMove"
+    @touchend="finishPageTouch"
+    @touchcancel="cancelPageTouch"
+  >
     <!-- 主内容区 -->
     <main
       class="main"
@@ -211,7 +245,6 @@ onUnmounted(() => {
     <!-- 移动端底部导航栏 -->
     <MobileBottomNav
       @navigate="handleNavigate"
-      @open-menu="sidebarOpen = true"
     />
   </div>
 </template>
@@ -252,7 +285,7 @@ onUnmounted(() => {
 
 /* 桌面端：为固定侧边栏留出空间 */
 @media (min-width: 769px) {
-  .main { margin-left: 260px }
+  .main { margin-left: 280px }
 }
 
 @media (max-width: 768px) {
@@ -420,21 +453,7 @@ onUnmounted(() => {
   .main{padding:12px 12px calc(68px + env(safe-area-inset-bottom, 0px));gap:12px}
 }
 
-/* ===== 左边缘右划呼出触发区 ===== */
-.edge-strip { display: none }
-
 @media (max-width: 768px) {
-  .edge-strip {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 22px;
-    height: 100vh;
-    height: calc(var(--vh, 1vh) * 100);
-    z-index: 1000;
-    touch-action: none;
-    pointer-events: auto;
-  }
+  .dashboard { touch-action: pan-y }
 }
 </style>

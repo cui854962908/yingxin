@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import DOMPurify from 'dompurify'
 import {
   INTRO_SCHOOL,
   INTRO_WIKI_CAMPUSES,
@@ -42,11 +43,14 @@ const strengthBlock = computed(() => parsedBlocks.value[2])
 const overviewBody = computed(() =>
   removeOfficialUrlEntry(overviewBlock.value?.body || overviewBlock.value?.content || ''),
 )
+const overviewBodySafe = computed(() => DOMPurify.sanitize(overviewBody.value))
 const strengthBody = computed(() => strengthBlock.value?.body || strengthBlock.value?.content || '')
+const strengthBodySafe = computed(() => DOMPurify.sanitize(strengthBody.value))
 const strengthImage = computed(
   () => strengthBlock.value?.image || INTRO_WIKI_CAMPUSES[0].image,
 )
 const cultureImage = computed(() => cultureBlock.value?.image || '')
+const cultureBodySafe = computed(() => DOMPurify.sanitize(cultureBlock.value?.body || overviewBlock.value?.body || ''))
 
 function splitBlockMedia(html: string): { image: string; body: string } {
   const match = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i)
@@ -101,7 +105,7 @@ onMounted(load)
       <aside class="wiki-overview">
         <span class="wiki-kicker">学校概况</span>
         <h3>{{ overviewBlock?.title || '学校概况' }}</h3>
-        <div class="wiki-overview__text" v-html="overviewBody" />
+        <div class="wiki-overview__text" v-html="overviewBodySafe" />
         <a class="wiki-official" :href="INTRO_WIKI_OFFICIAL_URL" target="_blank" rel="noopener">
           学校官网
           <strong>www.hnuahe.edu.cn</strong>
@@ -157,7 +161,7 @@ onMounted(load)
       <article class="wiki-text-card">
         <span class="wiki-kicker">{{ cultureBlock?.title || '校训与校风' }}</span>
         <h3>{{ cultureBlock?.title || '校训与校风' }}</h3>
-        <div class="wiki-text-card__body" v-html="cultureBlock?.body || overviewBlock?.body" />
+        <div class="wiki-text-card__body" v-html="cultureBodySafe" />
         <a :href="INTRO_WIKI_OFFICIAL_URL" target="_blank" rel="noopener">了解更多学校信息</a>
         <div class="wiki-facts">
           <span>校庆日<br /><strong>9月19日</strong></span>
@@ -171,7 +175,7 @@ onMounted(load)
       <div class="wiki-strength__copy">
         <span class="wiki-kicker">{{ strengthBlock?.title || '办学实力' }}</span>
         <h3>{{ strengthBlock?.title || '办学实力' }}</h3>
-        <div class="wiki-strength__body" v-html="strengthBody" />
+        <div class="wiki-strength__body" v-html="strengthBodySafe" />
       </div>
       <div class="wiki-strength__media">
         <img :src="strengthImage" :alt="strengthBlock?.title || '办学实力'" loading="lazy" />

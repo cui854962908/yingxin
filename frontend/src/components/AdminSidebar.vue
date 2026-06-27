@@ -33,11 +33,11 @@ const emit = defineEmits<{
 }>()
 
 const menuItems: MenuItem[] = [
+  { id: 'intro',            label: '认识牧院', icon: 'building' },
   { id: 'home',             label: '首页',     icon: 'home' },
   { id: 'announcements',    label: '校园公告', icon: 'megaphone' },
   { id: 'faq',              label: '问题答疑', icon: 'message-circle' },
   { id: 'wall',             label: '问牧墙',   icon: 'wall' },
-  { id: 'intro',            label: '认识牧院', icon: 'building' },
 ]
 
 const avatarChar = computed(() => props.user.name?.charAt(0) || '')
@@ -56,7 +56,7 @@ function close() {
   emit('update:modelValue', false)
 }
 
-// ===== 右划关闭手势（仅移动端） =====
+// ===== 左划关闭手势（仅移动端） =====
 const swipeStartX = ref(0)
 const swipeStartY = ref(0)
 const swipeDX = ref(0)
@@ -67,6 +67,7 @@ let swipeCaptureEl: HTMLElement | null = null
 
 function onSwipeDown(e: PointerEvent) {
   if (window.innerWidth > 768) return
+  if (e.pointerType === 'touch') return
   swiping.value = true
   swipePointerId = e.pointerId
   swipeStartX.value = e.clientX
@@ -77,6 +78,34 @@ function onSwipeDown(e: PointerEvent) {
   swipeCaptureEl.setPointerCapture(e.pointerId)
 }
 
+function onSwipeTouchStart(e: TouchEvent) {
+  if (window.innerWidth > 768 || e.touches.length !== 1) return
+  const touch = e.touches[0]
+  swiping.value = true
+  swipeStartX.value = touch.clientX
+  swipeStartY.value = touch.clientY
+  swipeDX.value = 0
+  swipeDY.value = 0
+}
+
+function onSwipeTouchMove(e: TouchEvent) {
+  if (!swiping.value || e.touches.length !== 1) return
+  const touch = e.touches[0]
+  swipeDX.value = Math.min(0, touch.clientX - swipeStartX.value)
+  swipeDY.value = touch.clientY - swipeStartY.value
+  if (swipeDX.value < -12 && Math.abs(swipeDX.value) > Math.abs(swipeDY.value)) {
+    e.preventDefault()
+  }
+}
+
+function finishSwipeState() {
+  if (!swiping.value) return
+  swiping.value = false
+  if (swipeDX.value < -70 && Math.abs(swipeDX.value) > Math.abs(swipeDY.value)) close()
+  swipeDX.value = 0
+  swipeDY.value = 0
+}
+
 function onSwipeMove(e: PointerEvent) {
   if (!swiping.value || e.pointerId !== swipePointerId) return
   swipeDX.value = Math.min(0, e.clientX - swipeStartX.value)
@@ -85,17 +114,12 @@ function onSwipeMove(e: PointerEvent) {
 
 function finishSwipe(e: PointerEvent) {
   if (!swiping.value || e.pointerId !== swipePointerId) return
-  swiping.value = false
   if (swipeCaptureEl?.hasPointerCapture?.(e.pointerId)) {
     swipeCaptureEl.releasePointerCapture(e.pointerId)
   }
   swipeCaptureEl = null
   swipePointerId = null
-  if (swipeDX.value < -70 && Math.abs(swipeDX.value) > Math.abs(swipeDY.value)) {
-    close()
-  }
-  swipeDX.value = 0
-  swipeDY.value = 0
+  finishSwipeState()
 }
 
 onMounted(() => {
@@ -126,6 +150,10 @@ onUnmounted(() => {
       :class="{ swiping }"
       :style="swiping ? { transform: `translateX(${swipeDX}px)`, transition: 'none' } : {}"
       @pointerdown="onSwipeDown"
+      @touchstart.passive="onSwipeTouchStart"
+      @touchmove="onSwipeTouchMove"
+      @touchend="finishSwipeState"
+      @touchcancel="finishSwipeState"
     >
       <!-- 移动端关闭按钮 -->
       <button class="mobile-close" @click="close" aria-label="关闭菜单">
@@ -203,7 +231,7 @@ onUnmounted(() => {
   top: 0;
   left: 0;
   z-index: 9000;
-  width: 260px;
+  width: 280px;
   height: 100vh;
   height: calc(var(--vh, 1vh) * 100);
   display: flex;

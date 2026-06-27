@@ -37,7 +37,7 @@ interface CampusUIProps {
 export function CampusUI(props: CampusUIProps) {
   const {
     selectedBuilding, navigateTarget, onNavigate, onClearNavigate,
-    onCloseInfo, onExit,
+    onCloseInfo,
     displayMode, onToggleFullscreen,
     colliderDebug = false,
     airWallCount = 0,
@@ -101,17 +101,6 @@ export function CampusUI(props: CampusUIProps) {
         padding: "10px 16px", pointerEvents: "none",
       }}>
         <div style={{ display: "flex", gap: 8, pointerEvents: "auto", flexShrink: 0 }}>
-          <button
-            className="campus-topbar-btn"
-            onClick={onExit}
-            style={{
-              background: "rgba(0,0,0,0.55)", color: "white",
-              border: "none", borderRadius: 20,
-              padding: "6px 14px", fontSize: 14, cursor: "pointer",
-            }}
-          >
-            ← 返回
-          </button>
           <div
             className="campus-topbar-title"
             style={{
@@ -261,16 +250,6 @@ export function CampusUI(props: CampusUIProps) {
               {joystickVisible ? "隐藏摇杆" : "🕹 摇杆"}
             </button>
           )}
-          <button
-            onClick={onExit}
-            style={{
-              background: "rgba(0,0,0,0.55)", color: "white",
-              border: "none", borderRadius: 20,
-              padding: "6px 14px", fontSize: 14, cursor: "pointer",
-            }}
-          >
-            ← 工作室
-          </button>
           <button
             className="campus-topbar-btn"
             onClick={onToggleFullscreen}

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import DOMPurify from 'dompurify'
 import { useAuth } from '../composables/useAuth'
 import AppSpinner from './AppSpinner.vue'
 import IntroFacultyGrid, { type FacultyCard } from './IntroFacultyGrid.vue'
@@ -18,6 +19,8 @@ const blocks = ref<ContentBlock[]>([])
 const facultyProfiles = ref<FacultyCard[]>([])
 const facultyProse = ref<ContentBlock[]>([])
 const loading = ref(true)
+const safeBlocks = computed(() => blocks.value.map(b => ({ ...b, content: DOMPurify.sanitize(b.content) })))
+const safeFacultyProse = computed(() => facultyProse.value.map(f => ({ ...f, content: DOMPurify.sanitize(f.content) })))
 const { isAdmin } = useAuth()
 
 function photoFromHtml(html: string): string {
@@ -85,7 +88,7 @@ onMounted(load)
     <template v-else>
       <div id="section-overview" class="college-sections">
       <section
-        v-for="(item, i) in blocks" :key="item.id ?? i"
+        v-for="(item, i) in safeBlocks" :key="item.id ?? i"
         class="module-section"
         :class="{ 'module-section--lead': i === 0 }"
       >
@@ -107,7 +110,7 @@ onMounted(load)
         </IntroFacultyGrid>
         <div v-else class="faculty-prose">
           <article
-            v-for="(item, i) in facultyProse"
+            v-for="(item, i) in safeFacultyProse"
             :key="i"
             class="faculty-prose-block"
           >

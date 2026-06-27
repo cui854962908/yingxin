@@ -31,15 +31,18 @@
 
   .wiki-gallery-card {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
   }
 
   .wiki-gallery-card__image {
-    max-height: 132px;
+    width: 100%;
+    min-height: 0;
+    height: auto;
+    max-height: none;
     aspect-ratio: 16 / 7;
   }
 
   .wiki-gallery-card footer {
-    border-left: 0;
     border-top: 1px solid var(--intro-line);
   }
 

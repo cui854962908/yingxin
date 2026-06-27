@@ -3,14 +3,18 @@ import { computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { getIntroCollege, getIntroCollegeTabPath, INTRO_COLLEGES } from '../constants/intro'
 import { useAppNavigate } from '../composables/useAppNavigate'
+import { usePanelReveal } from '../composables/usePanelReveal'
 import IntroCollegeModule from './IntroCollegeModule.vue'
 import IntroCollegeClubs from './IntroCollegeClubs.vue'
 import '../styles/intro-theme.css'
+import '../styles/panel-enter.css'
+import '../styles/intro-college-detail-mobile.css'
 
 const props = defineProps<{ id: string }>()
 
 const router = useRouter()
 const { appNavigate } = useAppNavigate()
+const { ready: revealReady } = usePanelReveal()
 
 const college = computed(() => getIntroCollege(props.id))
 
@@ -29,13 +33,17 @@ function goBack() {
 </script>
 
 <template>
-  <div v-if="college" class="college-detail intro-page">
+  <div
+    v-if="college"
+    class="college-detail intro-page panel-reveal panel-reveal--intro"
+    :class="{ 'panel-reveal--ready': revealReady }"
+  >
     <button type="button" class="intro-back-btn" @click="goBack">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
       返回{{ INTRO_COLLEGES.length > 1 ? '学院列表' : '牧院大百科' }}
     </button>
 
-    <header class="detail-hero">
+    <header class="detail-hero panel-reveal__item">
       <img
         v-if="college.coverImage"
         class="detail-hero-img"
@@ -49,7 +57,7 @@ function goBack() {
       </div>
     </header>
 
-    <section class="detail-meta">
+    <section class="detail-meta panel-reveal__item">
       <div v-if="college.stats.length" class="intro-stat-row detail-stats">
         <div v-for="(s, i) in college.stats" :key="i" class="intro-stat-chip">
           <span class="intro-stat-chip__val">{{ s.value }}</span>
@@ -59,6 +67,7 @@ function goBack() {
     </section>
 
     <IntroCollegeModule
+      class="panel-reveal__item"
       :overview-category="college.overviewCategory"
       :faculty-category="college.facultyCategory"
       :overview-fallback="college.overviewFallback"
@@ -66,6 +75,7 @@ function goBack() {
     />
 
     <IntroCollegeClubs
+      class="panel-reveal__item"
       :college-name="college.college"
       :club-filter="college.clubFilter"
     />

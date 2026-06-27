@@ -35,7 +35,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         校园导览 · 英才校区
         <span class="campus-trial">{{ CAMPUS_3D_TRIAL_LABEL }}</span>
       </span>
-      <span class="campus-hint">返回</span>
+      <span class="campus-hint" aria-hidden="true" />
     </header>
 
     <Transition name="fade">
@@ -124,6 +124,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .campus-hint {
+  width: 88px;
   font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.35);
   flex-shrink: 0;

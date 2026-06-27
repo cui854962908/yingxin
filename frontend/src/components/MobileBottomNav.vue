@@ -4,30 +4,28 @@ import { useRoute } from 'vue-router'
 
 const emit = defineEmits<{
   navigate: [key: string]
-  openMenu: []
 }>()
 
 const route = useRoute()
 
 const tabs = [
+  { key: 'intro', label: '牧院', aria: '认识牧院' },
   { key: 'home', label: '首页', aria: '首页' },
+  { key: 'wall', label: '问牧墙', aria: '问牧墙' },
+  { key: 'announcements', label: '公告', aria: '校园公告' },
   { key: 'faq', label: '答疑', aria: '问题答疑' },
-  { key: 'intro', label: '介绍', aria: '认识牧院' },
-  { key: 'menu', label: '菜单', aria: '打开菜单' },
 ] as const
 
 const activeKey = computed(() => {
   if (route.path.startsWith('/intro')) return 'intro'
   if (route.path === '/') return 'home'
+  if (route.path.startsWith('/announcements')) return 'announcements'
   if (route.path.startsWith('/faq')) return 'faq'
+  if (route.path.startsWith('/wall')) return 'wall'
   return ''
 })
 
 function onClick(key: string) {
-  if (key === 'menu') {
-    emit('openMenu')
-    return
-  }
   if (key !== activeKey.value) {
     emit('navigate', key)
   }
@@ -60,6 +58,20 @@ function onClick(key: string) {
         >
           <path d="M4.5 10.2 12 4l7.5 6.2V20a1.5 1.5 0 0 1-1.5 1.5H6a1.5 1.5 0 0 1-1.5-1.5v-9.8Z" />
           <path d="M9.5 21.5V13h5v8.5" />
+        </svg>
+        <svg
+          v-else-if="tab.key === 'announcements'"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M4 13.5V9.8a2 2 0 0 1 2-2h3l8-3.3v14.3l-8-3.3H6a2 2 0 0 1-2-2Z" />
+          <path d="M9 15.5 10.5 21H7l-1-5.5M20 8v7" />
         </svg>
         <svg
           v-else-if="tab.key === 'faq'"
@@ -95,7 +107,7 @@ function onClick(key: string) {
           <path d="M9.5 13.5h5" />
         </svg>
         <svg
-          v-else
+          v-else-if="tab.key === 'wall'"
           width="22"
           height="22"
           viewBox="0 0 24 24"
@@ -105,10 +117,8 @@ function onClick(key: string) {
           stroke-linecap="round"
           stroke-linejoin="round"
         >
-          <rect x="4" y="4" width="6.5" height="6.5" rx="1.5" />
-          <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" />
-          <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" />
-          <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" />
+          <path d="M5 4.5h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H10l-5 3v-3H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z" />
+          <path d="M7.5 9h9M7.5 13h6" />
         </svg>
       </span>
       <span class="bottom-nav__label">{{ tab.label }}</span>
@@ -121,23 +131,24 @@ function onClick(key: string) {
 
 @media (max-width: 768px) {
   .bottom-nav {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     z-index: 8000;
-    justify-content: space-around;
-    gap: 4px;
-    padding: 6px 10px calc(6px + env(safe-area-inset-bottom, 0px));
-    background: rgba(255, 252, 249, 0.94);
-    border-top: 1px solid rgba(181, 52, 58, 0.08);
-    box-shadow: 0 -8px 28px rgba(44, 35, 47, 0.07);
+    gap: 0;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: rgba(255, 255, 255, 0.96);
+    border-top: 1px solid #dedee3;
+    box-shadow: 0 -6px 22px rgba(21, 21, 26, 0.07);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
   }
 
   .bottom-nav__tab {
+    position: relative;
     display: flex;
     flex: 1;
     flex-direction: column;
@@ -145,9 +156,8 @@ function onClick(key: string) {
     justify-content: center;
     gap: 3px;
     min-width: 0;
-    max-width: 88px;
     min-height: 50px;
-    padding: 2px 4px;
+    padding: 2px;
     border: none;
     background: transparent;
     color: #9a8b7a;
@@ -155,7 +165,21 @@ function onClick(key: string) {
     font-family: inherit;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
-    transition: color 0.18s ease;
+    transition: color 0.18s ease, transform 0.18s ease;
+  }
+
+  .bottom-nav__tab::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    width: 18px;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: #b5343a;
+    opacity: 0;
+    transform: translateX(-50%) scaleX(0.4);
+    transition: opacity 0.18s ease, transform 0.18s ease;
   }
 
   .bottom-nav__tab:active {
@@ -179,13 +203,18 @@ function onClick(key: string) {
     color: #b5343a;
   }
 
+  .bottom-nav__tab--active::before {
+    opacity: 1;
+    transform: translateX(-50%) scaleX(1);
+  }
+
   .bottom-nav__tab--active .bottom-nav__icon {
     background: rgba(181, 52, 58, 0.12);
     color: #b5343a;
   }
 
   .bottom-nav__label {
-    font-size: 0.6875rem;
+    font-size: 0.625rem;
     font-weight: 600;
     line-height: 1.1;
     letter-spacing: 0.02em;

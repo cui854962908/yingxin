@@ -198,10 +198,13 @@ async function copyQQ() {
 .club-card {
   position: relative;
   width: 100%;
-  min-height: 340px;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 236px;
   background: linear-gradient(90deg, #FFF5EC 0%, #FFFDFB 50%, #FFFDFB 100%);
-  border-radius: 24px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+  border-radius: 18px;
+  box-shadow: 0 6px 22px rgba(76, 43, 27, 0.07);
   border: 1px solid #F3E7E2;
   overflow: hidden;
   cursor: pointer;
@@ -218,7 +221,7 @@ async function copyQQ() {
    ========================================== */
 .card-hero {
   position: relative;
-  height: 195px;
+  height: 142px;
   overflow: hidden;
 }
 
@@ -252,11 +255,11 @@ async function copyQQ() {
 /* 团徽 — 左上，金色描边 + 立体阴影 */
 .card-badge-ring {
   position: absolute;
-  top: 28px;
-  left: 28px;
+  top: 22px;
+  left: 22px;
   z-index: 3;
-  width: 80px;
-  height: 80px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   padding: 4px;
   background: linear-gradient(135deg, #D4A853 0%, #F0D78C 30%, #C49B3C 70%, #A67C27 100%);
@@ -288,7 +291,7 @@ async function copyQQ() {
 }
 
 .card-badge-text {
-  font-size: 2rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: #fff;
   font-family: 'Georgia', 'Noto Serif SC', serif;
@@ -298,16 +301,16 @@ async function copyQQ() {
 /* 标题区 */
 .card-title-area {
   position: absolute;
-  top: 32px;
-  left: 124px;
-  right: 28px;
+  top: 24px;
+  left: 102px;
+  right: 108px;
   z-index: 2;
   min-width: 0;
 }
 
 .card-name {
   margin: 0 0 6px;
-  font-size: 1.9rem;
+  font-size: 1.45rem;
   font-weight: 700;
   color: #3C2415;
   letter-spacing: 0.04em;
@@ -331,14 +334,14 @@ async function copyQQ() {
 .card-title-meta {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 14px;
 }
 
 .card-title-meta-item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.84rem;
+  font-size: 0.76rem;
   font-weight: 500;
   color: #5C3D2E;
   white-space: nowrap;
@@ -369,13 +372,13 @@ async function copyQQ() {
 /* 状态胶囊标签 */
 .card-status {
   position: absolute;
-  top: 22px;
-  right: 24px;
+  top: 18px;
+  right: 18px;
   z-index: 4;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 16px;
+  padding: 4px 12px;
   border-radius: 20px;
   font-size: 0.74rem;
   font-weight: 700;
@@ -470,7 +473,7 @@ async function copyQQ() {
 .card-info {
   display: flex;
   gap: 10px;
-  padding: 12px 24px 8px;
+  padding: 10px 20px 6px;
   flex-wrap: wrap;
 }
 
@@ -478,7 +481,7 @@ async function copyQQ() {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 5px 10px;
   background: #FFF9F4;
   border: 1px solid #F0E4D8;
   border-radius: 10px;
@@ -518,15 +521,15 @@ async function copyQQ() {
 .card-actions {
   display: flex;
   gap: 12px;
-  padding: 6px 24px 12px;
+  padding: 4px 20px 16px;
 }
 
 .card-btn-detail,
 .card-btn-join {
   flex: 1;
-  height: 48px;
-  border-radius: 24px;
-  font-size: 0.92rem;
+  height: 40px;
+  border-radius: 20px;
+  font-size: 0.84rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   cursor: pointer;
@@ -678,7 +681,7 @@ async function copyQQ() {
    ========================================== */
 @media (max-width: 1100px) {
   .card-title-area {
-    right: 24px;
+    right: 104px;
   }
 
   .card-name {
@@ -694,7 +697,7 @@ async function copyQQ() {
   .card-hero-decor { display: none }
 
   .card-hero {
-    height: 200px;
+    height: 160px;
   }
 
   .card-badge-ring {
@@ -755,7 +758,7 @@ async function copyQQ() {
   }
 
   .card-actions {
-    padding: 6px 16px 20px;
+    padding: 6px 16px 16px;
     gap: 10px;
   }
 

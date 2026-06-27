@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import type { Club } from '../types/club'
 import type { IntroClubFilter } from '../constants/intro'
 import {
-  filterClubsByIntroGroup,
+  filterClubsByIntroGroupId,
   resolveIntroClubGroups,
 } from '../constants/intro'
 import { useBreakpoint } from '../composables/useBreakpoint'
@@ -36,7 +36,7 @@ const expandedGroup = computed(
 
 const visible = computed(() => {
   if (!expandedGroupId.value) return []
-  return filterClubsByIntroGroup(clubs.value, props.clubFilter, expandedGroupId.value)
+  return filterClubsByIntroGroupId(clubs.value, expandedGroupId.value, props.clubFilter)
 })
 
 const pageSize = computed(() => (isMobile.value ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP))
@@ -49,7 +49,7 @@ const pagedClubs = computed(() => {
 })
 
 function clubCountForGroup(groupId: string): number {
-  return filterClubsByIntroGroup(clubs.value, props.clubFilter, groupId).length
+  return filterClubsByIntroGroupId(clubs.value, groupId, props.clubFilter).length
 }
 
 watch([visible, pageSize], () => {

@@ -100,6 +100,7 @@ function goTab(path: string) {
     class="intro intro-page intro-choreo"
     :class="{
       'intro--detail': isDetailPage || isCampusPage,
+      'intro--college-detail': isDetailPage,
       'intro--wiki': isWikiPage,
       'intro--clubs': activeTab === 'clubs',
     }"
@@ -269,7 +270,7 @@ function goTab(path: string) {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   margin-top: 0;
-  padding-bottom: 0;
+  padding: 3px;
 }
 
 .intro--wiki .intro-tabs {
@@ -298,8 +299,9 @@ function goTab(path: string) {
 
 .intro-tab:hover {
   border-color: rgba(181, 31, 45, .42);
+  background: #f7f7f8;
   color: var(--intro-accent, #b51f2d);
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .intro-tab:focus-visible {
@@ -314,6 +316,7 @@ function goTab(path: string) {
 }
 
 .intro-tab--on:hover {
+  background: var(--intro-accent, #b51f2d);
   color: #fff;
 }
 

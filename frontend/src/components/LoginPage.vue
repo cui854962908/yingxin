@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import LoginForm from './LoginForm.vue'
-import { PRODUCT_TAGLINE, PRODUCT_POSITIONING, GUEST_ENTRY_LABEL } from '../constants/product'
+import { PRODUCT_TAGLINE, GUEST_ENTRY_LABEL } from '../constants/product'
 
 const emit = defineEmits<{
   'login-success': [student: Record<string, any>, token: string]
@@ -53,7 +53,6 @@ const emit = defineEmits<{
         <p class="form-eyebrow">NEW STUDENT · IDENTITY VERIFICATION</p>
         <h2 class="form-heading">新生入学验证</h2>
         <div class="heading-rule" />
-        <p class="form-desc">{{ PRODUCT_POSITIONING }}</p>
 
         <LoginForm @login-success="(s, t) => emit('login-success', s, t)" />
 
@@ -685,8 +684,8 @@ body{font-family:'PingFang SC','Microsoft YaHei','Noto Serif SC',-apple-system,B
 .year-badge{font-size:3.2rem;font-weight:300;color:#f2e6d0;letter-spacing:.15em;font-family:'Georgia','Noto Serif SC',serif;line-height:1}
 .brand-sub{font-size:.85rem;color:rgba(242,230,208,.5);letter-spacing:.3em;margin-top:8px}
 .brand-tagline{
-  margin-top:10px;font-size:.72rem;color:rgba(242,230,208,.72);
-  letter-spacing:.08em;line-height:1.5;max-width:280px;
+  width:100%;margin:10px auto 0;font-size:.72rem;color:rgba(242,230,208,.72);
+  letter-spacing:.08em;line-height:1.5;max-width:280px;text-align:center;
 }
 
 /* 右面板 */

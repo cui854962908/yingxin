@@ -6,6 +6,8 @@ import XiaoXinAssistant from './components/XiaoXinAssistant.vue'
 import AppSpinner from './components/AppSpinner.vue'
 import { usePreload } from './composables/usePreload'
 import { GUEST_STUDENT, isGuestRole, readGuestSession, setGuestSession } from './composables/useGuest'
+import { MOBILE_MAX } from './composables/useBreakpoint'
+import { viewportWidth } from './composables/useViewport'
 
 import type { Student } from './types/student'
 
@@ -78,7 +80,7 @@ function applyLoginSession(s: Record<string, any>, token: string): Student {
 
 function onLoginSuccess(s: Record<string, any>, token: string) {
   applyLoginSession(s, token)
-  router.replace('/')
+  router.replace(viewportWidth() <= MOBILE_MAX ? '/intro/wiki' : '/')
 }
 
 function clearAuth() {

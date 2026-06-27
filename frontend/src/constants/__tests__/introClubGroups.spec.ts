@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  filterClubsByIntroGroup,
   filterClubsByIntroGroupId,
   INTRO_TABS,
   resolveIntroClubGroups,
@@ -35,7 +34,7 @@ describe('intro club groups', () => {
       { id: '2', category: '兴趣社团' },
     ]
     expect(
-      filterClubsByIntroGroup(all, { categories: ['信工团学会', '兴趣社团'] }, '信工团学会'),
+      filterClubsByIntroGroupId(all, '信工团学会', { categories: ['信工团学会', '兴趣社团'] }),
     ).toEqual([{ id: '1', category: '信工团学会' }])
   })
 

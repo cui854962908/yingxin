@@ -6,10 +6,12 @@ import { resolveIntroTabGroups, filterClubsByIntroGroupId } from '../constants/i
 import type { IntroClubGroup } from '../constants/intro'
 import { authHeaders, useAuth } from '../composables/useAuth'
 import { useBreakpoint } from '../composables/useBreakpoint'
+import { usePanelReveal } from '../composables/usePanelReveal'
 import AppSpinner from './AppSpinner.vue'
 import ClubCard from './ClubCard.vue'
 import IntroOrgGroupCard from './IntroOrgGroupCard.vue'
 import '../styles/intro-theme.css'
+import '../styles/panel-enter.css'
 
 const props = withDefaults(
   defineProps<{ hideHeader?: boolean; perPage?: number }>(),
@@ -28,6 +30,7 @@ const categories = ['全部', '信工团学会', '校级组织', '兴趣社团']
 
 const { isAdmin, isClubAdmin, student } = useAuth()
 const { isMobile } = useBreakpoint()
+const { ready: revealReady } = usePanelReveal()
 const isAnyAdmin = computed(() => isAdmin.value || isClubAdmin.value)
 
 const pageSize = computed(() => (isMobile.value ? 6 : props.perPage))
@@ -151,9 +154,17 @@ onMounted(loadClubs)
 </script>
 
 <template>
-  <div class="clubs" :class="{ 'clubs--intro-embed': hideHeader }">
+  <div
+    class="clubs"
+    :class="{
+      'clubs--intro-embed': hideHeader,
+      'panel-reveal': hideHeader,
+      'panel-reveal--intro': hideHeader,
+      'panel-reveal--ready': hideHeader && revealReady,
+    }"
+  >
     <!-- 工具栏：添加 / 返回 / 搜索（Intro 顶栏单独吸顶，此处占文档流） -->
-    <div class="clubs-toolbar" :class="{ 'clubs-toolbar--embed': hideHeader }">
+    <div class="clubs-toolbar panel-reveal__item" :class="{ 'clubs-toolbar--embed': hideHeader }">
       <div v-if="!hideHeader" class="clubs-header">
         <h3 class="clubs-title">社团介绍</h3>
         <button v-if="isAnyAdmin" class="clubs-add-btn" @click="goAdd">+ 添加社团</button>
@@ -186,7 +197,7 @@ onMounted(loadClubs)
       </div>
     </div>
 
-    <div class="clubs-main">
+    <div class="clubs-main panel-reveal__item">
     <div v-if="introGroupMode" class="intro-org-list">
       <IntroOrgGroupCard
         v-for="group in introGroups"
@@ -308,7 +319,16 @@ onMounted(loadClubs)
 .clubs-cat-btn:hover { border-color: #4a8c5c; color: #4a8c5c }
 .clubs-cat-btn.active { background: #4a8c5c; color: #fff; border-color: #4a8c5c }
 
-.clubs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px }
+.clubs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0 clamp(12px, 1.2vw, 20px) 16px;
+  box-sizing: border-box;
+  gap: 18px;
+}
 
 .clubs-empty { text-align: center; color: #b0a090; padding: 40px 0 24px; font-size: .88rem }
 .clubs-loading { display: flex; align-items: center; justify-content: center; padding: 40px 0 }
@@ -360,7 +380,7 @@ onMounted(loadClubs)
     box-shadow: 0 1px 3px rgba(0,0,0,.06);
   }
   .clubs-toolbar:not(.clubs-toolbar--embed)::before { left: -14px; right: -14px }
-  .clubs-grid { grid-template-columns: 1fr; gap: 16px }
+  .clubs-grid { grid-template-columns: 1fr; gap: 16px; padding-inline: 12px }
 }
 @media(max-width: 480px) {
   .clubs-toolbar:not(.clubs-toolbar--embed) { padding: 6px 12px 8px; margin: 0 -12px }

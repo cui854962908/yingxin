@@ -1,0 +1,97 @@
+/* 学院详情页移动端页头：返回、学院身份与栏目导航合并为一个整体。 */
+@media (max-width: 768px) {
+  .intro.intro--college-detail .intro-head.intro-head--detail {
+    gap: 14px;
+    padding: calc(env(safe-area-inset-top, 0px) + 12px) 14px 0;
+    border-bottom: 0;
+    background: #fff;
+    box-shadow: 0 1px 0 #dedee3, 0 8px 24px rgba(21, 21, 26, 0.06);
+  }
+
+  .intro--college-detail .intro-head-top--detail {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 48px;
+    width: 100%;
+    padding-left: 0;
+    text-align: left;
+  }
+
+  .intro--college-detail .intro-brand--detail {
+    align-items: flex-start;
+    gap: 3px;
+    width: 100%;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .intro--college-detail .intro-head--detail .intro-eyebrow {
+    display: block;
+    margin: 0;
+    color: #b51f2d;
+    font-size: 0.6875rem;
+    line-height: 1.25;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+  }
+
+  .intro--college-detail .intro-head--detail .intro-title {
+    margin: 0;
+    color: #15151a;
+    font-size: 1.25rem;
+    line-height: 1.25;
+    font-weight: 850;
+    letter-spacing: -0.025em;
+  }
+
+  .intro--college-detail .intro-head--detail .intro-sub {
+    margin: 0;
+    overflow: hidden;
+    color: #66666d;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .intro--college-detail .intro-head--detail .intro-tabs {
+    gap: 0;
+    width: 100%;
+    margin: 0;
+    padding: 3px;
+    border: 1px solid #dedee3;
+    border-radius: 11px;
+    background: #f4f4f6;
+  }
+
+  .intro--college-detail .intro-head--detail .intro-tab {
+    height: 40px;
+    min-height: 40px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #55555c;
+    font-size: 0.875rem;
+    font-weight: 700;
+    overflow: visible;
+  }
+
+  .intro--college-detail .intro-head--detail .intro-tab--on {
+    color: #b51f2d;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(21, 21, 26, 0.1);
+  }
+
+  .intro--college-detail .intro-head--detail .intro-tab--on::after {
+    display: none;
+  }
+
+  .intro--college-detail .college-detail > .intro-back-btn {
+    display: none;
+  }
+
+  .intro--college-detail .intro-body .college-detail {
+    padding-top: 12px;
+  }
+}
