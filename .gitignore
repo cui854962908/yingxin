@@ -32,6 +32,14 @@ backend/*backup*.sql
 backend/agent_data_only.sql
 *.db
 database_dump.sql
+yingxin_dump.sql
+*_dump.sql
+
+# Test coverage (regenerate with vitest --coverage / pytest --cov)
+frontend/coverage/
+backend/.coverage
+htmlcov/
+.coverage
 frontend/test-results/
 frontend/data/campus-poi-overrides.json
 frontend/data/campus-road-overrides.json

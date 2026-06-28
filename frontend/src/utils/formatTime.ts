@@ -1,4 +1,4 @@
-/** 相对时间（问牧墙列表用） */
+/** 相对时间（牧院新生说列表用） */
 export function formatRelativeTime(iso: string): string {
   const then = new Date(iso).getTime()
   const diff = Date.now() - then

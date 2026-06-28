@@ -37,7 +37,7 @@ const menuItems: MenuItem[] = [
   { id: 'home',             label: '首页',     icon: 'home' },
   { id: 'announcements',    label: '校园公告', icon: 'megaphone' },
   { id: 'faq',              label: '问题答疑', icon: 'message-circle' },
-  { id: 'wall',             label: '问牧墙',   icon: 'wall' },
+  { id: 'wall',             label: '牧院新生说',   icon: 'wall' },
 ]
 
 const avatarChar = computed(() => props.user.name?.charAt(0) || '')

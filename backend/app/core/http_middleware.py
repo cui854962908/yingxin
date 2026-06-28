@@ -10,12 +10,26 @@ MAX_BODY_BYTES = 5 * 1024 * 1024
 _UPLOAD_PATHS = ("/api/admin/clubs/upload-image",)
 
 
+# CSP：允许 Vue 编译内联样式/脚本 + AMap 地图 SDK + TTS blob 音频
+_CSP_VALUE = (
+    "default-src 'self'; "
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+    "style-src 'self' 'unsafe-inline'; "
+    "img-src 'self' data: blob:; "
+    "connect-src 'self'; "
+    "font-src 'self' data:; "
+    "frame-src 'self'; "
+    "media-src 'self' blob:"
+)
+
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
         response = await call_next(request)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault("Content-Security-Policy", _CSP_VALUE)
         return response
 
 

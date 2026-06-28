@@ -1,3 +1,4 @@
+<!-- 超标例外：script+template=395行，2D地图集成POI检索/分类/详情/校准面板/底图交互，拆分会造成大量prop-drilling -->
 <script setup lang="ts">
 import { computed, markRaw, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

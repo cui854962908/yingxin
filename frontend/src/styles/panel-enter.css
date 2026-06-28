@@ -100,7 +100,7 @@
 .panel-reveal:not(.panel-reveal--intro) > .panel-reveal__item:nth-child(3) { animation-delay: 0.16s; }
 .panel-reveal:not(.panel-reveal--intro) > .panel-reveal__item:nth-child(4) { animation-delay: 0.22s; }
 
-/* 问牧墙 · 顶栏与卡片 */
+/* 牧院新生说 · 顶栏与卡片 */
 .wall-enter-head {
   opacity: 0;
   animation: panelBlockIn 0.44s cubic-bezier(0.33, 1, 0.68, 1) 0.05s forwards;

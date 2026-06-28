@@ -56,7 +56,7 @@ watch(() => route.path, (path) => {
   }
 })
 
-/** 登录/游客均展示身份卡片（问牧墙/社团全屏页除外；认识牧院移动端不展示） */
+/** 登录/游客均展示身份卡片（牧院新生说/社团全屏页除外；认识牧院移动端不展示） */
 const showProfileCard = computed(
   () =>
     !isFullBleedModule.value
@@ -223,6 +223,7 @@ onUnmounted(() => {
             'section-card--fullbleed': isFullBleedModule,
             'section-card--intro': isIntroModule,
             'section-card--motion': isMotionModule,
+            'section-card--wall': isWallModule,
           }"
         >
           <Transition name="module" mode="out-in">
@@ -333,6 +334,14 @@ onUnmounted(() => {
   background: #fff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 6px 20px rgba(0, 0, 0, 0.05);
   isolation: isolate;
+}
+
+.section-card--wall {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 /* 认识牧院：PC 整页滚动；移动端顶栏 sticky 时滚动锁在卡片内 */

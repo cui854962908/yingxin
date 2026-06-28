@@ -6,7 +6,7 @@ import time
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
-from app.api.deps import AgentIdentity, get_agent_identity
+from app.core.security import get_current_payload
 from app.core.response import fail_envelope, ok_envelope
 from app.db.database import get_db
 from app.schemas.agent import AgentChatEnvelopeData, AgentChatRequest
@@ -20,17 +20,19 @@ async def agent_chat(
     request: Request,
     payload: AgentChatRequest,
     db: Session = Depends(get_db),
-    identity: AgentIdentity = Depends(get_agent_identity),
+    jwt_payload: dict = Depends(get_current_payload),
 ):
-    """智能迎新助手。允许匿名通用问答；个人敏感信息依赖 JWT `sub`（学号）。知识生成走小信（DeepSeek + documents）。"""
+    """智能迎新助手（须登录）。个人敏感信息依赖 JWT `sub`（学号）。知识生成走小信（DeepSeek + documents）。"""
     msg = payload.message.strip()
-    is_authenticated, current_student_id, role = identity
+    jwt = jwt_payload
+    current_student_id = str(jwt.get("sub", "")).strip() or None
+    role = str(jwt.get("role", "student")).strip().lower() or "student"
     t_body = time.perf_counter()
 
     result = await route_chat_async(
         db=db,
         message=msg,
-        is_authenticated=is_authenticated,
+        is_authenticated=True,
         current_student_id=current_student_id,
         role=role,
         request=request,

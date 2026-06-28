@@ -1,6 +1,7 @@
 """迎新系统种子数据：管理员 + 示例学生 + FAQ + 公告。首次部署执行一次即可。"""
 
 import logging
+import os
 from datetime import date, datetime
 from pathlib import Path
 
@@ -21,16 +22,27 @@ from faq_sort_order import sort_order_for  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
-# ── 管理员 ──
-ADMIN = {
-    "name": "崔志远",
-    "student_id": "admin",
-    "id_number_hash": hash_id_number("000000000000000000"),
-    "class_name": "系统管理",
-    "role": "admin",
-}
+_DEFAULT_ADMIN_ID_NUMBER = "000000000000000000"
 
-# ── 示例学生 ──
+
+def _build_admin_seed() -> dict:
+    id_number = os.getenv("ADMIN_SEED_ID_NUMBER", "").strip() or _DEFAULT_ADMIN_ID_NUMBER
+    name = os.getenv("ADMIN_SEED_NAME", "崔志远").strip() or "崔志远"
+    student_id = os.getenv("ADMIN_SEED_STUDENT_ID", "admin").strip() or "admin"
+    if id_number == _DEFAULT_ADMIN_ID_NUMBER:
+        logger.warning(
+            "管理员种子使用默认身份证；生产部署请设置环境变量 ADMIN_SEED_ID_NUMBER"
+        )
+    return {
+        "name": name,
+        "student_id": student_id,
+        "id_number_hash": hash_id_number(id_number),
+        "class_name": "系统管理",
+        "role": "admin",
+    }
+
+
+# ── 管理员（首次 ensure 时写入；已存在则不会覆盖）──
 DEMO_STUDENTS = [
     {
         "name": "张三",
@@ -372,7 +384,7 @@ def _ensure_rows(
 
 
 def ensure_admin(db: Session) -> None:
-    _ensure_rows(db, Student, "student_id", [ADMIN])
+    _ensure_rows(db, Student, "student_id", [_build_admin_seed()])
 
 
 def ensure_students(db: Session) -> None:
@@ -409,7 +421,8 @@ def main() -> None:
         db.commit()
         faq_total = len(db.scalars(select(FAQ)).all())
         print("初始化完成。")
-        print(f"  管理员：student_id=admin（{ADMIN['name']}）")
+        admin_row = _build_admin_seed()
+        print(f"  管理员：student_id={admin_row['student_id']}（{admin_row['name']}）")
         print(f"  学生：{len(DEMO_STUDENTS)} 人")
         print(f"  FAQ：种子 {len(DEMO_FAQ) + len(OPERATIONAL_FAQ)} 条，库内合计 {faq_total} 条")
         print(f"  公告：{len(DEMO_ANNOUNCEMENTS)} 条")
@@ -420,7 +433,7 @@ def main() -> None:
             print("  向量库：已构建")
         except Exception:
             logger.warning(
-                "向量库构建未完成（Ollama 不可用），启动后可手动执行 rebuild_documents_best_effort",
+                "向量库构建未完成（嵌入 API 不可用），启动后可手动执行 rebuild_documents_best_effort",
                 exc_info=True,
             )
 

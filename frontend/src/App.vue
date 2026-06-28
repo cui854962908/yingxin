@@ -142,7 +142,7 @@ provide('isAuthenticated', isAuthenticated)
           <component :is="Component" />
         </Transition>
       </router-view>
-      <XiaoXinAssistant />
+      <XiaoXinAssistant v-if="isAuthenticated" />
     </div>
   </Transition>
 </template>

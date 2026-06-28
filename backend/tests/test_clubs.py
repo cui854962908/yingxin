@@ -2,6 +2,8 @@
 
 import uuid
 
+import pytest
+
 
 class TestPublicListClubs:
     """GET /api/clubs —— 公开列表，无需认证。"""
@@ -227,3 +229,33 @@ class TestAdminClubRecruitFields:
             "recruit_count": -1,
         })
         assert resp.status_code == 422
+
+
+class TestClubAdminOwnership:
+    """club_admin 创建/编辑自己名下社团（修复 get_student_id_from_payload 调用）。"""
+
+    @pytest.fixture
+    def club_admin_headers(self, db):
+        from app.core.security import create_access_token, hash_id_number
+        from app.models.student import Student
+
+        s = Student(
+            name="社团长",
+            student_id="20260909999",
+            id_number_hash=hash_id_number("410105200509010099"),
+            class_name="动科2026-1班",
+            role="club_admin",
+        )
+        db.add(s)
+        db.commit()
+        token = create_access_token(subject="20260909999", name="社团长", role="club_admin")
+        return {"Authorization": f"Bearer {token}"}
+
+    def test_club_admin_create_club(self, client, club_admin_headers):
+        resp = client.post(
+            "/api/admin/clubs",
+            headers=club_admin_headers,
+            json={"name": "摄影社", "category": "兴趣社团", "intro": "记录校园"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["data"]["name"] == "摄影社"

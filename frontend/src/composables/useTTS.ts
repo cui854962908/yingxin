@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { authHeaders } from './useAuth'
 
 const MS_PER_CHAR_MIN = 18
 const MS_PER_CHAR_MAX = 120
@@ -42,7 +43,7 @@ export function useTTS() {
   async function fetchAudio(text: string, token: number): Promise<{ url: string; audio: HTMLAudioElement } | null> {
     const resp = await fetch('/api/tts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ text }),
     })
     if (!resp.ok || token !== speakToken) return null

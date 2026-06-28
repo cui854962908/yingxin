@@ -38,7 +38,7 @@ export interface ForumPostDetail {
   content: string
   category: ForumCategory
   author: ForumAuthor
-  author_id: number
+  author_id: number | null
   answer_count: number
   has_accepted: boolean
   is_closed: boolean
@@ -50,7 +50,7 @@ export interface ForumPostDetail {
   answers: ForumAnswer[]
 }
 
-export const FORUM_CATEGORIES: ForumCategory[] = ['报到', '生活', '学习', '社团', '其他']
+export const FORUM_CATEGORIES: ForumCategory[] = ['报到', '学习', '生活', '社团', '其他']
 
 export const FORUM_CATEGORY_COLORS: Record<ForumCategory, string> = {
   报到: '#b5343a',

@@ -91,7 +91,7 @@ def build_documents(db: Session, *, progress: bool = False) -> dict[str, Any]:
         texts.append((DOCUMENT_SOURCE_CLUB, uid, title, blob))
 
     count_ok = count_skip = 0
-    verbose = os.getenv("OLLAMA_EMBED_VERBOSE", "").lower() in {"1", "true", "yes"}
+    verbose = os.getenv("EMBED_VERBOSE", "").lower() in {"1", "true", "yes"}
     total = len(texts)
 
     for i, (source_kind, source_id_str, title, content) in enumerate(texts, 1):

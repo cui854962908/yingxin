@@ -35,5 +35,5 @@ export const SERVICE_CARDS: ServiceCard[] = [
   { id: 'map',     icon: 'map',     title: '校园导览',   desc: '教学楼、食堂、宿舍位置' },
   { id: 'web',     icon: 'web',     title: '学校官网',   desc: '河南牧业经济学院网上服务大厅', link: 'http://ehall.hnuahe.edu.cn/' },
   { id: 'tips',    icon: 'tips',    title: '新生攻略',   desc: '校园生活指南、快递地址、食堂分布' },
-  { id: 'ai',      icon: 'ai',      title: 'AI迎新助手', desc: '基于迎新知识库的智能问答，答不上可去问牧墙' },
+  { id: 'ai',      icon: 'ai',      title: 'AI迎新助手', desc: '基于迎新知识库的智能问答，答不上可去牧院新生说' },
 ]

@@ -1,6 +1,6 @@
 # 迎新系统 — 运维部署指南
 
-> 给运维人员：环境配置、数据库初始化、日常维护。接口契约见 `backend/docs/FRONTEND_API.md`；项目画像见根目录 `CONTEXT.md`。
+> 给运维人员：环境配置、数据库初始化、日常维护。**公网 VPS** 见本文 §二～§四 与 **`deploy/nginx-yingxin.conf.example`**。**管理员内容维护**见 **`backend/docs/ADMIN_GUIDE.md`**。接口契约见 `backend/docs/FRONTEND_API.md`；项目画像见根目录 `CONTEXT.md`。
 
 ---
 
@@ -80,16 +80,9 @@ docker compose up -d
 
 根 `docker-compose.yml` 已使用 pgvector 镜像，凭据与 `.env.example` 一致。
 
-### 2.4 Ollama（向量嵌入）
+### 2.4 嵌入 API
 
-小信 RAG 需要本地 Ollama 嵌入模型：
-
-```bash
-ollama pull bge-m3:latest
-curl http://127.0.0.1:11434/api/tags   # 验证
-```
-
-对话生成走 **DeepSeek API**（`.env` 中 `DEEPSEEK_API_KEY`），**不需要**本地对话模型。
+小信 RAG 走远端嵌入 API（`.env` 中 `EMBED_API_KEY`，默认 SiliconFlow BAAI/bge-m3）。对话生成走 **DeepSeek API**（`.env` 中 `DEEPSEEK_API_KEY`）。
 
 ---
 
@@ -105,7 +98,7 @@ uv run alembic upgrade head
 uv run python scripts/init_db.py
 ```
 
-若向量构建因 Ollama 未就绪而跳过，Ollama 启动后手动重建：
+若向量构建因嵌入 API 不可用而跳过，API 就绪后手动重建：
 
 ```bash
 uv run python -c "from app.crud.document import rebuild_documents_best_effort; rebuild_documents_best_effort()"
@@ -139,13 +132,18 @@ sudo ufw allow 8000
 ### 5.1 FAQ / 公告 / 社团变更
 
 - **FAQ 快车**：管理员增删改 FAQ 后，服务端自动清进程内缓存，**无需**手动刷缓存接口。
-- **向量库**：FAQ / 公告 / 社团变更后会异步 `incremental_embed_*`；若 Ollama 当时不可用，执行 §三 中的 `rebuild_documents_best_effort()`。
+- **向量库**：FAQ / 公告 / 社团变更后会异步 `incremental_embed_*`；若嵌入 API 当时不可用，见 **§六** 全量重建命令。
 
-### 5.2 批量导入学生
+### 5.2 牧院新生说
+
+- 前端模块 **牧院新生说**（`/wall`），**无独立后台**。
+- 系统管理员在帖子详情页可 **隐藏 / 删除**；置顶见 **`backend/docs/ADMIN_GUIDE.md`**。
+
+### 5.3 批量导入学生
 
 Web 端与 API 均已移除学生名册管理。首次部署或本地演示请执行 `scripts/init_db.py` 写入管理员与示例学生；生产环境新生名单由运维在数据库侧维护（不经过本 Web）。
 
-### 5.3 健康检查
+### 5.4 健康检查
 
 ```bash
 curl http://localhost:8000/health
@@ -153,31 +151,51 @@ curl http://localhost:8000/health
 
 需 Bearer 时：`curl -H "Authorization: Bearer <token>" http://localhost:8000/health`
 
-### 5.4 日志
+### 5.5 日志
 
 FastAPI 默认 stdout；Docker 部署用 `docker compose logs -f backend`。
 
 ---
 
-## 六、资源参考（8GB 服务器）
+## 六、管理员与内容维护
+
+完整说明：**`backend/docs/ADMIN_GUIDE.md`**（角色、FAQ/公告/社团、牧院新生说 moderation、生产检查）。
+
+### 6.1 向量库手动重建
+
+嵌入 API 就绪后（`.env` 中 `EMBED_API_KEY` 已配置）：
+
+```powershell
+cd backend
+uv run python -c "from app.crud.document import rebuild_documents_best_effort; rebuild_documents_best_effort()"
+```
+
+带进度：
+
+```powershell
+uv run python -c "from app.db.database import SessionLocal; from app.crud.document import build_documents; db=SessionLocal(); print(build_documents(db, progress=True)); db.close()"
+```
+
+---
+
+## 七、资源参考（8GB 服务器）
 
 | 进程 | 预计内存 |
 |------|----------|
 | PostgreSQL | ~500MB |
-| Ollama (bge-m3) | ~2GB |
 | FastAPI | ~200MB |
-| **合计** | **~2.7GB** |
+| **合计** | **~700MB** |
 
-DeepSeek 对话在云端，不占本地 GPU/大模型内存。8GB 服务器足够；建议预留 swap。
+DeepSeek 对话与嵌入均在云端，不占本地 GPU/大模型内存。4GB 服务器足够。
 
 ---
 
-## 七、故障排查速查
+## 八、故障排查速查
 
 | 现象 | 检查 |
 |------|------|
 | 迁移失败 `vector` 扩展 | DB 镜像是否为 pgvector；`alembic upgrade head` |
 | 小信 503 | `XIAOXIN_CHAT_ENABLED`、`DEEPSEEK_API_KEY` |
-| 向量检索无结果 | Ollama 是否运行；`rebuild_documents_best_effort()` |
+| 小信答不上 / 无 RAG | EMBED_API_KEY、`documents` 是否为空；跑 **§6.1** 重建；兜底可引导 **牧院新生说** |
 | 前端连不上 API | `BACKEND_CORS_ORIGINS`、反向代理端口 |
 | Docker backend 连不上 DB | `.env` 中 `DATABASE_URL` 主机名是否为 `db`（非 127.0.0.1） |

@@ -6,13 +6,13 @@
 
 **认识牧院 · 指导报到 · 智能答疑**
 
-面向 2026 级新生与家长：帮助了解学校与学院、准备报到入学，并通过 FAQ、小信 AI 与问牧墙获取答疑与互助。
+面向 2026 级新生与家长：帮助了解学校与学院、准备报到入学，并通过 FAQ、小信 AI 与牧院新生说获取答疑与互助。
 
 | 能力 | 说明 |
 |------|------|
 | 认识牧院 | 牧院大百科、学院介绍、社团文化（游客可浏览） |
 | 报到指导 | 报到须知、新生攻略、校园导览 |
-| 答疑互助 | FAQ、小信 AI、问牧墙 |
+| 答疑互助 | FAQ、小信 AI、牧院新生说 |
 
 **边界：** 不是学籍/名册管理系统。学生名单由运维脚本导入；Web 端做身份校验、个人报到信息展示与内容维护。
 
@@ -30,7 +30,9 @@ docker compose up -d
 
 ## 运维
 
-- [yunwei.md](yunwei.md) — 部署与排障
+- [yunwei.md](yunwei.md) — 部署、公网 VPS 与排障
+- [deploy/nginx-yingxin.conf.example](deploy/nginx-yingxin.conf.example) — Nginx 反向代理示例
+- [backend/docs/ADMIN_GUIDE.md](backend/docs/ADMIN_GUIDE.md) — **管理员与内容维护**
 - [backend/docs/FRONTEND_API.md](backend/docs/FRONTEND_API.md) — 前后端接口
 - [CONTEXT.md](CONTEXT.md) — 项目画像与模块说明
 

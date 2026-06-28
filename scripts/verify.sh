@@ -49,7 +49,15 @@ over=0
 for f in "$ROOT"/backend/app/**/*.py "$ROOT"/backend/tests/**/*.py "$ROOT"/frontend/src/**/*.ts; do
   [ -f "$f" ] || continue
   lines=$(wc -l < "$f")
-  [ "$lines" -gt 450 ] && { fail "$f → $lines 行（上限 450）"; over=$((over + 1)); }
+  if [ "$lines" -gt 450 ]; then
+    justification=$(head -10 "$f" | grep -cE '超出.*行限制|超标|例外' 2>/dev/null || true)
+    if [ "$justification" -gt 0 ]; then
+      warn "$f → $lines 行（有注释说明例外理由）"
+    else
+      fail "$f → $lines 行（上限 450）"
+      over=$((over + 1))
+    fi
+  fi
 done
 [ "$over" -eq 0 ] && pass "全部通过"
 

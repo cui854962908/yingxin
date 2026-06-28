@@ -68,7 +68,7 @@ class ForumPostDetail(BaseModel):
     content: str
     category: str
     author: ForumAuthorBrief
-    author_id: int
+    author_id: int | None = None
     answer_count: int
     has_accepted: bool
     is_closed: bool

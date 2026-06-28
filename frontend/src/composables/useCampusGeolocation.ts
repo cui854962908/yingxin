@@ -8,6 +8,16 @@ const BRAND_RED = '#b5343a'
 const OUT_OF_CAMPUS_MSG = '您当前不在学校范围内，无法定位'
 /** 移动小于此距离不刷新 marker，避免 GPS 抖动 */
 const MIN_TRACK_MOVE_METERS = 4
+/** 定位结果缓存 5 分钟，避免页面来回切换时重复调高德 IP 定位 API */
+const GEO_CACHE_TTL_MS = 5 * 60 * 1000
+
+interface GeoCache {
+  lnglat: [number, number]
+  accuracy: number | null
+  timestamp: number
+}
+
+let _geoCache: GeoCache | null = null
 
 interface GpsReading {
   lnglat: [number, number]
@@ -236,8 +246,24 @@ export function useCampusGeolocation(options: CampusGeolocationOptions = {}) {
     return null
   }
 
+  function _updateCache(lnglat: [number, number], accuracy: number | null) {
+    _geoCache = { lnglat, accuracy, timestamp: Date.now() }
+  }
+
   async function locate(map: any, AMap: any): Promise<[number, number] | null> {
     if (!map || !AMap) return fail('地图尚未就绪')
+
+    // 5 分钟内直接复用缓存，避免重复调高德 IP 定位（付费）
+    if (_geoCache && Date.now() - _geoCache.timestamp < GEO_CACHE_TTL_MS) {
+      const cached = _geoCache
+      if (isWithinCampus(cached.lnglat)) {
+        applyPosition(map, AMap, cached.lnglat, cached.accuracy)
+        startTracking(map, AMap)
+        message.value = ''
+        return cached.lnglat
+      }
+    }
+
     if (!navigator.geolocation) return fail('当前浏览器不支持定位')
     status.value = 'loading'
     message.value = ''
@@ -247,6 +273,7 @@ export function useCampusGeolocation(options: CampusGeolocationOptions = {}) {
     if (inCampus) {
       applyPosition(map, AMap, inCampus.lnglat, inCampus.accuracy)
       startTracking(map, AMap)
+      _updateCache(inCampus.lnglat, inCampus.accuracy)
       return inCampus.lnglat
     }
 
@@ -255,6 +282,7 @@ export function useCampusGeolocation(options: CampusGeolocationOptions = {}) {
     if (fallback) {
       applyPosition(map, AMap, fallback.lnglat, fallback.accuracy)
       startTracking(map, AMap)
+      _updateCache(fallback.lnglat, fallback.accuracy)
       return fallback.lnglat
     }
 

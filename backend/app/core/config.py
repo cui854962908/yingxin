@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     #: 为 true 时在请求结束后打印 [agent_perf]（仅 POST /api/agent/chat）
     AGENT_PERF_LOG: bool = False
 
-    # --- 小信 SSE：`POST /api/chat`（DeepSeek 对话 + Ollama 嵌入）---
+    # --- 小信 SSE：`POST /api/chat`（DeepSeek 对话 + 远端嵌入）---
     #: 若为 false，`POST /api/chat` 返回 503
     XIAOXIN_CHAT_ENABLED: bool = True
 
@@ -43,9 +43,15 @@ class Settings(BaseSettings):
     DEEPSEEK_CHAT_MODEL: str = "deepseek-v4-flash"
     DEEPSEEK_CHAT_TIMEOUT_SECONDS: float = 120.0
 
-    # --- Ollama（仅嵌入，不跑对话）---
-    OLLAMA_BASE_URL: str = "http://127.0.0.1:11434"
-    OLLAMA_EMBED_MODEL: str = "bge-m3:latest"
+    # --- 嵌入模型（远端 API，OpenAI 兼容）---
+    #: 远端嵌入 API Key（如 SiliconFlow）
+    EMBED_API_KEY: str = ""
+    #: 远端嵌入 API 地址（如 https://api.siliconflow.cn/v1）
+    EMBED_API_BASE_URL: str = "https://api.siliconflow.cn/v1"
+    #: 远端嵌入模型名（如 BAAI/bge-m3）
+    EMBED_MODEL: str = "BAAI/bge-m3"
+    #: 远端嵌入超时秒数
+    EMBED_TIMEOUT_SECONDS: float = 30.0
 
     #: 余弦相似度阈值（embedding 归一化后点积）
     DOCUMENT_COSINE_THRESHOLD: float = 0.6

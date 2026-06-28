@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import json
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.core.config import settings
+from app.core.security import get_current_payload
 from app.schemas.xiaoxin import XiaoxinChatBody
 from app.services import xiaoxin_chat_service
 
@@ -26,7 +27,8 @@ def _sse(data: dict) -> str:
 
 
 @router.post("/chat")
-async def chat(req: XiaoxinChatBody):
+async def chat(req: XiaoxinChatBody, _: dict = Depends(get_current_payload)):
+    """小信 SSE：须登录（游客不可用）。"""
     if not settings.XIAOXIN_CHAT_ENABLED:
         raise HTTPException(status_code=503, detail="小信 SSE 已在服务端关闭（XIAOXIN_CHAT_ENABLED=false）")
 

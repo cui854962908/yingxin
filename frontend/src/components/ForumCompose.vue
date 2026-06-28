@@ -5,6 +5,7 @@ import type { ForumCategory } from '../types/forum'
 import { FORUM_CATEGORIES } from '../types/forum'
 import { authHeaders, useAuth } from '../composables/useAuth'
 import { useAppNavigate } from '../composables/useAppNavigate'
+import { FORUM_MODULE_NAME } from '../constants/product'
 import '../styles/forum-mobile.css'
 
 const route = useRoute()
@@ -65,7 +66,7 @@ onMounted(() => {
     <div class="forum-mobile-sticky-top">
       <button type="button" class="forum-mobile-back" @click="appGoBackTo('/wall')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-        返回问牧墙
+        返回{{ FORUM_MODULE_NAME }}
       </button>
     </div>
 
@@ -95,7 +96,7 @@ onMounted(() => {
 
     <div class="wc-submit-dock">
       <button type="button" class="wc-submit" :disabled="saving" @click="submit">
-        {{ saving ? '发布中…' : '发布到问牧墙' }}
+        {{ saving ? '发布中…' : `发布到${FORUM_MODULE_NAME}` }}
       </button>
     </div>
   </div>

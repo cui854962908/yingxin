@@ -1,6 +1,9 @@
+// 超标例外：481行，小信聊天状态机集中管理SSE流/FAQ匹配/前端兜底/TTS联动，拆分会割裂紧密耦合的状态逻辑
 import { ref, computed, nextTick, type Ref } from 'vue'
 import { useAppNavigate } from './useAppNavigate'
 import { usePreload } from './usePreload'
+import { authHeaders } from './useAuth'
+import { FORUM_MODULE_NAME } from '../constants/product'
 import type { Msg } from '../components/XinChatBubble.vue'
 import type { XinTTS } from './useTTS'
 
@@ -19,7 +22,7 @@ interface AgentResponse {
   }
 }
 
-/** 小信答不上 / 知识库未命中时的跳转（问牧墙优先） */
+/** 小信答不上 / 知识库未命中时的跳转（牧院新生说优先） */
 const KB_HINT_LINKS = [
   { label: '查看问题答疑', to: '/faq' },
   { label: '查看校园公告', to: '/announcements' },
@@ -36,7 +39,7 @@ function wallFallbackLinks(question: string, loggedIn: boolean): { label: string
   const hasQ = !!question.trim()
   return [
     {
-      label: loggedIn && hasQ ? '🌾 去问牧墙提问' : '🌾 去问牧墙',
+      label: loggedIn && hasQ ? `🌾 去${FORUM_MODULE_NAME}提问` : `🌾 去${FORUM_MODULE_NAME}`,
       to: askTo,
     },
     { label: '查看问题答疑', to: '/faq' },
@@ -56,7 +59,7 @@ function applyWallAskToLinks(
     return {
       ...l,
       to,
-      label: loggedIn && question.trim() ? '🌾 去问牧墙提问' : l.label,
+      label: loggedIn && question.trim() ? `🌾 去${FORUM_MODULE_NAME}提问` : l.label,
     }
   })
 }
@@ -131,7 +134,7 @@ export function useXinChat(
 
   function pushLinkMsg(links: { label: string; to: string }[], wallAsk = false) {
     const text = wallAsk
-      ? '要不要把刚才的问题发到问牧墙，让学长学姐帮你？'
+      ? `要不要把刚才的问题发到${FORUM_MODULE_NAME}，让学长学姐帮你？`
       : '需要我帮你跳转到相关页面查看详细信息吗？'
     messages.value.push({
       role: 'xin', time: now(),
@@ -218,6 +221,22 @@ export function useXinChat(
     return localStorage.getItem('token')
   }
 
+  function ensureLoggedInForChat(): boolean {
+    if (!authToken()) {
+      const tip = '小信 AI 仅对登录同学开放，请先登录后再使用。'
+      messages.value.push({
+        role: 'xin',
+        time: now(),
+        text: tip,
+        displayText: tip,
+        done: true,
+      })
+      nextTick(() => scrollBottom())
+      return false
+    }
+    return true
+  }
+
   async function tryAgentChat(q: string): Promise<boolean> {
     const token = authToken()
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -258,10 +277,11 @@ export function useXinChat(
     try {
       resp = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ question: q }),
         signal: AbortSignal.timeout(15000),
       })
+      if (resp.status === 401) return false
       if (!resp.ok || !resp.body) return false
     } catch { return false }
 
@@ -388,7 +408,7 @@ export function useXinChat(
     }
 
     return {
-      answer: `这个问题我暂时答不上来。\n\n关于「${q.slice(0, 15)}」，建议你：\n• 去「问牧墙」发帖，让学长学姐帮你\n• 查看校园公告或问题答疑\n• 联系辅导员获取一对一帮助`,
+      answer: `这个问题我暂时答不上来。\n\n关于「${q.slice(0, 15)}」，建议你：\n• 去「${FORUM_MODULE_NAME}」发帖，让学长学姐帮你\n• 查看校园公告或问题答疑\n• 联系辅导员获取一对一帮助`,
       links: wallFallbackLinks(q, !!authToken()),
     }
   }
@@ -423,6 +443,7 @@ export function useXinChat(
   async function send() {
     const q = input.value.trim()
     if (!q || sending.value) return
+    if (!ensureLoggedInForChat()) return
     finishTyping()
     messages.value.push({ role: 'user', text: q, time: now(), displayText: q, done: true })
     input.value = ''

@@ -7,9 +7,17 @@ import ServiceIcons from './ServiceIcons.vue'
 
 const router = useRouter()
 const xinOpen = inject<Ref<boolean>>('xinOpen')
+const isAuthenticated = inject<Ref<boolean>>('isAuthenticated', ref(false))
 function openChat() { if (xinOpen) xinOpen.value = true }
 function handleServiceClick(id: string) {
-  if (id === 'ai') { openChat(); return }
+  if (id === 'ai') {
+    if (!isAuthenticated.value) {
+      window.alert('登录后可使用小信 AI 助手')
+      return
+    }
+    openChat()
+    return
+  }
   if (id === 'map') { router.push('/campus').catch(() => {}); return }
   if (id === 'notice') { router.push('/guide'); return }
   if (id === 'tips') { router.push('/tips'); return }

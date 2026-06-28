@@ -78,7 +78,7 @@ def create_club(
 ):
     owner_id = None
     if payload.get("role") == "club_admin":
-        owner_id = get_student_id_from_payload(db, payload)
+        owner_id = get_student_id_from_payload(payload)
         existing = db.scalars(
             select(Club).where(Club.owner_student_id == owner_id)
         ).first()
@@ -111,7 +111,7 @@ def update_club(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="社团不存在")
 
     if payload.get("role") == "club_admin":
-        owner_id = get_student_id_from_payload(db, payload)
+        owner_id = get_student_id_from_payload(payload)
         if row.owner_student_id != owner_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -168,7 +168,7 @@ def set_club_status(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="社团不存在")
 
     if payload.get("role") == "club_admin":
-        owner_id = get_student_id_from_payload(db, payload)
+        owner_id = get_student_id_from_payload(payload)
         if row.owner_student_id != owner_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只能修改自己管理的社团")
 
@@ -179,7 +179,7 @@ def set_club_status(
 
 _UPLOAD_DIR = Path("static/uploads/clubs")
 _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-_ALLOWED_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
+_ALLOWED_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 
 
 @router_admin.post("/clubs/upload-image")

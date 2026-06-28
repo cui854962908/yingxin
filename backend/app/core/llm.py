@@ -1,14 +1,13 @@
-"""LLM 层：DeepSeek API 对话生成 + Ollama bge-m3 向量嵌入。
+"""LLM 层：DeepSeek API 对话生成 + 远端嵌入（OpenAI 兼容 API）。
 
 配置：
 - ``DEEPSEEK_API_KEY`` → DeepSeek 对话（deepseek-v4-flash）
-- ``OLLAMA_BASE_URL`` → 本地 Ollama 嵌入（bge-m3）
+- ``EMBED_API_KEY`` → 远端嵌入 API（如 SiliconFlow BAAI/bge-m3）
 """
 
 from __future__ import annotations
 
 import json
-import time
 from collections.abc import Iterator
 
 import httpx
@@ -24,7 +23,7 @@ SYSTEM_PROMPT = """你是河南牧业经济学院的迎新助手，名字叫"小
 
 ## 核心规则
 1. 回答必须准确。只能基于知识库中已有的信息回答学校相关问题，严禁编造任何政策、规定、流程或数据。
-2. 知识库中没有的信息，直接告诉同学"这个问题我暂时答不上来"，并建议去「问牧墙」问问学长学姐、查看迎新公告或咨询辅导员，不要猜测。
+2. 知识库中没有的信息，直接告诉同学"这个问题我暂时答不上来"，并建议去「牧院新生说」问问学长学姐、查看迎新公告或咨询辅导员，不要猜测。
 3. 闲聊话题正常回应，保持友好。
 
 ## 风格
@@ -35,44 +34,30 @@ SYSTEM_PROMPT = """你是河南牧业经济学院的迎新助手，名字叫"小
 
 
 # ═══════════════════════════════════════════════════════════════════
-# 嵌入：Ollama bge-m3
+# 嵌入：远端 API（OpenAI 兼容）
 # ═══════════════════════════════════════════════════════════════════
 
 def embed(text: str) -> list[float]:
-    """调 Ollama embedding API，失败时重试最多 3 次。"""
-    url = f"{settings.OLLAMA_BASE_URL.rstrip('/')}/api/embeddings"
-    last_err: Exception | None = None
-    for attempt in range(3):
-        try:
-            resp = httpx.post(
-                url,
-                json={"model": settings.OLLAMA_EMBED_MODEL, "prompt": text},
-                timeout=30.0,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            emb = data.get("embedding")
-            if isinstance(emb, list) and emb:
-                return [float(x) for x in emb]
-            embs = data.get("embeddings")
-            if isinstance(embs, list) and embs:
-                first = embs[0]
-                if isinstance(first, list) and first:
-                    return [float(x) for x in first]
-                if isinstance(first, dict):
-                    inner = first.get("embedding") or first.get("embeddings")
-                    if isinstance(inner, list) and inner:
-                        return [float(x) for x in inner]
-            raise ValueError(f"unexpected embeddings response keys: {list(data.keys())}")
-        except (httpx.TimeoutException, httpx.ConnectError, httpx.RemoteProtocolError) as exc:
-            last_err = exc
-            if attempt < 2:
-                logger.warning("embed() attempt %d failed: %s, retrying...", attempt + 1, exc)
-                time.sleep(1)
-        except Exception as exc:
-            last_err = exc
-            break
-    raise last_err or RuntimeError("embed() failed after retries")
+    """调用 OpenAI 兼容的嵌入 API（如 SiliconFlow BAAI/bge-m3）。"""
+    url = f"{settings.EMBED_API_BASE_URL.rstrip('/')}/embeddings"
+    headers = {
+        "Authorization": f"Bearer {settings.EMBED_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    resp = httpx.post(
+        url,
+        json={"model": settings.EMBED_MODEL, "input": text},
+        headers=headers,
+        timeout=settings.EMBED_TIMEOUT_SECONDS,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    items = data.get("data", [])
+    if items and isinstance(items[0], dict):
+        emb = items[0].get("embedding")
+        if isinstance(emb, list) and emb:
+            return [float(x) for x in emb]
+    raise ValueError(f"unexpected embeddings response: {list(data.keys())}")
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -135,7 +120,7 @@ def build_prompt(context: str | None, question: str) -> str:
         return (
             f"{SYSTEM_PROMPT}\n\n"
             f"同学的问题：{question}\n"
-            f"（知识库中未找到相关信息，请如实告知，并引导同学去「问牧墙」互助、查看公告或咨询辅导员）"
+            f"（知识库中未找到相关信息，请如实告知，并引导同学去「牧院新生说」互助、查看公告或咨询辅导员）"
         )
     return (
         f"{SYSTEM_PROMPT}\n\n"

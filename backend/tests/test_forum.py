@@ -1,4 +1,4 @@
-"""问牧墙 API 集成测试。"""
+"""牧院新生说 API 集成测试。"""
 
 import pytest
 from app.core.security import create_access_token
@@ -37,10 +37,52 @@ def _create_post(client, headers, title="宿舍几点关门？"):
 
 
 class TestForumPosts:
-    def test_list_public_without_auth(self, client):
+    def test_list_public_masks_author_by_grade(self, client, student_headers):
+        _create_post(client, student_headers)
         resp = client.get("/api/forum/posts")
         assert resp.status_code == 200
-        assert resp.json()["success"] is True
+        data = resp.json()
+        assert data["success"] is True
+        assert data["data"]["items"]
+        assert data["data"]["items"][0]["author"]["name"] == "2026 级新生"
+
+    def test_list_public_shows_other_grade_label(self, client, db):
+        from app.core.security import hash_id_number, create_access_token
+        from app.models.student import Student
+
+        s = Student(
+            name="王五",
+            student_id="20250901001",
+            id_number_hash=hash_id_number("410105200409010033"),
+            class_name="动科2025-1班",
+            role="student",
+        )
+        db.add(s)
+        db.commit()
+        token = create_access_token(subject="20250901001", name="王五", role="student")
+        _create_post(client, {"Authorization": f"Bearer {token}"}, title="老生发帖")
+        resp = client.get("/api/forum/posts")
+        names = [it["author"]["name"] for it in resp.json()["data"]["items"]]
+        assert "2025 级" in names
+        assert "王五" not in names
+
+    def test_detail_guest_hides_author_id(self, client, student_headers):
+        create = _create_post(client, student_headers)
+        post_id = create.json()["data"]["id"]
+        resp = client.get(f"/api/forum/posts/{post_id}")
+        assert resp.status_code == 200
+        assert resp.json()["data"]["author_id"] is None
+
+    def test_detail_logged_in_shows_author_id(self, client, student_headers):
+        create = _create_post(client, student_headers)
+        post_id = create.json()["data"]["id"]
+        resp = client.get(f"/api/forum/posts/{post_id}", headers=student_headers)
+        assert resp.json()["data"]["author_id"] is not None
+
+    def test_list_shows_real_author_when_logged_in(self, client, student_headers):
+        _create_post(client, student_headers)
+        resp = client.get("/api/forum/posts", headers=student_headers)
+        assert resp.json()["data"]["items"][0]["author"]["name"] == "张三"
 
     def test_create_and_detail(self, client, student_headers):
         resp = _create_post(client, student_headers)

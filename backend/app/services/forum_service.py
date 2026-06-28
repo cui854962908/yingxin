@@ -1,7 +1,8 @@
-"""问牧墙业务逻辑。"""
+"""牧院新生说业务逻辑。"""
 
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -43,6 +44,29 @@ def resolve_author_id(db: Session, payload: dict[str, Any]) -> int:
 
 def _author_brief(student: Student) -> ForumAuthorBrief:
     return ForumAuthorBrief(name=student.name, class_name=student.class_name or "—")
+
+
+def _guest_author_label(student: Student, *, now: datetime | None = None) -> str:
+    """未登录可见：按学号前缀展示年级，不暴露姓名（与前端 gradeLabel 规则一致）。"""
+    sid = (student.student_id or "").strip()
+    m = re.match(r"^(\d{4})", sid)
+    if not m:
+        return "牧院学子"
+    year = int(m.group(1))
+    if year < 2000 or year > 2100:
+        return "牧院学子"
+    ref = now or datetime.now(timezone.utc)
+    enroll_year = ref.year if ref.month >= 6 else ref.year - 1
+    if year == enroll_year:
+        return f"{year} 级新生"
+    return f"{year} 级"
+
+
+def _author_brief_for_viewer(student: Student, viewer_id: int | None) -> ForumAuthorBrief:
+    """未登录浏览时隐藏真实姓名/班级（与前端 formatForumAuthor 一致）。"""
+    if viewer_id is None:
+        return ForumAuthorBrief(name=_guest_author_label(student), class_name="—")
+    return _author_brief(student)
 
 
 def _preview(text: str) -> str:
@@ -172,7 +196,7 @@ def list_posts(
                 title=row.title,
                 content_preview=_preview(row.content),
                 category=row.category,
-                author=_author_brief(author),
+                author=_author_brief_for_viewer(author, viewer_id),
                 answer_count=row.answer_count,
                 has_accepted=row.has_accepted,
                 is_closed=row.is_closed,
@@ -210,7 +234,7 @@ def get_post_detail(db: Session, post_id: uuid.UUID, viewer_id: int | None) -> d
         ForumAnswerItem(
             id=a.id,
             content=a.content,
-            author=_author_brief(answer_authors[a.author_id]),
+            author=_author_brief_for_viewer(answer_authors[a.author_id], viewer_id),
             is_accepted=a.is_accepted,
             like_count=a.like_count,
             liked_by_me=a.id in liked_answers,
@@ -226,8 +250,8 @@ def get_post_detail(db: Session, post_id: uuid.UUID, viewer_id: int | None) -> d
         title=post.title,
         content=post.content,
         category=post.category,
-        author=_author_brief(author),
-        author_id=post.author_id,
+        author=_author_brief_for_viewer(author, viewer_id),
+        author_id=post.author_id if viewer_id is not None else None,
         answer_count=post.answer_count,
         has_accepted=post.has_accepted,
         is_closed=post.is_closed,

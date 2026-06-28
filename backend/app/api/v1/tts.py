@@ -5,17 +5,19 @@ from __future__ import annotations
 import io
 
 import edge_tts
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.core.config import settings
+from app.core.security import get_current_payload
 from app.schemas.xiaoxin import XiaoxinTtsBody
 
 router = APIRouter(tags=["tts"])
 
 
 @router.post("/tts")
-async def tts(req: XiaoxinTtsBody):
+async def tts(req: XiaoxinTtsBody, _: dict = Depends(get_current_payload)):
+    """须登录后使用（与小信配套）。"""
     communicate = edge_tts.Communicate(req.text.strip(), settings.EDGE_TTS_VOICE)
     buffer = io.BytesIO()
 

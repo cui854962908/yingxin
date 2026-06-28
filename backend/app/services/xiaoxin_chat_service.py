@@ -39,9 +39,9 @@ def _links_for_kb() -> list[dict[str, str]]:
 
 
 def _links_for_fallback() -> list[dict[str, str]]:
-    """知识库未命中时的引导链接（问牧墙优先）。"""
+    """知识库未命中时的引导链接（牧院新生说优先）。"""
     return [
-        {"label": "🌾 去问牧墙", "to": "/wall"},
+        {"label": "🌾 去牧院新生说", "to": "/wall"},
         {"label": "查看问题答疑", "to": "/faq"},
         {"label": "查看校园公告", "to": "/announcements"},
     ]

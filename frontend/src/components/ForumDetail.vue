@@ -7,6 +7,7 @@ import { authHeaders, useAuth } from '../composables/useAuth'
 import { formatForumAuthor } from '../utils/forumAuthor'
 import { useAppNavigate } from '../composables/useAppNavigate'
 import { formatRelativeTime } from '../utils/formatTime'
+import { FORUM_MODULE_NAME } from '../constants/product'
 import AppSpinner from './AppSpinner.vue'
 import '../styles/forum-mobile.css'
 
@@ -155,7 +156,7 @@ onMounted(load)
     <div class="forum-mobile-sticky-top">
       <button type="button" class="forum-mobile-back" @click="appGoBackTo('/wall')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-        返回问牧墙
+        返回{{ FORUM_MODULE_NAME }}
       </button>
     </div>
 

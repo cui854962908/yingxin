@@ -8,9 +8,12 @@ export const PRODUCT_NAME = '2026 迎新门户'
 /** 一句话定位（登录页、侧栏、认识牧院顶栏） */
 export const PRODUCT_TAGLINE = '认识牧院 · 指导报到 · 智能答疑'
 
+/** 新生互助论坛（路由 /wall） */
+export const FORUM_MODULE_NAME = '牧院新生说'
+
 /** 面向谁、解决什么 */
 export const PRODUCT_POSITIONING =
-  '面向 2026 级新生与家长：帮助了解学校与学院、准备报到入学，并通过 FAQ、小信 AI 与问牧墙获取答疑与互助。'
+  '面向 2026 级新生与家长：帮助了解学校与学院、准备报到入学，并通过 FAQ、小信 AI 与牧院新生说获取答疑与互助。'
 
 /** 明确边界，避免被当成学籍系统 */
 export const PRODUCT_BOUNDARY =
@@ -20,7 +23,7 @@ export const PRODUCT_BOUNDARY =
 export const PRODUCT_PILLARS = [
   { id: 'intro', title: '认识牧院', desc: '学校大百科、学院介绍、社团文化' },
   { id: 'guide', title: '报到指导', desc: '报到须知、新生攻略、校园导览' },
-  { id: 'qa', title: '答疑互助', desc: 'FAQ 知识库、小信 AI、问牧墙' },
+  { id: 'qa', title: '答疑互助', desc: 'FAQ 知识库、小信 AI、牧院新生说' },
 ] as const
 
 export const GUEST_ENTRY_LABEL = '游客浏览 · 先看学校与学院介绍'

@@ -39,6 +39,7 @@ describe('useXinChat', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     localStorage.clear()
+    localStorage.setItem('token', 'test-token')
     autoSpeak = ref(true)
     tts = makeTtsMock()
     usePreload().faqItems.value = []
@@ -103,6 +104,15 @@ describe('useXinChat', () => {
       input.value = '   '
       await send()
       expect(messages.value.length).toBe(0)
+    })
+
+    it('未登录时不调用接口', async () => {
+      localStorage.removeItem('token')
+      const { send, input, messages } = createChat()
+      input.value = 'hello'
+      await send()
+      expect(messages.value.some(m => m.role === 'user')).toBe(false)
+      expect(messages.value.some(m => m.text.includes('登录'))).toBe(true)
     })
 
     it('发送后清空输入框', async () => {
@@ -205,7 +215,7 @@ describe('useXinChat', () => {
       expect(xinMsg!.text).toContain('统一支付平台')
     })
 
-    it('agent fallback 时推送问牧墙跳转链接', async () => {
+    it('agent fallback 时推送牧院新生说跳转链接', async () => {
       localStorage.setItem('token', 'test-token')
       autoSpeak.value = false
       const { send, input, messages } = createChat()
@@ -215,7 +225,7 @@ describe('useXinChat', () => {
         ok: true,
         json: () => Promise.resolve({
           success: true,
-          data: { reply: '这个问题我暂时答不上来，可以去问牧墙问问学长学姐哦', source: 'fallback' },
+          data: { reply: '这个问题我暂时答不上来，可以去牧院新生说问问学长学姐哦', source: 'fallback' },
         }),
       } as Response)
 
@@ -226,11 +236,11 @@ describe('useXinChat', () => {
       const linkMsg = messages.value.find(m => m.links?.some(l => l.to.startsWith('/wall/new')))
       expect(answerMsg?.done).toBe(true)
       expect(linkMsg).toBeDefined()
-      expect(linkMsg!.links![0].label).toContain('问牧墙')
+      expect(linkMsg!.links![0].label).toContain('牧院新生说')
       expect(decodeURIComponent(linkMsg!.links![0].to)).toContain('食堂几点开门')
     })
 
-    it('本地兜底未知问题时文案含问牧墙', async () => {
+    it('本地兜底未知问题时文案含牧院新生说', async () => {
       localStorage.setItem('token', 'test-token')
       const { send, input, messages } = createChat()
       input.value = '完全不知道的问题xyz'
@@ -256,7 +266,7 @@ describe('useXinChat', () => {
 
       const xinMsgs = messages.value.filter(m => m.role === 'xin')
       const unknownReply = xinMsgs.find(m => m.text.includes('答不上'))
-      expect(unknownReply?.text).toContain('问牧墙')
+      expect(unknownReply?.text).toContain('牧院新生说')
       const linkMsg = xinMsgs.find(m => m.links?.some(l => l.to.startsWith('/wall/new')))
       expect(linkMsg).toBeDefined()
     })

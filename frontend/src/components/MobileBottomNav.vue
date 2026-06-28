@@ -11,7 +11,7 @@ const route = useRoute()
 const tabs = [
   { key: 'intro', label: '牧院', aria: '认识牧院' },
   { key: 'home', label: '首页', aria: '首页' },
-  { key: 'wall', label: '问牧墙', aria: '问牧墙' },
+  { key: 'wall', label: '新生说', aria: '牧院新生说' },
   { key: 'announcements', label: '公告', aria: '校园公告' },
   { key: 'faq', label: '答疑', aria: '问题答疑' },
 ] as const
