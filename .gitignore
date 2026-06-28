@@ -12,10 +12,12 @@ dist/
 .env
 !.env.example
 
-# IDE
+# IDE / AI 助手本地配置（保留本机，不上传）
 .vscode/
 .idea/
 .claude/
+CLAUDE.md
+.cursor/
 
 # Vite cache
 .vite/
