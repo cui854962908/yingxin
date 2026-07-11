@@ -1,0 +1,673 @@
+/* ==========================================
+   卡片容器
+   ========================================== */
+.club-card {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 236px;
+  background: linear-gradient(90deg, #FFF5EC 0%, #FFFDFB 50%, #FFFDFB 100%);
+  border-radius: 18px;
+  box-shadow: 0 6px 22px rgba(76, 43, 27, 0.07);
+  border: 1px solid #F3E7E2;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.33, 1, 0.68, 1), box-shadow 0.3s;
+}
+
+.club-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================
+   顶部 Hero �?   ========================================== */
+.card-hero {
+  position: relative;
+  height: 142px;
+  overflow: hidden;
+}
+
+/* 暖色渐变�?*/
+.card-hero-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 500px 250px at 15% 70%, rgba(235, 215, 195, 0.45) 0%, transparent 65%),
+    radial-gradient(ellipse 350px 200px at 85% 25%, rgba(250, 242, 235, 0.35) 0%, transparent 65%),
+    linear-gradient(90deg, #F5E6D8 0%, #FBF3EB 35%, #FFF9F4 70%, #FFFDFB 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 85%, transparent 100%);
+}
+
+/* 装饰元素：虚线网�?+ 光晕�?*/
+.card-hero-decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+  background-image:
+    /* 水平�?*/
+    repeating-linear-gradient(0deg, transparent, transparent 39px, #E8D5C0 39px, #E8D5C0 40px),
+    /* 垂直�?*/
+    repeating-linear-gradient(90deg, transparent, transparent 39px, #E8D5C0 39px, #E8D5C0 40px);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 70%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 70%);
+}
+
+/* 团徽 �?左上，金色描�?+ 立体阴影 */
+.card-badge-ring {
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  z-index: 3;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(135deg, #D4A853 0%, #F0D78C 30%, #C49B3C 70%, #A67C27 100%);
+  box-shadow:
+    0 4px 16px rgba(180, 140, 60, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-badge {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(145deg, #C0392B 0%, #A53125 40%, #8B1A1A 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.15);
+}
+
+.card-badge-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-badge-text {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fff;
+  font-family: 'Georgia', 'Noto Serif SC', serif;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 标题�?*/
+.card-title-area {
+  position: absolute;
+  top: 24px;
+  left: 102px;
+  right: 108px;
+  z-index: 2;
+  min-width: 0;
+}
+
+.card-name {
+  margin: 0 0 6px;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #3C2415;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-subtitle {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: #8B7355;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-title-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.card-title-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #5C3D2E;
+  white-space: nowrap;
+}
+
+.card-title-meta-item svg {
+  color: #B5343A;
+  flex-shrink: 0;
+}
+
+/* 封面�?�?满铺上半部，右向左渐变淡�?*/
+.card-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: 20px 20px 0 0;
+  -webkit-mask-image: linear-gradient(270deg, #000 25%, transparent 80%);
+  mask-image: linear-gradient(270deg, #000 25%, transparent 80%);
+}
+
+.card-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 状态胶囊标�?*/
+.card-status {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.96);
+  color: #2E7D32;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(46, 125, 50, 0.15);
+}
+
+.card-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4CAF50;
+  box-shadow: 0 0 6px rgba(76, 175, 80, 0.5);
+}
+
+.card-status.ended {
+  color: #66BB6A;
+  border-color: rgba(102, 187, 106, 0.2);
+}
+
+.card-status.ended .card-status-dot {
+  background: #A5D6A7;
+  box-shadow: 0 0 6px rgba(165, 214, 167, 0.4);
+}
+
+.card-status.clickable {
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.card-status.clickable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* 状态下�?*/
+.card-status-drop {
+  position: absolute;
+  top: 56px;
+  right: 24px;
+  z-index: 10;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-status-drop button {
+  padding: 8px 20px;
+  border: none;
+  background: #fff;
+  font-size: 0.76rem;
+  color: #3C2415;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.12s;
+}
+
+.card-status-drop button:hover {
+  background: #FFF8F4;
+}
+
+.card-status-drop button.active {
+  color: #2E7D32;
+  font-weight: 600;
+  background: #F1F8F2;
+}
+
+/* 下拉动画 */
+.sd-enter-active { animation: sdIn 0.15s ease-out; }
+.sd-leave-active { animation: sdOut 0.1s ease-in; }
+
+@keyframes sdIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes sdOut {
+  to { opacity: 0; transform: translateY(-6px); }
+}
+
+/* ==========================================
+   中部信息�?   ========================================== */
+.card-info {
+  display: flex;
+  gap: 10px;
+  padding: 10px 20px 6px;
+  flex-wrap: wrap;
+}
+
+.card-info-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: #FFF9F4;
+  border: 1px solid #F0E4D8;
+  border-radius: 10px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.card-info-chip:hover {
+  border-color: #D4B896;
+  background: #FFF5EC;
+}
+
+.card-info-icon {
+  color: #C49B3C;
+  flex-shrink: 0;
+}
+
+.card-info-chip-label {
+  font-size: 0.7rem;
+  color: #A09181;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.card-info-chip-val {
+  font-size: 0.78rem;
+  color: #3C2415;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==========================================
+   底部操作�?   ========================================== */
+.card-actions {
+  display: flex;
+  gap: 12px;
+  padding: 4px 20px 16px;
+}
+
+.card-btn-detail,
+.card-btn-join {
+  flex: 1;
+  height: 40px;
+  border-radius: 20px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.25s cubic-bezier(0.33, 1, 0.68, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 查看详情：白底描�?*/
+.card-btn-detail {
+  background: #fff;
+  border: 1.5px solid #E0D3C5;
+  color: #5C4A3A;
+}
+
+.card-btn-detail:hover {
+  border-color: #C49B3C;
+  color: #3C2415;
+  background: #FFFCF8;
+  box-shadow: 0 2px 12px rgba(180, 140, 60, 0.12);
+  transform: translateY(-1px);
+}
+
+/* 立即加入：红色渐�?*/
+.card-btn-join {
+  border: none;
+  color: #fff;
+  background: linear-gradient(135deg, #C0392B 0%, #A53125 100%);
+  box-shadow: 0 3px 12px rgba(192, 57, 43, 0.25);
+}
+
+.card-btn-join::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.card-btn-join:hover {
+  background: linear-gradient(135deg, #D44637 0%, #B5343A 100%);
+  box-shadow: 0 6px 20px rgba(192, 57, 43, 0.35);
+  transform: translateY(-1px);
+}
+
+.card-btn-detail:active,
+.card-btn-join:active {
+  transform: translateY(0);
+}
+
+/* ==========================================
+   管理按钮（hover 出现，左上角�?   ========================================== */
+.card-admin-actions {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.25s;
+  z-index: 10;
+}
+
+.club-card:hover .card-admin-actions {
+  opacity: 1;
+}
+
+.card-admin-edit,
+.card-admin-del {
+  height: 30px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s;
+}
+
+.card-admin-edit {
+  background: rgba(255, 255, 255, 0.85);
+  color: #2E7D32;
+  border: 1px solid rgba(46, 125, 50, 0.15);
+}
+
+.card-admin-edit:hover {
+  background: #fff;
+  border-color: #2E7D32;
+}
+
+.card-admin-del {
+  background: rgba(255, 255, 255, 0.85);
+  color: #B5343A;
+  border: 1px solid rgba(181, 52, 58, 0.15);
+}
+
+.card-admin-del:hover {
+  background: #fff;
+  border-color: #B5343A;
+}
+
+/* ==========================================
+   加入弹窗
+   ========================================== */
+.join-overlay {
+  position: fixed; inset: 0; z-index: 5000;
+  background: rgba(0,0,0,.52); display: flex;
+  align-items: center; justify-content: center;
+}
+.join-modal {
+  position: relative; width: 360px; max-width: 90vw;
+  background: #fff; border-radius: 20px; padding: 32px 28px 24px;
+  box-shadow: 0 16px 48px rgba(0,0,0,.18);
+}
+.join-modal-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 32px; height: 32px; border-radius: 50%; border: none;
+  background: #f5f0eb; color: #8b7b65; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.join-modal-close:hover { background: #e8e0d5 }
+.join-modal-title { margin: 0 0 20px; font-size: 1.1rem; font-weight: 700; color: #3C2415; text-align: center; letter-spacing: .04em }
+.join-modal-empty { text-align: center; color: #b0a090 }
+.join-modal-empty p { margin: 0 0 4px; font-size: .88rem }
+.join-modal-empty-hint { font-size: .76rem !important; color: #c4b8a4 }
+.join-modal-row { margin-bottom: 18px }
+.join-modal-row:last-child { margin-bottom: 0 }
+.join-modal-label { display: block; font-size: .78rem; color: #8b7b65; margin-bottom: 8px; font-weight: 500 }
+.join-modal-qq { display: flex; align-items: center; gap: 10px }
+.join-modal-qq-num { flex: 1; padding: 10px 14px; background: #faf6f0; border-radius: 10px; font-size: 1.05rem; font-weight: 700; color: #3C2415; letter-spacing: .06em; text-align: center; font-family: inherit }
+.join-modal-copy { height: 38px; padding: 0 16px; border: none; border-radius: 10px; background: #4a8c5c; color: #fff; font-size: .8rem; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; transition: opacity .15s }
+.join-modal-copy:hover { opacity: .85 }
+.join-modal-qr { display: block; width: 200px; height: 200px; margin: 0 auto; object-fit: contain; border-radius: 12px; border: 1px solid #f0e4d8 }
+
+.join-modal-enter-active { animation: jmIn .25s ease-out }
+.join-modal-leave-active { animation: jmOut .18s ease-in }
+@keyframes jmIn { from { opacity:0; transform:scale(.95) } to { opacity:1; transform:scale(1) } }
+@keyframes jmOut { to { opacity:0; transform:scale(.95) } }
+
+/* ==========================================
+   响应�?   ========================================== */
+@media (max-width: 1100px) {
+  .card-title-area {
+    right: 104px;
+  }
+
+  .card-name {
+    font-size: 1.5rem;
+  }
+
+  .card-subtitle {
+    font-size: 0.76rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .card-hero-decor { display: none }
+
+  .card-hero {
+    height: 160px;
+  }
+
+  .card-badge-ring {
+    top: 20px;
+    left: 20px;
+    width: 64px;
+    height: 64px;
+    padding: 3px;
+  }
+
+  .card-badge-text {
+    font-size: 1.5rem;
+  }
+
+  .card-title-area {
+    top: 24px;
+    left: 96px;
+    right: 20px;
+  }
+
+  .card-name {
+    font-size: 1.35rem;
+  }
+
+  .card-subtitle {
+    font-size: 0.7rem;
+    -webkit-line-clamp: 1;
+  }
+
+  .card-title-meta-item {
+    font-size: 0.68rem;
+  }
+
+  .card-status {
+    top: 18px;
+    right: 16px;
+    font-size: 0.68rem;
+    padding: 4px 12px;
+  }
+
+  .card-info {
+    padding: 12px 16px 8px;
+    gap: 6px;
+  }
+
+  .card-info-chip {
+    padding: 5px 10px;
+    gap: 4px;
+  }
+
+  .card-info-chip-label {
+    font-size: 0.64rem;
+  }
+
+  .card-info-chip-val {
+    font-size: 0.7rem;
+    max-width: 70px;
+  }
+
+  .card-actions {
+    padding: 6px 16px 16px;
+    gap: 10px;
+  }
+
+  .card-btn-detail,
+  .card-btn-join {
+    height: 42px;
+    font-size: 0.82rem;
+    border-radius: 21px;
+  }
+
+  .card-status-drop {
+    top: 48px;
+    right: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .club-card {
+    min-height: 260px;
+  }
+
+  .card-hero {
+    height: 160px;
+  }
+
+  .card-badge-ring {
+    top: 14px;
+    left: 14px;
+    width: 56px;
+    height: 56px;
+    padding: 3px;
+  }
+
+  .card-badge-text {
+    font-size: 1.3rem;
+  }
+
+  .card-title-area {
+    top: 14px;
+    left: 82px;
+    right: 14px;
+  }
+
+  .card-name {
+    font-size: 1.2rem;
+  }
+
+  .card-subtitle {
+    display: none;
+  }
+
+  .card-title-meta-item {
+    font-size: 0.72rem;
+    gap: 3px;
+  }
+
+  .card-title-meta-item svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .card-status {
+    top: 12px;
+    right: 8px;
+    font-size: 0.6rem;
+    padding: 2px 8px;
+    gap: 3px;
+  }
+
+  .card-status-dot {
+    width: 5px;
+    height: 5px;
+  }
+
+  .card-info {
+    padding: 8px 12px 4px;
+    gap: 4px;
+  }
+
+  .card-info-chip {
+    padding: 3px 8px;
+    gap: 3px;
+    border-radius: 6px;
+  }
+
+  .card-info-icon {
+    width: 11px;
+    height: 11px;
+  }
+
+  .card-info-chip-label {
+    font-size: 0.58rem;
+  }
+
+  .card-info-chip-val {
+    font-size: 0.64rem;
+    max-width: 50px;
+  }
+
+  .card-actions {
+    padding: 4px 12px 12px;
+    gap: 8px;
+  }
+
+  .card-btn-detail,
+  .card-btn-join {
+    height: 36px;
+    font-size: 0.76rem;
+    border-radius: 18px;
+  }
+}

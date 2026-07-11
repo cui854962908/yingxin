@@ -1,9 +1,5 @@
 import type { CampusPlace, CategoryKey } from './types'
 
-function escapeHtmlAttr(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
-}
-
 export interface CampusMarkerLayer {
   clear: () => void
   render: (places: CampusPlace[], selectedId: string) => void
@@ -22,6 +18,19 @@ interface MarkerLayerOptions {
 export function createCampusMarkerLayer(options: MarkerLayerOptions): CampusMarkerLayer {
   let markers: any[] = []
 
+  function createMarkerButton(place: CampusPlace, draggable: boolean) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = draggable ? 'campus-poi-dot campus-poi-dot--drag' : 'campus-poi-dot'
+    button.style.setProperty('--poi', options.categoryColor(place.category))
+    button.setAttribute('aria-label', place.name)
+    button.addEventListener('click', (event) => {
+      event.stopPropagation()
+      options.onSelect(place)
+    })
+    return button
+  }
+
   function clear() {
     const map = options.getMap()
     if (map && markers.length) map.remove(markers)
@@ -35,16 +44,14 @@ export function createCampusMarkerLayer(options: MarkerLayerOptions): CampusMark
     clear()
     const draggable = options.getPoiDraggable()
     markers = places.map((place) => {
-      const dotClass = draggable ? 'campus-poi-dot campus-poi-dot--drag' : 'campus-poi-dot'
       const marker = new AMap.Marker({
         position: place.location,
         anchor: 'center',
         draggable,
         cursor: draggable ? 'move' : 'pointer',
-        content: `<button type="button" class="${dotClass}" style="--poi:${options.categoryColor(place.category)}" aria-label="${escapeHtmlAttr(place.name)}"></button>`,
+        content: createMarkerButton(place, draggable),
         zIndex: selectedId === place.id ? 150 : 120,
       })
-      marker.on('click', () => options.onSelect(place))
       if (draggable) {
         marker.on('dragend', () => {
           const pos = marker.getPosition()

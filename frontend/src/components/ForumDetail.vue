@@ -5,6 +5,7 @@ import type { ForumPostDetail } from '../types/forum'
 import { FORUM_CATEGORY_COLORS } from '../types/forum'
 import { authHeaders, useAuth } from '../composables/useAuth'
 import { formatForumAuthor } from '../utils/forumAuthor'
+import { forumRoleLabel } from '../utils/forumRole'
 import { useAppNavigate } from '../composables/useAppNavigate'
 import { formatRelativeTime } from '../utils/formatTime'
 import { FORUM_MODULE_NAME } from '../constants/product'
@@ -171,6 +172,9 @@ onMounted(load)
       <p class="wd-content">{{ post.content }}</p>
       <div class="wd-meta">
         <span>{{ formatForumAuthor(post.author.name, post.author.class_name, isGuest) }}</span>
+        <span v-if="forumRoleLabel(post.author.forum_role)" class="forum-role-badge">
+          {{ forumRoleLabel(post.author.forum_role) }}
+        </span>
         <span>{{ formatRelativeTime(post.created_at) }} · {{ post.answer_count }} 回答</span>
       </div>
       <button
@@ -204,6 +208,9 @@ onMounted(load)
         <div class="wd-ans-top">
           <span v-if="a.is_accepted" class="wd-accept-badge">最佳回答</span>
           <span class="wd-ans-author">{{ formatForumAuthor(a.author.name, a.author.class_name, isGuest) }}</span>
+          <span v-if="forumRoleLabel(a.author.forum_role)" class="forum-role-badge">
+            {{ forumRoleLabel(a.author.forum_role) }}
+          </span>
           <span class="wd-ans-time">{{ formatRelativeTime(a.created_at) }}</span>
           <button
             v-if="!isGuest"
@@ -243,6 +250,27 @@ onMounted(load)
 <style scoped>
 .wall-detail { display: flex; flex-direction: column; gap: 16px; padding-bottom: 24px; min-height: 100% }
 .wd-loading { display: flex; justify-content: center; padding: 48px 0 }
+.forum-mobile-sticky-top { display: flex; align-items: center; min-height: 44px; padding-top: 2px }
+.forum-mobile-back {
+  display: inline-flex; align-items: center; gap: 9px; min-height: 42px; padding: 5px 18px 5px 6px;
+  border: 1px solid rgba(143, 16, 28, .18); border-radius: 999px;
+  background: linear-gradient(135deg, #fff 0%, #fff8f4 100%); color: #76101a;
+  box-shadow: 0 5px 16px rgba(91, 27, 25, .08); cursor: pointer;
+  font-family: inherit; font-size: .84rem; font-weight: 700; letter-spacing: .01em;
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background .22s ease;
+}
+.forum-mobile-back svg {
+  width: 30px; height: 30px; padding: 7px; border-radius: 50%; color: #fff;
+  background: linear-gradient(145deg, #bd2734, #86121c); box-shadow: 0 3px 8px rgba(134, 18, 28, .24);
+  transition: transform .22s ease;
+}
+.forum-mobile-back:hover {
+  transform: translateY(-1px); border-color: rgba(143, 16, 28, .34);
+  background: #fff; box-shadow: 0 9px 22px rgba(91, 27, 25, .13);
+}
+.forum-mobile-back:hover svg { transform: translateX(-2px) }
+.forum-mobile-back:focus-visible { outline: 3px solid rgba(181, 52, 58, .2); outline-offset: 3px }
+.forum-mobile-back:active { transform: translateY(0); box-shadow: 0 3px 10px rgba(91, 27, 25, .1) }
 .wd-question {
   padding: 20px 22px; border-radius: 14px; background: #fff;
   border: 1px solid #f2ebe0; border-left: 4px solid #b5343a;
@@ -324,6 +352,8 @@ onMounted(load)
   .wall-detail--reply {
     padding-bottom: calc(140px + var(--yx-mobile-nav, calc(52px + env(safe-area-inset-bottom, 0px))));
   }
+  .forum-mobile-sticky-top { padding: 8px 12px 0 }
+  .forum-mobile-back { min-height: 40px; padding-right: 15px; font-size: .8rem }
   .wd-question {
     margin: 0; padding: 16px 14px;
     border-radius: 0;

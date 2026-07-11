@@ -24,6 +24,8 @@ interface GpsReading {
   accuracy: number | null
 }
 
+type BrowserGeoFailure = 'insecure' | 'unsupported' | 'denied' | 'unavailable' | 'timeout' | 'unknown'
+
 interface CampusGeolocationOptions {
   isWithinCampus?: (lnglat: [number, number]) => boolean
 }
@@ -59,6 +61,7 @@ export function useCampusGeolocation(options: CampusGeolocationOptions = {}) {
   let watchId: number | null = null
   let trackingMap: any = null
   let trackingAMap: any = null
+  let browserFailure: BrowserGeoFailure | null = null
 
   function isWithinCampus(lnglat: [number, number]): boolean {
     return options.isWithinCampus?.(lnglat) ?? true
@@ -191,21 +194,47 @@ export function useCampusGeolocation(options: CampusGeolocationOptions = {}) {
   }
 
   function viaBrowser(AMap: any): Promise<GpsReading | null> {
-    if (!navigator.geolocation) return Promise.resolve(null)
+    /* 非安全上下文（HTTP 非 localhost）下浏览器会静默拒绝 GPS，不等超时直接跳过 */
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      browserFailure = 'insecure'
+      return Promise.resolve(null)
+    }
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      browserFailure = 'unsupported'
+      return Promise.resolve(null)
+    }
     return new Promise((resolve) => {
+      let settled = false
+      const done = (value: GpsReading | null) => {
+        if (settled) return
+        settled = true
+        resolve(value)
+      }
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
           const accuracy = Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : null
           try {
             const lnglat = await pickGcjLngLat(AMap, pos.coords.longitude, pos.coords.latitude)
-            resolve({ lnglat, accuracy })
+            done({ lnglat, accuracy })
           } catch {
-            resolve(null)
+            done(null)
           }
         },
-        () => resolve(null),
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+        (error) => {
+          browserFailure = error.code === 1
+            ? 'denied'
+            : error.code === 2
+              ? 'unavailable'
+              : error.code === 3 ? 'timeout' : 'unknown'
+          done(null)
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
       )
+      /* 安全兜底：某些环境下浏览器既不 resolve 也不 reject，手动超时 */
+      setTimeout(() => {
+        if (!settled) browserFailure = 'timeout'
+        done(null)
+      }, 12000)
     })
   }
 
@@ -250,6 +279,15 @@ export function useCampusGeolocation(options: CampusGeolocationOptions = {}) {
     _geoCache = { lnglat, accuracy, timestamp: Date.now() }
   }
 
+  function browserFailureMessage(): string {
+    if (browserFailure === 'insecure') return '当前页面不是安全连接，电脑定位需要使用 HTTPS'
+    if (browserFailure === 'denied') return '定位权限被拒绝，请在浏览器网站设置中允许访问位置'
+    if (browserFailure === 'unavailable') return '电脑定位服务不可用，请开启 Windows 定位服务'
+    if (browserFailure === 'timeout') return '设备定位超时，请重试或改用我的宿舍作为起点'
+    if (browserFailure === 'unsupported') return '当前电脑不支持设备定位，请改用我的宿舍或地图选点'
+    return '无法获取当前位置，请检查浏览器与系统定位权限'
+  }
+
   async function locate(map: any, AMap: any): Promise<[number, number] | null> {
     if (!map || !AMap) return fail('地图尚未就绪')
 
@@ -264,9 +302,9 @@ export function useCampusGeolocation(options: CampusGeolocationOptions = {}) {
       }
     }
 
-    if (!navigator.geolocation) return fail('当前浏览器不支持定位')
     status.value = 'loading'
     message.value = ''
+    browserFailure = null
 
     const browserReading = await viaBrowser(AMap)
     const inCampus = pickInCampusReading(browserReading)
@@ -287,7 +325,7 @@ export function useCampusGeolocation(options: CampusGeolocationOptions = {}) {
     }
 
     if (!browserReading && !amapReading) {
-      return fail('无法获取当前位置，请检查定位权限')
+      return fail(browserFailureMessage())
     }
 
     rejectOutsideCampus(map)

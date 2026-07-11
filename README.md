@@ -20,9 +20,55 @@
 
 ## 快速启动
 
-```bash
-docker compose up -d
+```powershell
+# 终端 1：启动数据库
+cd backend
+docker compose up -d postgres
+
+# 终端 2：启动后端（FastAPI，端口 8000）
+cd backend
+.\scripts\start_backend.ps1
+
+# 终端 3：启动前端（Vite，端口 5173）
+cd frontend
+npm run dev
 ```
+
+启动后访问 `http://localhost:5173`，其他设备通过局域网 IP 访问（如 `http://192.168.43.6:5173`）。
+
+首次启动后需执行种子数据初始化（仅一次）：
+
+```powershell
+cd backend
+uv run python scripts/init_db.py
+```
+
+## 内置账号
+
+系统通过**姓名 + 学号 + 身份证号**三项认证登录。连续错误 5 次锁定 5 分钟。
+
+### 管理员
+
+| 姓名 | 学号 | 身份证号 | 角色 |
+|------|------|----------|------|
+| 崔志远 | `admin` | `000000000000000000` | admin |
+
+可通过环境变量覆盖：`ADMIN_SEED_NAME`、`ADMIN_SEED_STUDENT_ID`、`ADMIN_SEED_ID_NUMBER`。
+
+### 演示学生
+
+| 姓名 | 学号 | 身份证号 | 班级 |
+|------|------|----------|------|
+| 张三 | `20260901001` | `410105200509010011` | 计算机科学与技术2026-1班 |
+| 李思雨 | `20260902001` | `410105200510150022` | 软件工程2026-2班 |
+| 王浩然 | `20260903001` | `410105200508200033` | 数据科学与大数据2026-1班 |
+| 刘子涵 | `20260904001` | `410105200509050044` | 物联网工程2026-6班 |
+
+### 数据库
+
+| 地址 | 用户 | 密码 | 数据库 |
+|------|------|------|--------|
+| `127.0.0.1:5434` | `welcome` | `welcome` | `welcome_db` |
 
 ## 项目画像
 
@@ -39,13 +85,15 @@ docker compose up -d
 ## 开发
 
 ```bash
-# 后端
-cd backend && uv run uvicorn app.main:app --reload
-
-# 前端
-cd frontend && npm run dev
-
-# 测试
+# 后端测试
 cd backend && uv run pytest
+
+# 前端测试
 cd frontend && npx vitest run
+
+# 前端类型检查
+cd frontend && npx vue-tsc --noEmit
+
+# 前端生产构建
+cd frontend && npm run build
 ```

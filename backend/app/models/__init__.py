@@ -8,6 +8,7 @@ from app.models.document import (
 )
 from app.models.faq import FAQ
 from app.models.forum import ForumAnswer, ForumAnswerLike, ForumPost, ForumPostLike
+from app.models.refresh_token import RefreshToken
 from app.models.student import Student
 
 __all__ = [
@@ -22,5 +23,6 @@ __all__ = [
     "ForumAnswerLike",
     "ForumPost",
     "ForumPostLike",
+    "RefreshToken",
     "Student",
 ]

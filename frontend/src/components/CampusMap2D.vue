@@ -1,4 +1,4 @@
-<!-- 超标例外：script+template=395行，2D地图集成POI检索/分类/详情/校准面板/底图交互，拆分会造成大量prop-drilling -->
+﻿<!-- 瓒呮爣渚嬪锛歴cript+template=395琛岋紝2D鍦板浘闆嗘垚POI妫€绱?鍒嗙被/璇︽儏/鏍″噯闈㈡澘/搴曞浘浜や簰锛屾媶鍒嗕細閫犳垚澶ч噺prop-drilling -->
 <script setup lang="ts">
 import { computed, markRaw, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -7,6 +7,7 @@ import CampusMapDetail from './campus-map/CampusMapDetail.vue'
 import CampusMapHeader from './campus-map/CampusMapHeader.vue'
 import CampusMapPoiSearch from './campus-map/CampusMapPoiSearch.vue'
 import CampusMapSidebar from './campus-map/CampusMapSidebar.vue'
+import CampusRouteOriginPrompt from './campus-map/desktop/CampusRouteOriginPrompt.vue'
 import {
   applyPoiOverrides,
   clearPoiOverrides,
@@ -21,10 +22,12 @@ import { campusFitBoundsFromLocations, campusOrigin } from './campus-map/campusG
 import { initCampusAmapMap } from './campus-map/initCampusAmap'
 import type { CampusPlace, CategoryKey } from './campus-map/types'
 import { useCampusMapLocation } from '../composables/useCampusMapLocation'
+import { useDesktopRouteOrigin } from '../composables/campus-map/useDesktopRouteOrigin'
+import { useBreakpoint } from '../composables/useBreakpoint'
 import { useCampusRoadCalibrate } from '../composables/useCampusRoadCalibrate'
 import { useAuth } from '../composables/useAuth'
+import { useCampusRouteNavigation } from '../composables/campus-map/useCampusRouteNavigation'
 import { planCampusRoute } from './campus-map/campusPathfind'
-import type { CampusRouteResult } from './campus-map/campusPathfind'
 import './campus-map/campus-map.css'
 
 const router = useRouter()
@@ -56,12 +59,12 @@ const selected = ref<CampusPlace>(
 )
 const zoom = ref(17)
 const centerText = ref('113.641689, 34.862226')
-const routeMessage = ref('')
-const routeDistance = ref(0)
-const routePlanning = ref(false)
 const placeSheetExpanded = ref(false)
 const placeDetailOpen = ref(false)
-const activeRouteTarget = ref<CampusPlace | null>(null)
+const userPickedPlace = ref(false)
+const sheetDetail = computed(() => !placeSheetExpanded.value && userPickedPlace.value)
+const { width } = useBreakpoint()
+const isDesktopMap = computed(() => width.value > 1100)
 
 function useMobileDetailSheet(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(max-width: 1100px)').matches
@@ -69,7 +72,6 @@ function useMobileDetailSheet(): boolean {
 
 let map: any = null
 let AMapRef: any = null
-let routeLine: any = null
 let campusCenter: [number, number] = campusOrigin()
 
 const {
@@ -92,15 +94,46 @@ const location = useCampusMapLocation({
   getMap: () => map,
   getAMap: () => AMapRef,
   allPlaces,
-  getCampusBounds: () => campusBounds.value,
   getProfileDormitory: () => student.value?.dormitory,
 })
 
 const {
   status: geoStatus, message: geoMessage, position: userLocation,
-  profileDormLabel,
-  locateMyPosition, locateAtProfileDorm, refreshMarker, clearMarker: clearUserMarker,
+  userLocationLabel, routeOriginKind, profileDormLabel,
+  locateMyPosition, locateAtProfileDorm, setPlaceAsOrigin,
+  refreshMarker, clearMarker: clearUserMarker,
 } = location
+
+const {
+  routeMessage,
+  routeDistance,
+  routePlanning,
+  activeRouteTarget,
+  clearRoute,
+  planRouteToPlace,
+  rerouteToActiveTarget,
+} = useCampusRouteNavigation({
+  getMap: () => map,
+  getAMap: () => AMapRef,
+  getOrigin: () => userLocation.value,
+  getOriginLabel: () => userLocationLabel.value,
+  getRoadSegments: () => drawnRoadSegments.value,
+  planRoute: planCampusRoute,
+  setGeoMessage: (message) => { geoMessage.value = message },
+})
+
+const desktopOrigin = useDesktopRouteOrigin({
+  isDesktop: isDesktopMap,
+  hasOrigin: computed(() => !!userLocation.value),
+  profileDormLabel,
+  locateAtProfileDorm,
+  locateMyPosition,
+  setPlaceAsOrigin,
+  planRoute: planRouteToPlace,
+  onMobileMissing: () => { geoMessage.value = '\u8bf7\u9009\u62e9\u5730\u56fe\u4e0a\u7684\u5730\u70b9\u4f5c\u4e3a\u8def\u7ebf\u8d77\u70b9\uff0c\u7136\u540e\u7ee7\u7eed\u5bfc\u822a' },
+  getGeoMessage: () => geoMessage.value,
+})
+const { promptOpen, promptMessage, choosingOrigin } = desktopOrigin
 
 function categoryColor(key: CategoryKey) {
   return campusCategories.find((item) => item.key === key)?.color || '#7b3294'
@@ -113,9 +146,10 @@ function saveMovedPlace(id: string, lnglat: [number, number]) {
 }
 
 function selectPlace(place: CampusPlace) {
+  if (desktopOrigin.useSelectedPlace(place)) return
   selected.value = place
   clearRoute()
-  placeDetailOpen.value = useMobileDetailSheet()
+  userPickedPlace.value = true
   placeSheetExpanded.value = false
   map?.panTo(place.location)
   map?.setZoom(Math.max(map.getZoom(), 17))
@@ -131,7 +165,7 @@ function dismissMobileSheets() {
 function pickDestination(place: CampusPlace) {
   selected.value = place
   dismissMobileSheets()
-  planRouteToPlace(place)
+  desktopOrigin.requestRoute(place)
 }
 
 function closePlaceDetail() {
@@ -184,51 +218,14 @@ function onPoiMergedToSource() {
   renderMarkers(filteredPlaces.value)
 }
 
-function clearRoute() {
-  if (routeLine && map) map.remove(routeLine)
-  routeLine = null
-  routeMessage.value = ''
-  routeDistance.value = 0
-  activeRouteTarget.value = null
-}
-
-function drawRouteLine(result: CampusRouteResult) {
-  if (!AMapRef || !map) return
-  routeDistance.value = result.distanceMeters
-  const solid = result.mode !== 'straight-fallback'
-  routeLine = new AMapRef.Polyline({
-    path: result.path,
-    strokeColor: '#7b3294',
-    strokeWeight: 6,
-    strokeOpacity: .9,
-    strokeStyle: solid ? 'solid' : 'dashed',
-    showDir: true,
-    lineJoin: 'round',
-  })
-  map.add(routeLine)
-  map.setFitView([routeLine], false, [80, 80, 80, 80])
-}
-
-function planRouteToPlace(place: CampusPlace) {
-  if (!AMapRef || !map || routePlanning.value) return
-  if (!userLocation.value) {
-    geoMessage.value = '尚未获取当前位置，请使用 GPS 定位或稍后再试'
-    return
-  }
-  routePlanning.value = true
-  routeMessage.value = `正在规划前往${place.name}…`
-  const result = planCampusRoute(userLocation.value, place.location, drawnRoadSegments.value)
-  if (routeLine && map) map.remove(routeLine)
-  routeLine = null
-  drawRouteLine(result)
-  activeRouteTarget.value = place
-  routeMessage.value = `前往 ${place.name}${result.message ? ` · ${result.message}` : ''}`
-  routePlanning.value = false
-}
-
 function goToSelectedPlace() {
   dismissMobileSheets()
-  planRouteToPlace(selected.value)
+  desktopOrigin.requestRoute(selected.value)
+}
+
+function startMapOriginSelection() {
+  geoMessage.value = '璇烽€夋嫨鍦板浘鏍囪鎴栧乏渚у湴鐐癸紝浣滀负鏍″唴璺嚎璧风偣'
+  desktopOrigin.beginMapSelection()
 }
 
 async function initMap() {
@@ -244,9 +241,9 @@ async function initMap() {
     applyCampusViewport()
     renderMarkers(filteredPlaces.value)
     refreshRoadOverlay()
-    if (!calibrateMode.value) await locateMyPosition()
+    /* 鑷姩瀹氫綅鏄撹娴忚鍣ㄥ洜闈炵敤鎴锋墜鍔胯€岄潤榛樻嫆缁濓紱鏀逛负鐢ㄦ埛鏄惧紡鐐瑰嚮 "GPS瀹氫綅" */
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '地图初始化失败'
+    error.value = caught instanceof Error ? caught.message : '\u5730\u56fe\u521d\u59cb\u5316\u5931\u8d25'
   } finally {
     loading.value = false
   }
@@ -275,9 +272,7 @@ watch(selected, () => {
 })
 watch(poiOverrides, () => syncSelectedFromPlaces(allPlaces.value), { deep: true })
 watch(drawnRoadSegments, () => {
-  if (activeRouteTarget.value && userLocation.value) {
-    planRouteToPlace(activeRouteTarget.value)
-  }
+  if (userLocation.value) rerouteToActiveTarget()
 })
 
 onMounted(async () => {
@@ -301,6 +296,7 @@ onUnmounted(() => {
     :class="{
       'campus-map-page--calibrate': calibrateMode,
       'campus-map-page--sheet-expanded': placeSheetExpanded,
+      'campus-map-page--sheet-detail': sheetDetail,
       'campus-map-page--detail-open': placeDetailOpen,
       'campus-map-page--route': !!activeRouteTarget && !placeDetailOpen,
     }"
@@ -313,7 +309,9 @@ onUnmounted(() => {
         v-model:sheet-expanded="placeSheetExpanded"
         :places="filteredPlaces"
         :selected-id="selected.id"
+        :detail-place="placeSheetExpanded || !userPickedPlace ? null : selected"
         @select="selectPlace"
+        @go="goToSelectedPlace"
       />
       <div class="campus-map-center">
         <section class="campus-map-stage">
@@ -322,6 +320,17 @@ onUnmounted(() => {
             v-if="!calibrateMode && !loading && !error"
             :places="allPlaces"
             @select="pickDestination"
+          />
+          <CampusRouteOriginPrompt
+            v-if="isDesktopMap"
+            :open="promptOpen"
+            :message="promptMessage"
+            :dorm-label="profileDormLabel"
+            :locating="geoStatus === 'loading'"
+            @dorm="desktopOrigin.chooseDorm"
+            @device="desktopOrigin.chooseDevice"
+            @map="startMapOriginSelection"
+            @cancel="desktopOrigin.cancelPrompt"
           />
           <div v-if="loading" class="campus-map-state">正在加载真实高德校园地图…</div>
           <div v-else-if="error" class="campus-map-state error">{{ error }}</div>
@@ -343,21 +352,25 @@ onUnmounted(() => {
               v-if="profileDormLabel"
               class="locate-dorm map-tool-btn"
               type="button"
-              :aria-label="`定位到${profileDormLabel}`"
-              @click="locateAtProfileDorm"
+              :aria-label="`\u5b9a\u4f4d\u5230${profileDormLabel}`"
+              @click="desktopOrigin.chooseDorm"
             >
-              <span class="map-tool-btn__icon" aria-hidden="true">◎</span>
-              <span class="map-tool-btn__label">我的宿舍</span>
+              <span class="map-tool-btn__icon" aria-hidden="true">⌂</span>
+              <span class="map-tool-btn__label">{{ isDesktopMap ? profileDormLabel : '鎴戠殑瀹胯垗' }}</span>
             </button>
             <button
               class="locate-me map-tool-btn"
               type="button"
               :disabled="geoStatus === 'loading'"
-              aria-label="GPS 定位"
-              @click="locateMyPosition"
+              aria-label="璁惧瀹氫綅"
+              @click="desktopOrigin.chooseDevice"
             >
-              <span class="map-tool-btn__icon" aria-hidden="true">⊙</span>
-              <span class="map-tool-btn__label">{{ geoStatus === 'loading' ? '定位中' : 'GPS定位' }}</span>
+              <span class="map-tool-btn__icon" aria-hidden="true">◎</span>
+              <span class="map-tool-btn__label">{{ geoStatus === 'loading' ? '\u5b9a\u4f4d\u4e2d' : (isDesktopMap ? '\u8bbe\u5907\u5b9a\u4f4d' : 'GPS\u5b9a\u4f4d') }}</span>
+            </button>
+            <button class="locate-me map-tool-btn" type="button" @click="startMapOriginSelection">
+              <span class="map-tool-btn__icon" aria-hidden="true">⌖</span>
+              <span class="map-tool-btn__label">{{ choosingOrigin ? '\u6b63\u5728\u9009\u8d77\u70b9' : '\u9009\u62e9\u8d77\u70b9' }}</span>
             </button>
           </div>
           <p
@@ -369,10 +382,10 @@ onUnmounted(() => {
           </p>
           <p v-else-if="geoMessage && !calibrateMode" class="geo-toast" role="status">{{ geoMessage }}</p>
           <div class="map-legend">
-            <span v-if="userLocation && !calibrateMode"><i class="legend-user-dot" />我的位置</span>
+            <span v-if="userLocation && !calibrateMode"><i class="legend-user-dot" />{{ routeOriginKind === 'gps' ? '当前位置' : `路线起点：${userLocationLabel}` }}</span>
             <span v-for="item in campusCategories" :key="item.key"><i :style="{ background: item.color }" />{{ item.label }}</span>
           </div>
-          <div v-if="showMapCoordinate" class="map-coordinate">中心 {{ centerText }} · 缩放 {{ zoom }}</div>
+          <div v-if="showMapCoordinate" class="map-coordinate">涓績 {{ centerText }} 路 缂╂斁 {{ zoom }}</div>
         </section>
         <CampusMapDetail
           v-if="!calibrateMode && placeDetailOpen"

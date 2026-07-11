@@ -57,7 +57,7 @@ def get_forum_post(
     db: Session = Depends(get_db),
     payload: dict | None = Depends(get_optional_payload),
 ):
-    data = svc.get_post_detail(db, post_id, _viewer_id(db, payload))
+    data = svc.view_post_detail(db, post_id, _viewer_id(db, payload))
     return ok_envelope(message="操作成功", data=data)
 
 

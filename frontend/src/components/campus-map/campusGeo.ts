@@ -8,6 +8,9 @@ const LAT_PER_Z = -0.00001919
 /** 重置视野时 POI 外包范围的外扩留白 */
 const FIT_BOUNDS_PADDING = 0.0012
 
+/** 定位验证的边界外扩——IP 定位精度较低，需比视野留白更大 */
+export const CAMPUS_GEO_PADDING = 0.006
+
 const AFFINE_DET =
   LNG_PER_X * LAT_PER_Z - LNG_PER_Z * LAT_PER_X
 

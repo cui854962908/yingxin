@@ -8,6 +8,7 @@ import { usePreload } from './composables/usePreload'
 import { GUEST_STUDENT, isGuestRole, readGuestSession, setGuestSession } from './composables/useGuest'
 import { MOBILE_MAX } from './composables/useBreakpoint'
 import { viewportWidth } from './composables/useViewport'
+import { setAccessToken, onForceLogout } from './composables/useAuthFetch'
 
 import type { Student } from './types/student'
 
@@ -21,15 +22,50 @@ const xinOpen = ref(false)
 const sidebarOpen = ref(typeof window !== 'undefined' ? window.innerWidth > 768 : true)
 
 onMounted(async () => {
-  const token = localStorage.getItem('token')
-  if (token) {
+  // 注册强制登出回调（供 authFetch 在 refresh 也失败时调用）
+  onForceLogout(() => {
+    student.value = null
+  })
+
+  // 优先用 refresh token 恢复会话
+  const savedToken = localStorage.getItem('token')
+  const refreshToken = localStorage.getItem('refresh_token')
+  if (refreshToken) {
+    try {
+      // 尝试刷新 token 以获取新的 access token（避免旧 token 已过期）
+      const refreshRes = await fetch('/api/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      })
+      const refreshData = await refreshRes.json()
+      if (refreshData.success) {
+        // 刷新成功，用新 token 获取用户信息
+        const newToken = refreshData.data.access_token
+        setAccessToken(newToken)
+        localStorage.setItem('refresh_token', refreshData.data.refresh_token)
+
+        const res = await fetch('/api/auth/me', {
+          headers: { Authorization: `Bearer ${newToken}` },
+        })
+        const d = await res.json()
+        if (d.success) {
+          applyLoginSession(d.data, newToken)
+          loading.value = false
+          return
+        }
+      }
+    } catch { console.warn('Refresh token 恢复会话失败，退回登录页') }
+    clearAuth()
+  } else if (savedToken) {
     try {
       const res = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${savedToken}` },
       })
       const d = await res.json()
       if (d.success) {
-        applyLoginSession(d.data, token)
+        setAccessToken(savedToken)
+        applyLoginSession(d.data, savedToken)
         loading.value = false
         return
       }
@@ -40,6 +76,9 @@ onMounted(async () => {
     student.value = { ...GUEST_STUDENT }
     loading.value = false
     preload()
+    if (viewportWidth() <= MOBILE_MAX) {
+      router.replace('/intro/wiki')
+    }
     return
   }
   loading.value = false
@@ -72,34 +111,59 @@ function applyLoginSession(s: Record<string, any>, token: string): Student {
   setGuestSession(false)
   const safe = buildStudent(s)
   student.value = safe
-  localStorage.setItem('token', token)
+  setAccessToken(token)
   localStorage.setItem('student', JSON.stringify(safe))
   preload()
   return safe
 }
 
-function onLoginSuccess(s: Record<string, any>, token: string) {
-  applyLoginSession(s, token)
-  router.replace(viewportWidth() <= MOBILE_MAX ? '/intro/wiki' : '/')
+function onLoginSuccess(s: Record<string, any>, token: string, refreshToken?: string) {
+  // 先持久化 token，再导航，最后设置 student 以避免闪现首页
+  setGuestSession(false)
+  const safe = buildStudent(s)
+  setAccessToken(token)
+  if (refreshToken) {
+    localStorage.setItem('refresh_token', refreshToken)
+  }
+  localStorage.setItem('student', JSON.stringify(safe))
+  const target = viewportWidth() <= MOBILE_MAX ? '/intro/wiki' : '/'
+  router.replace(target).then(() => {
+    student.value = safe
+    preload()
+  })
 }
 
 function clearAuth() {
+  setAccessToken(null)
   localStorage.removeItem('token')
+  localStorage.removeItem('refresh_token')
   localStorage.removeItem('student')
   setGuestSession(false)
 }
 
-function onGuestEnter() {
+async function onGuestEnter() {
   localStorage.removeItem('token')
   localStorage.removeItem('student')
   setGuestSession(true)
-  student.value = { ...GUEST_STUDENT }
   showWelcome.value = false
   preload()
-  router.push('/intro/wiki')
+  // 先导航到认识牧院，再设置 student，避免 router-view 在 '/' 路径渲染一帧
+  await router.push('/intro/wiki')
+  student.value = { ...GUEST_STUDENT }
 }
 
-function onLogout() {
+async function onLogout() {
+  // 通知服务端撤销 refresh token
+  const rt = localStorage.getItem('refresh_token')
+  if (rt) {
+    try {
+      await fetch('/api/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: rt }),
+      })
+    } catch { /* 网络异常不影响本地登出 */ }
+  }
   clearAuth()
   student.value = null
 }

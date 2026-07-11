@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
 
-FORUM_CATEGORIES = ("报到", "生活", "学习", "社团", "其他")
+FORUM_CATEGORIES = ("报到", "宿舍", "生活", "学习", "社团", "其他")
 
 
 class ForumPost(Base):
@@ -25,6 +25,7 @@ class ForumPost(Base):
     is_pinned: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     is_hidden: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     like_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    view_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

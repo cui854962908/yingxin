@@ -341,7 +341,8 @@ onUnmounted(() => {
   background: transparent;
   box-shadow: none;
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* 认识牧院：PC 整页滚动；移动端顶栏 sticky 时滚动锁在卡片内 */

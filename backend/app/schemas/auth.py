@@ -17,3 +17,11 @@ class StudentVerifyRequest(BaseModel):
         description="身份证号",
         validation_alias=AliasChoices("id_number", "idNumber"),
     )
+
+
+class TokenRefreshRequest(BaseModel):
+    refresh_token: str = Field(..., min_length=1, description="refresh token 原文")
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: str = Field(default="", min_length=0, description="refresh token 原文，为空则仅提示前端清除本地状态")

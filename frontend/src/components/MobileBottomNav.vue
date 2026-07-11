@@ -9,9 +9,9 @@ const emit = defineEmits<{
 const route = useRoute()
 
 const tabs = [
-  { key: 'intro', label: '牧院', aria: '认识牧院' },
   { key: 'home', label: '首页', aria: '首页' },
   { key: 'wall', label: '新生说', aria: '牧院新生说' },
+  { key: 'intro', label: '牧院', aria: '认识牧院' },
   { key: 'announcements', label: '公告', aria: '校园公告' },
   { key: 'faq', label: '答疑', aria: '问题答疑' },
 ] as const
@@ -39,7 +39,10 @@ function onClick(key: string) {
       :key="tab.key"
       type="button"
       class="bottom-nav__tab"
-      :class="{ 'bottom-nav__tab--active': activeKey === tab.key }"
+      :class="{
+        'bottom-nav__tab--active': activeKey === tab.key,
+        'bottom-nav__tab--brand': tab.key === 'intro',
+      }"
       :aria-label="tab.aria"
       :aria-current="activeKey === tab.key ? 'page' : undefined"
       @click="onClick(tab.key)"
@@ -211,6 +214,42 @@ function onClick(key: string) {
   .bottom-nav__tab--active .bottom-nav__icon {
     background: rgba(181, 52, 58, 0.12);
     color: #b5343a;
+  }
+
+  .bottom-nav__tab--brand {
+    z-index: 1;
+    transform: translateY(-9px);
+    color: #7e1820;
+  }
+
+  .bottom-nav__tab--brand::before { display: none; }
+
+  .bottom-nav__tab--brand:active { transform: translateY(-8px) scale(.96); }
+
+  .bottom-nav__tab--brand .bottom-nav__icon {
+    width: 46px;
+    height: 46px;
+    border: 4px solid rgba(255, 255, 255, .98);
+    border-radius: 50%;
+    color: #fff8ef;
+    background: linear-gradient(145deg, #b72b36, #75121b);
+    box-shadow: 0 7px 18px rgba(117, 18, 27, .28);
+  }
+
+  .bottom-nav__tab--brand .bottom-nav__icon svg { width: 23px; height: 23px; stroke-width: 1.9; }
+
+  .bottom-nav__tab--brand .bottom-nav__label {
+    margin-top: -1px;
+    color: #7e1820;
+    font-weight: 700;
+  }
+
+  .bottom-nav__tab--brand.bottom-nav__tab--active .bottom-nav__icon {
+    color: #fff9ec;
+    background: linear-gradient(145deg, #c83a43, #85151f);
+    border-color: #f4dfbd;
+    box-shadow: 0 8px 22px rgba(117, 18, 27, .34), 0 0 0 2px rgba(200, 160, 91, .2);
+    transform: translateY(-2px);
   }
 
   .bottom-nav__label {

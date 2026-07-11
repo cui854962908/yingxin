@@ -240,6 +240,33 @@ describe('useXinChat', () => {
       expect(decodeURIComponent(linkMsg!.links![0].to)).toContain('食堂几点开门')
     })
 
+    it('agent 回答完成后才添加细节引导', async () => {
+      autoSpeak.value = false
+      const { send, input, messages, sending } = createChat()
+      input.value = '学校食堂在哪里'
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          success: true,
+          data: { reply: '学校共有三个食堂，分布在各宿舍区附近。', source: 'faq' },
+        }),
+      } as Response)
+
+      const pending = send()
+      await vi.advanceTimersByTimeAsync(1)
+
+      const answer = messages.value.find(m => m.role === 'xin' && m.source === 'faq')
+      expect(answer?.done).toBe(false)
+      expect(sending.value).toBe(false)
+      expect(messages.value.some(m => m.links?.length)).toBe(false)
+
+      await vi.runAllTimersAsync()
+      await pending
+      expect(answer?.done).toBe(true)
+      expect(messages.value.some(m => m.links?.length)).toBe(true)
+    })
+
     it('本地兜底未知问题时文案含牧院新生说', async () => {
       localStorage.setItem('token', 'test-token')
       const { send, input, messages } = createChat()

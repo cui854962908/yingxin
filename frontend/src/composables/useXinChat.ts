@@ -260,6 +260,7 @@ export function useXinChat(
     const reply: string = data.data.reply
     const source: string = data.data.source || 'agent'
 
+    sending.value = false
     await pushXinMsg(reply, source)
 
     const agentLinks = linksAfterAgent(source, q, !!token)
@@ -268,7 +269,6 @@ export function useXinChat(
       pushLinkMsg(agentLinks, wallAsk)
     }
 
-    sending.value = false
     return true
   }
 

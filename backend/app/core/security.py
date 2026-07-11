@@ -25,10 +25,10 @@ def create_access_token(
     subject: str,
     name: str,
     role: str,
-    expires_hours: Optional[int] = None,
+    expires_minutes: Optional[int] = None,
 ) -> str:
-    hours = expires_hours if expires_hours is not None else settings.ACCESS_TOKEN_EXPIRE_HOURS
-    expire = datetime.now(timezone.utc) + timedelta(hours=hours)
+    minutes = expires_minutes if expires_minutes is not None else settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    expire = datetime.now(timezone.utc) + timedelta(minutes=minutes)
     to_encode: Dict[str, Any] = {
         "sub": subject,
         "name": name,
@@ -36,6 +36,11 @@ def create_access_token(
         "exp": expire,
     }
     return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def hash_refresh_token(token: str) -> str:
+    """对 refresh token 原文做 SHA-256 哈希，数据库中不存明文字符串。"""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 def decode_token(token: str) -> Dict[str, Any]:

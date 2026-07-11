@@ -317,11 +317,7 @@
   }
 
   .campus-anchors {
-    position: sticky;
-    top: var(--intro-sticky-h, 0px);
-    z-index: 6;
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(6px);
+    position: static;
   }
 
   .campus-gallery {

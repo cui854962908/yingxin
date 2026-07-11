@@ -156,12 +156,21 @@ function isMobileViewport() {
 }
 
 /** 勿在 afterEach 里 pushState — 会冲掉 Vue Router 的 history.state，移动端无法再 router.push */
+
+/** 记录最近一次导航的来源路径，用于 popstate 判断用户是否从子页面返回 */
+let lastRoutePath = '/'
+router.afterEach((_to, from) => {
+  lastRoutePath = from.path
+})
+
 window.addEventListener('popstate', () => {
   if (!isMobileViewport() || getChatOpen()) return
   queueMicrotask(() => {
     if (getChatOpen()) return
     const path = router.currentRoute.value.path
     if (path === '/') return
+    // 从子页面（如 /wall/123）返回其父级时，走正常浏览器后退，不拦截
+    if (!shouldMobileBackToHome(lastRoutePath)) return
     if (shouldMobileBackToHome(path)) {
       router.replace('/')
     }

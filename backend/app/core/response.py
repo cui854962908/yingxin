@@ -20,13 +20,17 @@ def verify_ok(
     message: str,
     token: str,
     data: Any,
+    refresh_token: str = "",
 ) -> JSONDict:
-    """学生验证成功：token 与 data 同级。"""
-    return {
+    """学生验证成功：token、refresh_token 与 data 同级。"""
+    result: JSONDict = {
         "success": True,
         "message": message,
         "token": token,
         "data": data,
     }
+    if refresh_token:
+        result["refresh_token"] = refresh_token
+    return result
 
 

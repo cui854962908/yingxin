@@ -1,7 +1,9 @@
 """牧院新生说 API 集成测试。"""
 
 import pytest
+from sqlalchemy import select
 from app.core.security import create_access_token
+from app.models.student import Student
 
 
 @pytest.fixture
@@ -36,7 +38,64 @@ def _create_post(client, headers, title="宿舍几点关门？"):
     )
 
 
+def _create_dorm_post(client, headers):
+    return client.post(
+        "/api/forum/posts",
+        headers=headers,
+        json={"title": "宿舍有独立卫浴吗？", "content": "想提前了解宿舍洗浴条件。", "category": "宿舍"},
+    )
+
+
 class TestForumPosts:
+    def test_forum_role_is_visible_only_to_logged_in_forum_viewers(self, client, db, seed_student, student_headers):
+        seed_student.forum_role = "teacher"
+        db.commit()
+        post_id = _create_post(client, student_headers).json()["data"]["id"]
+
+        logged_in = client.get(f"/api/forum/posts/{post_id}", headers=student_headers)
+        guest = client.get(f"/api/forum/posts/{post_id}")
+
+        assert logged_in.json()["data"]["author"]["forum_role"] == "teacher"
+        assert guest.json()["data"]["author"]["forum_role"] is None
+
+    def test_forum_role_is_resolved_dynamically_for_existing_answers(self, client, db, student_headers, other_student_headers):
+        post_id = _create_post(client, student_headers).json()["data"]["id"]
+        client.post(
+            f"/api/forum/posts/{post_id}/answers",
+            headers=other_student_headers,
+            json={"content": "这是第一条回答。"},
+        )
+        author = db.scalars(select(Student).where(Student.student_id == "20260901002")).one()
+        author.forum_role = "assistant"
+        db.commit()
+
+        detail = client.get(f"/api/forum/posts/{post_id}", headers=student_headers).json()["data"]
+        assert detail["answers"][0]["author"]["forum_role"] == "assistant"
+
+    def test_dorm_category_can_be_created_and_filtered(self, client, student_headers):
+        created = _create_dorm_post(client, student_headers)
+        assert created.status_code == 200
+        assert created.json()["data"]["category"] == "宿舍"
+
+        listing = client.get("/api/forum/posts?category=宿舍")
+        items = listing.json()["data"]["items"]
+        assert len(items) == 1
+        assert items[0]["category"] == "宿舍"
+
+    def test_detail_view_count_increments_only_on_get(self, client, student_headers):
+        created = _create_post(client, student_headers).json()["data"]
+        post_id = created["id"]
+        assert created["view_count"] == 0
+
+        first = client.get(f"/api/forum/posts/{post_id}")
+        second = client.get(f"/api/forum/posts/{post_id}")
+        assert first.json()["data"]["view_count"] == 1
+        assert second.json()["data"]["view_count"] == 2
+
+        client.post(f"/api/forum/posts/{post_id}/close", headers=student_headers)
+        listing = client.get("/api/forum/posts")
+        assert listing.json()["data"]["items"][0]["view_count"] == 2
+
     def test_list_public_masks_author_by_grade(self, client, student_headers):
         _create_post(client, student_headers)
         resp = client.get("/api/forum/posts")
@@ -166,12 +225,18 @@ class TestForumPosts:
         assert resp.status_code == 200
         assert client.get(f"/api/forum/posts/{post_id}").status_code == 404
 
-    def test_cannot_delete_others_post(self, client, student_headers, other_student_headers):
+    def test_teacher_forum_role_cannot_delete_others_post(self, client, db, student_headers, other_student_headers):
         post_id = _create_post(client, student_headers).json()["data"]["id"]
+        teacher = db.scalars(select(Student).where(Student.student_id == "20260901002")).one()
+        teacher.forum_role = "teacher"
+        db.commit()
+
         resp = client.delete(f"/api/forum/posts/{post_id}", headers=other_student_headers)
         assert resp.status_code == 403
 
-    def test_admin_delete_post(self, client, admin_headers, student_headers):
+    def test_admin_with_assistant_forum_role_can_delete_post(self, client, db, seed_admin, admin_headers, student_headers):
+        seed_admin.forum_role = "assistant"
+        db.commit()
         post_id = _create_post(client, student_headers).json()["data"]["id"]
         resp = client.delete(f"/api/forum/posts/{post_id}", headers=admin_headers)
         assert resp.status_code == 200

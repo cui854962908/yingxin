@@ -13,7 +13,6 @@ import {
   INTRO_WIKI_STATS,
   INTRO_WIKI_TAGLINE,
 } from '../constants/intro'
-import { useAuth } from '../composables/useAuth'
 import { usePanelReveal } from '../composables/usePanelReveal'
 import AppSpinner from './AppSpinner.vue'
 import '../styles/intro-theme.css'
@@ -28,7 +27,6 @@ interface WikiBlock {
 
 const blocks = ref<WikiBlock[]>([...INTRO_WIKI_FALLBACK])
 const loading = ref(true)
-const { isAdmin } = useAuth()
 const { ready: revealReady } = usePanelReveal()
 
 const parsedBlocks = computed(() =>
@@ -202,8 +200,5 @@ onMounted(load)
       <AppSpinner />
     </div>
 
-    <p v-if="isAdmin" class="wiki-admin-hint">
-      公告分类 <code>{{ INTRO_WIKI_CATEGORY }}</code>；正文内的首张图片会作为图文卡片图片。
-    </p>
   </div>
 </template>

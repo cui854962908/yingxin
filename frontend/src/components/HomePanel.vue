@@ -259,7 +259,7 @@ function dayLabel(d: string, i: number): 'past' | 'today' | 'future' {
 }
 .tl-scroll {
   overflow: hidden; cursor: grab; user-select: none;
-  margin-right: 44px; touch-action: none;
+  margin-top: -20px; margin-right: 44px; padding-top: 20px; touch-action: none;
 }
 .tl-scroll.dragging { cursor: grabbing }
 .tl-nodes {
@@ -326,9 +326,7 @@ function dayLabel(d: string, i: number): 'past' | 'today' | 'future' {
   font-size: .58rem; color: #c4b8a8;
 }
 
-.tl-hint {
-  font-size: .74rem; color: #c4b8a8; letter-spacing: .03em; margin: 0;
-}
+.tl-hint { font-size: .74rem; color: #c4b8a8; letter-spacing: .03em; margin: 0; }
 
 /* ===== 功能入口 ===== */
 .service-section { margin-top: 4px }
@@ -411,7 +409,7 @@ function dayLabel(d: string, i: number): 'past' | 'today' | 'future' {
 }
 @media(max-width: 480px) {
   .tl-section { padding: 0 40px }
-  .tl-scroll { padding-top: 14px; padding-bottom: 2px }
+  .tl-scroll { margin-top: -14px; padding-top: 14px; padding-bottom: 2px }
   .tl-nodes { gap: 24px }
   .tl-node { width: 120px }
   .tl-dot { width: 44px; height: 44px; margin-bottom: 6px }
@@ -419,11 +417,20 @@ function dayLabel(d: string, i: number): 'past' | 'today' | 'future' {
   .tl-title { font-size: .62rem }
   .tl-arrow { width: 30px; height: 30px; top: 21px }
   .service-grid { grid-template-columns: repeat(2, 1fr); gap: 10px }
-  .svc-card { padding: 16px 12px; gap: 12px; border-radius: 12px }
+  .svc-card {
+    padding: 16px 12px;
+    gap: 10px 12px;
+    border-radius: 12px;
+    min-height: 142px;
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-items: start;
+  }
   .svc-icon { width: 36px; height: 36px }
-  .svc-title { font-size: .8rem }
-  .svc-desc { font-size: .7rem }
-  .svc-link { font-size: .7rem }
+  .svc-text { gap: 4px; align-self: start }
+  .svc-title { font-size: .8rem; margin: 0; line-height: 1.3; word-break: keep-all }
+  .svc-desc { font-size: .7rem; margin: 0; line-height: 1.5; word-break: break-word }
+  .svc-link { font-size: .7rem; grid-column: 2; justify-self: end; align-self: end; margin-top: 2px }
   .tl-node--today .tl-dot { animation: none } /* 移动端关闭脉冲动画 */
 }
 </style>

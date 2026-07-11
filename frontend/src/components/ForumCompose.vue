@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { ForumCategory } from '../types/forum'
-import { FORUM_CATEGORIES } from '../types/forum'
+import { FORUM_CATEGORIES, FORUM_CATEGORY_COLORS } from '../types/forum'
 import { authHeaders, useAuth } from '../composables/useAuth'
 import { useAppNavigate } from '../composables/useAppNavigate'
 import { FORUM_MODULE_NAME } from '../constants/product'
 import '../styles/forum-mobile.css'
+import '../styles/forum/forum-compose.css'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,10 +20,17 @@ const category = ref<ForumCategory>('其他')
 const saving = ref(false)
 const errMsg = ref('')
 const fromXin = ref(false)
+const titleFocused = ref(false)
+const contentFocused = ref(false)
+
+const titleLen = computed(() => title.value.length)
+const contentLen = computed(() => content.value.length)
+const canSubmit = computed(() => title.value.trim() && content.value.trim().length >= 5 && !saving.value)
 
 async function submit() {
-  if (!title.value.trim() || content.value.trim().length < 5) {
-    errMsg.value = '请填写标题和至少 5 字的描述'
+  if (!canSubmit.value) {
+    if (!title.value.trim()) errMsg.value = '请填写标题'
+    else if (content.value.trim().length < 5) errMsg.value = '描述至少需要 5 个字'
     return
   }
   saving.value = true
@@ -62,111 +70,73 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="wall-compose">
-    <div class="forum-mobile-sticky-top">
-      <button type="button" class="forum-mobile-back" @click="appGoBackTo('/wall')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-        返回{{ FORUM_MODULE_NAME }}
-      </button>
-    </div>
+  <div class="fcompose">
+    <div class="fcompose-layout">
+      <aside class="fcompose-intro" aria-label="提问说明">
+        <div class="fcompose-intro-mark">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a8 8 0 0 0-4.8 14.4L6 21l3.6-1.2A8 8 0 1 0 12 3Z"/><path d="M9.4 10a2.7 2.7 0 0 1 5.2.9c0 1.9-2.6 2.1-2.6 3.6M12 17.3h.01"/></svg>
+        </div>
+        <p class="fcompose-intro-kicker">牧院新生说</p>
+        <h1><span>问题说清楚</span><span>回答更准确</span></h1>
+        <p class="fcompose-intro-copy">向学长学姐描述你在报到、学习和校园生活中遇到的问题。</p>
+        <ol class="fcompose-steps">
+          <li><span>01</span><strong>概括问题</strong></li>
+          <li><span>02</span><strong>选择分类</strong></li>
+          <li><span>03</span><strong>补充细节</strong></li>
+        </ol>
+      </aside>
 
-    <div class="wc-card">
-      <h2 class="wc-title">发布提问</h2>
-      <p class="wc-hint">
-        {{ fromXin ? '标题已从小信带入，补充详细描述后发布即可' : '描述清楚你的问题，方便同学帮你解答' }}
-      </p>
+      <section class="fcompose-card">
+        <header class="fcompose-card-head">
+          <div>
+            <p class="fcompose-card-eyebrow">新生互动问答</p>
+            <h2 class="fcompose-card-title">发布提问</h2>
+          </div>
+          <button type="button" class="fcompose-card-close" @click="appGoBackTo('/wall')">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18 9 12l6-6"/></svg>
+            返回{{ FORUM_MODULE_NAME }}
+          </button>
+        </header>
 
-      <label class="wc-field">
-        <span>标题</span>
-        <input v-model="title" maxlength="120" placeholder="例如：军训需要带什么？" />
-      </label>
-      <label class="wc-field">
-        <span>分类</span>
-        <select v-model="category">
-          <option v-for="c in FORUM_CATEGORIES" :key="c" :value="c">{{ c }}</option>
-        </select>
-      </label>
-      <label class="wc-field">
-        <span>详细描述</span>
-        <textarea v-model="content" rows="6" maxlength="2000" placeholder="补充背景、你已了解的信息…" />
-      </label>
+        <p v-if="fromXin" class="fcompose-xin-badge">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a8 8 0 0 1 8 8c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>标题已从小信带入，请补充问题细节</span>
+        </p>
 
-      <p v-if="errMsg" class="wc-err">{{ errMsg }}</p>
-    </div>
+        <label class="fcompose-field" :class="{ focused: titleFocused }">
+          <span class="fcompose-label"><b>01</b> 问题标题 <em>必填</em></span>
+          <div class="fcompose-input-wrap">
+            <input v-model="title" maxlength="120" placeholder="用一句话概括你的问题" @focus="titleFocused = true" @blur="titleFocused = false" />
+            <span class="fcompose-count" :class="{ near: titleLen > 100 }">{{ titleLen }}<span class="fcompose-count-max"> / 120</span></span>
+          </div>
+        </label>
 
-    <div class="wc-submit-dock">
-      <button type="button" class="wc-submit" :disabled="saving" @click="submit">
-        {{ saving ? '发布中…' : `发布到${FORUM_MODULE_NAME}` }}
-      </button>
+        <fieldset class="fcompose-cats">
+          <legend class="fcompose-label"><b>02</b> 问题分类</legend>
+          <div class="fcompose-cats-row">
+            <button v-for="c in FORUM_CATEGORIES" :key="c" type="button" class="fcompose-cat" :class="{ active: category === c }" :style="category === c ? { '--cat-color': FORUM_CATEGORY_COLORS[c] } : undefined" @click="category = c">{{ c }}</button>
+          </div>
+        </fieldset>
+
+        <label class="fcompose-field" :class="{ focused: contentFocused }">
+          <span class="fcompose-label"><b>03</b> 详细描述 <em>至少 5 个字</em></span>
+          <div class="fcompose-input-wrap">
+            <textarea v-model="content" rows="8" maxlength="2000" placeholder="补充事情经过、时间地点或你已经尝试过的方法，方便大家准确回答" @focus="contentFocused = true" @blur="contentFocused = false" />
+            <span class="fcompose-count" :class="{ near: contentLen > 1700 }">{{ contentLen }}<span class="fcompose-count-max"> / 2000</span></span>
+          </div>
+        </label>
+
+        <div class="fcompose-foot">
+          <p v-if="errMsg" class="fcompose-err">{{ errMsg }}</p>
+          <div class="fcompose-actions">
+            <p v-if="!errMsg" class="fcompose-foot-hint">发布后 24 小时内可编辑，每日限 5 条</p>
+            <button type="button" class="fcompose-submit" :class="{ ready: canSubmit }" :disabled="!canSubmit" @click="submit">
+              <span>{{ saving ? '发布中…' : '确认发布' }}</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 14-7-4 14-3-5-7-2Z"/><path d="m12 14 7-9"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </template>
-
-<style scoped>
-.wall-compose { display: flex; flex-direction: column; gap: 14px; max-width: 640px; margin: 0 auto; min-height: 100% }
-.wc-card {
-  padding: 22px 24px; border-radius: 14px; background: #fff;
-  border: 1px solid #f2ebe0; box-shadow: 0 4px 18px rgba(60,48,40,.06);
-}
-.wc-title { margin: 0; font-size: 1.1rem; color: #3c3028; font-weight: 700; letter-spacing: .06em }
-.wc-hint { margin: 6px 0 18px; font-size: .8rem; color: #b0a090 }
-.wc-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px }
-.wc-field span { font-size: .78rem; font-weight: 600; color: #6b5e4e; letter-spacing: .08em }
-.wc-field input, .wc-field select, .wc-field textarea {
-  width: 100%; padding: 10px 12px; border: 1.5px solid #e5dbcc; border-radius: 10px;
-  font-size: .88rem; font-family: inherit; color: #3c3028; background: #fefcf9; outline: none; box-sizing: border-box;
-}
-.wc-field input:focus, .wc-field select:focus, .wc-field textarea:focus {
-  border-color: #b5343a; box-shadow: 0 0 0 3px rgba(181,52,58,.08);
-}
-.wc-err { color: #b5343a; font-size: .82rem; margin: 0 0 10px }
-.wc-submit {
-  width: 100%; height: 44px; border: none; border-radius: 11px; cursor: pointer;
-  background: linear-gradient(135deg, #bd1f2e, #8f101c); color: #fff;
-  font-size: .92rem; font-weight: 700; letter-spacing: .12em; font-family: inherit;
-}
-.wc-submit:disabled { opacity: .55; cursor: default }
-
-.wc-submit-dock { margin-top: 8px }
-
-@media (min-width: 769px) {
-  .wc-submit-dock {
-    position: static;
-    padding: 0;
-    background: none;
-  }
-}
-
-@media (max-width: 768px) {
-  .wall-compose {
-    max-width: none; gap: 0;
-    padding-bottom: calc(80px + var(--yx-mobile-nav, calc(52px + env(safe-area-inset-bottom, 0px))));
-  }
-  .wc-card {
-    margin: 0; padding: 18px 14px 24px;
-    border-radius: 0; border: none;
-    border-top: 1px solid #f2ebe0;
-    box-shadow: none;
-  }
-  .wc-title { font-size: 1.05rem }
-  .wc-hint { font-size: .78rem; margin-bottom: 16px }
-  .wc-field input, .wc-field select, .wc-field textarea {
-    font-size: 16px; min-height: 48px; padding: 12px 14px; border-radius: 12px;
-  }
-  .wc-field textarea { min-height: 140px }
-  .wc-submit-dock {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 8500;
-    padding: 10px 14px var(--yx-mobile-nav, calc(52px + env(safe-area-inset-bottom, 0px)));
-    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.94) 30%, #fff 100%);
-  }
-  .wc-submit {
-    width: 100%; height: 48px; border-radius: 13px; margin: 0;
-    box-shadow: 0 10px 24px rgba(143,16,28,.28);
-  }
-}
-
-@media (max-width: 480px) {
-  .wc-card { padding: 16px 12px 20px }
-  .wc-submit-dock { padding-left: 12px; padding-right: 12px }
-}
-</style>

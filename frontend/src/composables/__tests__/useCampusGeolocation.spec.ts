@@ -47,6 +47,7 @@ describe('useCampusGeolocation', () => {
   let watchCallback: ((pos: GeolocationPosition) => void) | null = null
 
   beforeEach(() => {
+    vi.stubGlobal('isSecureContext', true)
     watchCallback = null
     clearWatch = vi.fn()
     vi.stubGlobal('navigator', {
@@ -141,5 +142,42 @@ describe('useCampusGeolocation', () => {
 
     expect(clearWatch).toHaveBeenCalledWith(42)
     expect(map.remove).toHaveBeenCalled()
+  })
+
+  it('explains when desktop location permission is denied', async () => {
+    vi.stubGlobal('navigator', {
+      geolocation: {
+        getCurrentPosition: vi.fn((_success: PositionCallback, error: PositionErrorCallback) => {
+          error({ code: 1, message: 'denied' } as GeolocationPositionError)
+        }),
+        watchPosition: vi.fn(),
+        clearWatch: vi.fn(),
+      },
+    })
+    const geo = useCampusGeolocation({ isWithinCampus: () => false })
+
+    await geo.locate(mockMap(), mockAMap())
+
+    expect(geo.message.value).toContain('定位权限被拒绝')
+  })
+
+  it('explains that a non-secure desktop page requires HTTPS', async () => {
+    vi.stubGlobal('isSecureContext', false)
+    const geo = useCampusGeolocation({ isWithinCampus: () => false })
+
+    await geo.locate(mockMap(), mockAMap())
+
+    expect(geo.message.value).toContain('HTTPS')
+  })
+
+  it('can use AMap fallback when browser geolocation is unavailable', async () => {
+    vi.stubGlobal('navigator', {})
+    const origin = campusOrigin()
+    const geo = useCampusGeolocation({ isWithinCampus: alwaysOnCampus() })
+
+    const result = await geo.locate(mockMap(), mockAMap({ lnglat: origin, accuracy: 80 }))
+
+    expect(result).toEqual(origin)
+    expect(geo.status.value).toBe('ok')
   })
 })

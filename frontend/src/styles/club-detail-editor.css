@@ -1,0 +1,293 @@
+﻿@media (min-width: 769px) {
+  .club-detail.club-detail--editing {
+    --editor-red: #9b1d28;
+    --editor-ink: #3a2b25;
+    --editor-line: #eadcd1;
+    background: #f7f1ec;
+  }
+
+  .club-detail.club-detail--editing .cd-hero-wrapper,
+  .club-detail.club-detail--editing .cd-tabs,
+  .club-detail.club-detail--editing .cd-main {
+    width: min(1400px, calc(100% - 48px));
+    box-sizing: border-box;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .club-detail.club-detail--editing .cd-hero-wrapper { padding: 24px 0 0; }
+  .club-detail.club-detail--editing .cd-hero {
+    height: 410px;
+    border-radius: 24px;
+    box-shadow: 0 20px 48px rgba(67, 35, 30, .14);
+  }
+
+  .club-detail.club-detail--editing .cd-hero-gradient {
+    background: linear-gradient(100deg, rgba(36, 20, 20, .76), rgba(60, 38, 34, .5) 54%, rgba(32, 23, 21, .62));
+  }
+
+  .club-detail.club-detail--editing .cd-back { top: 22px; left: 24px; }
+  .club-detail.club-detail--editing .cd-hero-actions {
+    top: 20px;
+    right: 22px;
+    gap: 9px;
+    padding: 7px;
+    border: 1px solid rgba(255, 255, 255, .28);
+    border-radius: 999px;
+    background: rgba(35, 25, 22, .64);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, .18);
+    backdrop-filter: blur(12px);
+  }
+
+  .club-detail.club-detail--editing .cd-tag { min-height: 34px; padding: 0 18px; border-radius: 999px; }
+  .club-detail.club-detail--editing .cd-tag-save { background: linear-gradient(135deg, #a92330, #78131c); }
+  .club-detail.club-detail--editing .cd-tag-cancel { background: rgba(255, 255, 255, .14); }
+  .club-detail.club-detail--editing .cd-tag-status-select { min-width: 104px; background-color: rgba(255, 255, 255, .14); }
+
+  .club-detail.club-detail--editing .cd-hero-content {
+    top: 92px;
+    right: 32px;
+    left: 32px;
+    padding: 0;
+    gap: 24px;
+  }
+
+  .club-detail.club-detail--editing .cd-hero-badge-ring { width: 118px; height: 118px; }
+  .club-detail.club-detail--editing .cd-hero-info { max-width: 650px; }
+  .club-detail.club-detail--editing .cd-hero-name-input {
+    max-width: 560px;
+    height: 58px;
+    padding: 0 18px;
+    border-radius: 14px;
+    font-size: 2rem;
+  }
+  .club-detail.club-detail--editing .cd-hero-intro-input { max-width: 520px; height: 44px; padding: 0 16px; border-radius: 12px; }
+  .club-detail.club-detail--editing .cd-hero-cat-select { min-height: 36px; padding: 0 38px 0 16px; }
+
+  .club-detail.club-detail--editing .cd-hero-meta {
+    right: 32px;
+    bottom: 24px;
+    left: 32px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    padding: 16px;
+    border-radius: 18px;
+    background: rgba(28, 21, 19, .68);
+    backdrop-filter: blur(12px);
+  }
+
+  .club-detail.club-detail--editing .cd-hero-meta-item { gap: 7px; padding: 0 12px; }
+  .club-detail.club-detail--editing .cd-meta-input {
+    width: 100%;
+    height: 38px;
+    padding: 0 11px;
+    border-radius: 9px;
+    font-size: .8rem;
+  }
+
+  .club-detail.club-detail--editing .cd-hero-bg-upload {
+    right: 32px;
+    bottom: 126px;
+    left: auto;
+    min-height: 38px;
+    padding: 0 16px;
+    transform: none;
+    border: 1px solid rgba(255, 255, 255, .24);
+    border-radius: 999px;
+    background: rgba(28, 21, 19, .68);
+    backdrop-filter: blur(10px);
+  }
+
+  .club-detail.club-detail--editing .cd-tabs { margin-top: 18px; padding: 7px; border-radius: 16px; }
+  .club-detail.club-detail--editing .cd-main { padding: 22px 0 44px; }
+  .club-detail.club-detail--editing .cd-section,
+  .club-detail.club-detail--editing .cd-info-card {
+    border: 1px solid var(--editor-line);
+    border-radius: 20px;
+    background: #fffaf6;
+    box-shadow: 0 10px 28px rgba(80, 42, 32, .05);
+  }
+
+  .club-detail.club-detail--editing .cd-section { min-height: auto; padding: 28px; margin-bottom: 22px; }
+  .club-detail.club-detail--editing .cd-section::after,
+  .club-detail.club-detail--editing .cd-info-card::after { display: none; }
+  .club-detail.club-detail--editing .cd-section-title,
+  .club-detail.club-detail--editing .cd-info-card-head { margin-bottom: 20px; color: var(--editor-ink); }
+  .club-detail.club-detail--editing .cd-edit-textarea {
+    min-height: 250px;
+    padding: 17px 18px;
+    border-color: #dfcfc4;
+    border-radius: 14px;
+    background: #fff;
+    line-height: 1.85;
+  }
+  .club-detail.club-detail--editing .cd-edit-textarea:focus,
+  .club-detail.club-detail--editing .cd-edit-input:focus { border-color: var(--editor-red); box-shadow: 0 0 0 4px rgba(155, 29, 40, .08); }
+
+  .club-detail.club-detail--editing .cd-cards-row { grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr); gap: 22px; }
+  .club-detail.club-detail--editing .cd-info-card { padding: 28px; }
+  .club-detail.club-detail--editing .cd-info-card--contact { grid-column: 1 / -1; }
+  .club-detail.club-detail--editing .cd-recruit-split { display: block; }
+  .club-detail.club-detail--editing .cd-recruit-right { display: none; }
+  .club-detail.club-detail--editing .cd-recruit-left { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 20px; }
+  .club-detail.club-detail--editing .cd-info-row { gap: 7px; }
+  .club-detail.club-detail--editing .cd-edit-input { width: 100%; max-width: none; height: 42px; padding: 0 13px; border-radius: 10px; }
+  .club-detail.club-detail--editing .cd-edit-dates { max-width: none; gap: 8px; }
+  .club-detail.club-detail--editing .cd-edit-textarea--sm { width: 100%; max-width: none; min-height: 250px; }
+  .club-detail.club-detail--editing .cd-contact-edit { display: grid; grid-template-columns: minmax(240px, .6fr) minmax(320px, 1fr); gap: 24px; }
+}
+
+@media (max-width: 768px) {
+  .club-detail.club-detail--editing { background: #f6f0eb; }
+  .club-detail.club-detail--editing .cd-hero-wrapper { padding: 12px 12px 0; }
+  .club-detail.club-detail--editing .cd-hero {
+    grid-template-rows: 132px auto auto auto;
+    border: 1px solid #eaded6;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 12px 30px rgba(76, 39, 31, .09);
+    overflow: hidden;
+  }
+  .club-detail.club-detail--editing .cd-hero-bg,
+  .club-detail.club-detail--editing .cd-hero-gradient { height: 132px; }
+  .club-detail.club-detail--editing .cd-hero-gradient {
+    background: linear-gradient(180deg, rgba(44, 27, 25, .28), rgba(55, 34, 30, .62));
+  }
+  .club-detail.club-detail--editing .cd-back {
+    top: 12px;
+    left: 12px;
+    min-height: 42px;
+    max-width: calc(100% - 24px);
+    border-color: rgba(255, 255, 255, .6);
+  }
+  .club-detail.club-detail--editing .cd-hero-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    min-height: 0;
+    padding: 12px 14px;
+    border-bottom: 1px solid #eee4dd;
+    background: #fffaf6;
+  }
+  .club-detail.club-detail--editing .cd-tag {
+    width: 100%;
+    min-height: 42px;
+    padding: 0 10px;
+    border-radius: 12px;
+    text-align: center;
+  }
+  .club-detail.club-detail--editing .cd-tag-save {
+    background: linear-gradient(135deg, #aa2632, #7d141d);
+    box-shadow: 0 6px 14px rgba(125, 20, 29, .2);
+  }
+  .club-detail.club-detail--editing .cd-tag-cancel,
+  .club-detail.club-detail--editing .cd-tag-status-select {
+    border-color: #dfd1c8;
+    color: #624d43;
+    background-color: #f3e9e1;
+  }
+  .club-detail.club-detail--editing .cd-hero-content {
+    padding: 16px 14px 12px;
+    gap: 13px;
+    border-bottom: 1px solid #f0e8e1;
+    background: #fff;
+  }
+  .club-detail.club-detail--editing .cd-hero-badge-ring { width: 68px; height: 68px; margin-top: 0; }
+  .club-detail.club-detail--editing .cd-hero-info { display: grid; gap: 8px; }
+  .club-detail.club-detail--editing .cd-hero-info .cd-hero-name-input,
+  .club-detail.club-detail--editing .cd-hero-info .cd-hero-intro-input,
+  .club-detail.club-detail--editing .cd-hero-info .cd-hero-cat-select {
+    min-height: 43px;
+    margin: 0;
+    border-color: #dfd4cc;
+    border-radius: 11px;
+    background: #fffaf6;
+  }
+  .club-detail.club-detail--editing .cd-hero-info .cd-hero-name-input:focus,
+  .club-detail.club-detail--editing .cd-hero-info .cd-hero-intro-input:focus,
+  .club-detail.club-detail--editing .cd-hero-info .cd-hero-cat-select:focus {
+    border-color: #a92330;
+    box-shadow: 0 0 0 3px rgba(169, 35, 48, .08);
+  }
+  .club-detail.club-detail--editing .cd-hero-bg-upload {
+    top: 82px;
+    right: 62px;
+    bottom: auto;
+    left: auto;
+    min-height: 36px;
+    padding: 0 13px;
+    transform: none;
+    border: 1px solid rgba(255, 255, 255, .4);
+    border-radius: 999px;
+    background: rgba(46, 31, 28, .7);
+    backdrop-filter: blur(8px);
+  }
+  .club-detail.club-detail--editing .cd-hero-meta {
+    gap: 13px 10px;
+    margin: 0;
+    padding: 16px 14px 18px;
+    border: 0;
+    border-radius: 0;
+    background: #fffaf6;
+  }
+  .club-detail.club-detail--editing .cd-hero-meta-item { gap: 6px; }
+  .club-detail.club-detail--editing .cd-meta-input {
+    height: 42px;
+    padding: 0 11px;
+    border-color: #dfd4cc;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+  .club-detail.club-detail--editing .cd-tabs {
+    margin: 14px 12px 0;
+    padding: 5px;
+    border: 1px solid #eaded6;
+    border-radius: 14px;
+    background: #fff;
+  }
+  .club-detail.club-detail--editing .cd-tab-btn { min-height: 44px; border-radius: 11px; }
+  .club-detail.club-detail--editing .cd-tab-btn.active { color: #7d141d; background: #f8e9e7; }
+  .club-detail.club-detail--editing .cd-main { padding: 14px 12px calc(88px + env(safe-area-inset-bottom, 0px)); }
+  .club-detail.club-detail--editing .cd-section,
+  .club-detail.club-detail--editing .cd-info-card {
+    padding: 18px 16px;
+    border-color: #eaded6;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 7px 20px rgba(76, 39, 31, .045);
+  }
+  .club-detail.club-detail--editing .cd-section-title,
+  .club-detail.club-detail--editing .cd-info-card-head { margin-bottom: 14px; }
+  .club-detail.club-detail--editing .cd-section::after,
+  .club-detail.club-detail--editing .cd-info-card::after { opacity: .16; }
+  .club-detail.club-detail--editing .cd-recruit-right { display: none; }
+  .club-detail.club-detail--editing .cd-edit-textarea,
+  .club-detail.club-detail--editing .cd-edit-textarea--sm {
+    width: 100%;
+    max-width: none;
+    min-height: 210px;
+    padding: 14px;
+    border-color: #dfd4cc;
+    border-radius: 12px;
+    background: #fffdfb;
+  }
+  .club-detail.club-detail--editing .cd-info-row { gap: 7px; }
+  .club-detail.club-detail--editing .cd-edit-input {
+    height: 44px;
+    border-color: #dfd4cc;
+    border-radius: 10px;
+  }
+  .club-detail.club-detail--editing .cd-edit-dates { gap: 9px; }
+  .club-detail.club-detail--editing .cd-info-label { color: #816c61; font-weight: 600; }
+  body:has(.club-detail.club-detail--editing) .xin-character { display: none !important; }
+}
+
+@media (max-width: 390px) {
+  .club-detail.club-detail--editing .cd-hero-actions { gap: 6px; padding-right: 10px; padding-left: 10px; }
+  .club-detail.club-detail--editing .cd-tag { padding: 0 6px; font-size: .72rem; }
+  .club-detail.club-detail--editing .cd-hero-content { padding-right: 10px; padding-left: 10px; }
+  .club-detail.club-detail--editing .cd-hero-badge-ring { width: 60px; height: 60px; }
+  .club-detail.club-detail--editing .cd-hero-bg-upload { right: 54px; }
+}
+

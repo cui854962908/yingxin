@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 
 const emit = defineEmits<{
-  'login-success': [student: Record<string, any>, token: string]
+  'login-success': [student: Record<string, any>, token: string, refreshToken?: string]
 }>()
 
 const name = ref('')
@@ -30,7 +30,7 @@ async function handleSubmit() {
     })
     const data = await res.json()
     if (data.success) {
-      emit('login-success', data.data, data.token)
+      emit('login-success', data.data, data.token, data.refresh_token)
     } else {
       errorMsg.value = data.message
     }

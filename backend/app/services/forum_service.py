@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import re
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.forum import (
@@ -21,10 +20,10 @@ from app.models.forum import (
 from app.models.student import Student
 from app.schemas.forum import (
     ForumAnswerItem,
-    ForumAuthorBrief,
     ForumPostBrief,
     ForumPostDetail,
 )
+from app.services.forum_author_service import author_brief_for_viewer
 
 EDIT_WINDOW = timedelta(hours=24)
 MAX_POSTS_PER_DAY = 5
@@ -40,33 +39,6 @@ def resolve_author_id(db: Session, payload: dict[str, Any]) -> int:
     if row is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户不存在")
     return row
-
-
-def _author_brief(student: Student) -> ForumAuthorBrief:
-    return ForumAuthorBrief(name=student.name, class_name=student.class_name or "—")
-
-
-def _guest_author_label(student: Student, *, now: datetime | None = None) -> str:
-    """未登录可见：按学号前缀展示年级，不暴露姓名（与前端 gradeLabel 规则一致）。"""
-    sid = (student.student_id or "").strip()
-    m = re.match(r"^(\d{4})", sid)
-    if not m:
-        return "牧院学子"
-    year = int(m.group(1))
-    if year < 2000 or year > 2100:
-        return "牧院学子"
-    ref = now or datetime.now(timezone.utc)
-    enroll_year = ref.year if ref.month >= 6 else ref.year - 1
-    if year == enroll_year:
-        return f"{year} 级新生"
-    return f"{year} 级"
-
-
-def _author_brief_for_viewer(student: Student, viewer_id: int | None) -> ForumAuthorBrief:
-    """未登录浏览时隐藏真实姓名/班级（与前端 formatForumAuthor 一致）。"""
-    if viewer_id is None:
-        return ForumAuthorBrief(name=_guest_author_label(student), class_name="—")
-    return _author_brief(student)
 
 
 def _preview(text: str) -> str:
@@ -196,12 +168,13 @@ def list_posts(
                 title=row.title,
                 content_preview=_preview(row.content),
                 category=row.category,
-                author=_author_brief_for_viewer(author, viewer_id),
+                author=author_brief_for_viewer(author, viewer_id),
                 answer_count=row.answer_count,
                 has_accepted=row.has_accepted,
                 is_closed=row.is_closed,
                 is_pinned=row.is_pinned,
                 like_count=row.like_count,
+                view_count=row.view_count,
                 liked_by_me=row.id in liked_posts,
                 created_at=row.created_at,
                 is_mine=viewer_id == row.author_id if viewer_id else False,
@@ -234,7 +207,7 @@ def get_post_detail(db: Session, post_id: uuid.UUID, viewer_id: int | None) -> d
         ForumAnswerItem(
             id=a.id,
             content=a.content,
-            author=_author_brief_for_viewer(answer_authors[a.author_id], viewer_id),
+            author=author_brief_for_viewer(answer_authors[a.author_id], viewer_id),
             is_accepted=a.is_accepted,
             like_count=a.like_count,
             liked_by_me=a.id in liked_answers,
@@ -250,19 +223,34 @@ def get_post_detail(db: Session, post_id: uuid.UUID, viewer_id: int | None) -> d
         title=post.title,
         content=post.content,
         category=post.category,
-        author=_author_brief_for_viewer(author, viewer_id),
+        author=author_brief_for_viewer(author, viewer_id),
         author_id=post.author_id if viewer_id is not None else None,
         answer_count=post.answer_count,
         has_accepted=post.has_accepted,
         is_closed=post.is_closed,
         is_pinned=post.is_pinned,
         like_count=post.like_count,
+        view_count=post.view_count,
         liked_by_me=post.id in liked_posts,
         created_at=post.created_at,
         is_mine=viewer_id == post.author_id if viewer_id else False,
         answers=answer_items,
     )
     return detail.model_dump(mode="json")
+
+
+def view_post_detail(db: Session, post_id: uuid.UUID, viewer_id: int | None) -> dict[str, Any]:
+    """Increase the counter only for an actual detail-page request."""
+    result = db.execute(
+        update(ForumPost)
+        .where(ForumPost.id == post_id, ForumPost.is_hidden.is_(False))
+        .values(view_count=ForumPost.view_count + 1)
+    )
+    if result.rowcount == 0:
+        db.rollback()
+        raise HTTPException(status_code=404, detail="帖子不存在")
+    db.commit()
+    return get_post_detail(db, post_id, viewer_id)
 
 
 def create_post(db: Session, payload: dict[str, Any], *, title: str, content: str, category: str) -> dict:

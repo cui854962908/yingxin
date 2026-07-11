@@ -1,18 +1,20 @@
 import { inject, computed, type Ref, type ComputedRef } from 'vue'
 import type { Student } from '../types/student'
 import { isGuestRole } from './useGuest'
+import { setAccessToken, getAccessToken, onForceLogout, authFetch } from './useAuthFetch'
 
 /**
  * 共享的认证请求头构造器。
- * 统一了 8 处分散定义的差异：无 token 时也返回 Content-Type，
- * 避免部分组件少发 Content-Type 导致的请求格式问题。
+ * 优先使用内存中的 access token（由 authFetch 管理），
  */
 export function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem('token')
+  const token = getAccessToken()
   return token
     ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
     : { 'Content-Type': 'application/json' }
 }
+
+export { authFetch, onForceLogout, setAccessToken, getAccessToken }
 
 /**
  * 响应式认证状态 —— 替代各组件中直接的 localStorage.getItem 读取。
@@ -32,7 +34,7 @@ export function useAuth(): {
   const isAdmin = computed(() => student.value?.role === 'admin')
   const isClubAdmin = computed(() => student.value?.role === 'club_admin')
   const isGuest = computed(() => isGuestRole(student.value?.role))
-  const token = computed(() => localStorage.getItem('token'))
+  const token = computed(() => getAccessToken())
 
   return { student, isAdmin, isClubAdmin, isGuest, token }
 }

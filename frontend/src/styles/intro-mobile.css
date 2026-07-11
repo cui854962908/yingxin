@@ -180,12 +180,15 @@
 
   .intro-body .wiki-hero__copy a {
     align-self: flex-start;
-    height: 36px;
-    padding: 0 16px;
-    font-size: 0.8125rem;
-    border-color: var(--intro-line, #dedee3);
-    background: #fff;
+    width: fit-content;
+    height: 34px;
+    padding: 0 14px 0 16px;
+    gap: 8px;
+    font-size: 0.78rem;
+    border-color: rgba(181, 31, 45, .18);
+    background: rgba(255, 255, 255, .96);
     color: var(--intro-accent, #b51f2d);
+    box-shadow: 0 8px 18px rgba(181, 31, 45, .08);
   }
 
   .intro-body .school-wiki .wiki-overview,

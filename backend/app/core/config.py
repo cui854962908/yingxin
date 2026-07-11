@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     DATABASE_CONNECT_TIMEOUT: int = 60
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_HOURS: int = 24
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_HOURS: int = 168
     #: SHA-256 加盐哈希的盐值，用于存储身份证号哈希（三要素验证的第三个因子）
     ID_NUMBER_SALT: str = "yingxin-default-salt-change-in-production"
     # 若为 false（默认）：不挂载 /docs、/redoc、/openapi.json，避免匿名浏览完整 API 定义
@@ -72,11 +73,11 @@ class Settings(BaseSettings):
             return s if s else None
         return str(v)
 
-    @field_validator("ACCESS_TOKEN_EXPIRE_HOURS")
+    @field_validator("ACCESS_TOKEN_EXPIRE_MINUTES")
     @classmethod
-    def _positive_hours(cls, v: int) -> int:
+    def _positive_minutes(cls, v: int) -> int:
         if v <= 0:
-            raise ValueError("ACCESS_TOKEN_EXPIRE_HOURS must be positive")
+            raise ValueError("ACCESS_TOKEN_EXPIRE_MINUTES must be positive")
         return v
 
 

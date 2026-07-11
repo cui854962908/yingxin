@@ -3,10 +3,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.response import fail_envelope, ok_envelope, verify_ok
-from app.core.security import get_current_payload
+from app.core.security import create_access_token, get_current_payload
 from app.db.database import get_db
-from app.schemas.auth import StudentVerifyRequest
+from app.models.student import Student
+from app.schemas.auth import LogoutRequest, StudentVerifyRequest, TokenRefreshRequest
 from app.services.auth_service import verify_student_login
+from app.services.token_service import rotate_refresh_token, revoke_refresh_token
 from app.services import login_guard
 
 router = APIRouter(tags=["auth"])
@@ -45,10 +47,49 @@ def verify_student(body: StudentVerifyRequest, db: Session = Depends(get_db)):
 
     # 验证成功，清除错误记录
     login_guard.clear_record(sid)
-    token, data, role = result
+    token, refresh_token, data, role = result
+    db.commit()
     if role == "admin":
-        return verify_ok(message="管理员登录成功", token=token, data=data)
-    return verify_ok(message=f"欢迎你，{data['name']}同学！", token=token, data=data)
+        return verify_ok(message="管理员登录成功", token=token, refresh_token=refresh_token, data=data)
+    return verify_ok(message=f"欢迎你，{data['name']}同学！", token=token, refresh_token=refresh_token, data=data)
+
+
+@router.post("/refresh")
+def refresh_access_token(body: TokenRefreshRequest, db: Session = Depends(get_db)):
+    """用 refresh token 换取新的 access token + refresh token（轮换）。"""
+    if not body.refresh_token.strip():
+        return fail_envelope(message="缺少 refresh_token", data=None)
+
+    rotated = rotate_refresh_token(db, raw_token=body.refresh_token.strip())
+    if rotated is None:
+        return fail_envelope(message="refresh token 无效、已过期或已被轮换", data=None)
+
+    new_raw, record = rotated
+    # 从学生记录构造新的 access token
+    student = db.get(Student, record.student_id)
+    if not student:
+        return fail_envelope(message="用户不存在", data=None)
+
+    role = (student.role or "student").strip().lower()
+    new_access = create_access_token(subject=student.student_id, name=student.name, role=role)
+    db.commit()
+
+    return ok_envelope(
+        message="令牌已刷新",
+        data={
+            "access_token": new_access,
+            "refresh_token": new_raw,
+        },
+    )
+
+
+@router.post("/logout")
+def logout(body: LogoutRequest, db: Session = Depends(get_db)):
+    """撤销 refresh token（主动登出）。"""
+    if body.refresh_token.strip():
+        revoke_refresh_token(db, raw_token=body.refresh_token.strip())
+    db.commit()
+    return ok_envelope(message="已登出")
 
 
 @router.get("/auth/me")

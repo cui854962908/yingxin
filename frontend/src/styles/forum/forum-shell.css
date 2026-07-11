@@ -1,0 +1,184 @@
+.wall {
+  --wall-red: #a51f28;
+  --wall-red-dark: #7d1018;
+  --wall-ink: #312522;
+  --wall-muted: #826f68;
+  --wall-line: #eaded7;
+  min-height: 100%;
+  padding: 20px 22px 16px;
+  color: var(--wall-ink);
+  background:
+    radial-gradient(circle at 94% 8%, rgba(181, 52, 58, .07), transparent 26%),
+    linear-gradient(180deg, #fffaf6 0%, #f8f5f1 100%);
+  font-family: "Microsoft YaHei", "Noto Sans SC", sans-serif;
+}
+
+.wall button, .wall input { font: inherit; }
+.wall button:focus-visible, .wall input:focus-visible, .wall article:focus-visible { outline: 3px solid rgba(181, 52, 58, .24); outline-offset: 2px; }
+
+.wall-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-height: 146px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  overflow: hidden;
+  padding: 28px 38px;
+  border-radius: 16px 16px 0 0;
+  color: #fffaf5;
+  background: linear-gradient(118deg, #7f1119 0%, #a51f28 54%, #8b1720 100%);
+  box-shadow: 0 16px 36px rgba(103, 26, 29, .14);
+}
+
+.wall-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(95, 10, 16, .25), transparent 58%);
+}
+
+.wall-title {
+  margin: 0;
+  font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+  font-size: clamp(2rem, 2.35vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-shadow: 0 2px 12px rgba(65, 3, 8, .22);
+}
+
+.wall-sub { margin: 12px 0 0; font-size: .96rem; letter-spacing: .04em; opacity: .93; }
+.wall-ask-btn {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 9px;
+  height: 50px;
+  padding: 0 27px;
+  border: 1px solid rgba(255, 255, 255, .78);
+  border-radius: 999px;
+  color: #9e1d25;
+  background: rgba(255, 251, 247, .96);
+  box-shadow: 0 10px 28px rgba(63, 5, 10, .2);
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform .22s ease, box-shadow .22s ease;
+}
+.wall-ask-btn svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.wall-ask-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(63, 5, 10, .28); }
+
+.wall-filter-panel {
+  position: relative;
+  z-index: 2;
+  padding: 18px 30px 14px;
+  border: 1px solid var(--wall-line);
+  border-top: 0;
+  border-radius: 0 0 16px 16px;
+  background: rgba(255, 253, 251, .96);
+  box-shadow: 0 12px 28px rgba(90, 48, 37, .06);
+}
+.wall-search-row { display: flex; gap: 10px; }
+.wall-search { position: relative; flex: 1; min-width: 0; }
+.wall-search svg { position: absolute; top: 50%; left: 18px; width: 19px; height: 19px; transform: translateY(-50%); fill: none; stroke: #aa958d; stroke-width: 1.8; }
+.wall-search input {
+  width: 100%;
+  height: 48px;
+  padding: 0 18px 0 48px;
+  border: 1px solid #e7dbd5;
+  border-radius: 14px 0 0 14px;
+  color: var(--wall-ink);
+  background: #fff;
+  box-shadow: inset 0 1px 2px rgba(68, 39, 32, .03);
+  outline: 0;
+}
+.wall-search input::placeholder { color: #aa9a94; }
+.wall-search input:focus { border-color: #c9686d; box-shadow: 0 0 0 4px rgba(181, 52, 58, .08); }
+.wall-search-btn {
+  width: 88px;
+  border: 0;
+  border-radius: 0 14px 14px 0;
+  color: #fff;
+  background: linear-gradient(135deg, #b62c35, #941820);
+  cursor: pointer;
+  font-weight: 700;
+  transition: filter .2s ease;
+}
+.wall-search-btn:hover { filter: brightness(.92); }
+.wall-tabs { display: flex; gap: 32px; margin-top: 13px; border-bottom: 1px solid #eee3dd; }
+.wall-tabs button { position: relative; height: 38px; padding: 0 2px; border: 0; color: #876f68; background: transparent; cursor: pointer; }
+.wall-tabs button::after { content: ""; position: absolute; right: 50%; bottom: -1px; left: 50%; height: 3px; border-radius: 3px 3px 0 0; background: var(--wall-red); transition: inset .22s ease; }
+.wall-tabs button.active { color: var(--wall-red); font-weight: 700; }
+.wall-tabs button.active::after { right: 0; left: 0; }
+.wall-cats-scroll { overflow-x: auto; scrollbar-width: none; }
+.wall-cats-scroll::-webkit-scrollbar { display: none; }
+.wall-cats { display: flex; width: max-content; min-width: 100%; gap: 12px; padding-top: 12px; }
+.wall-cats button { height: 34px; min-width: 66px; padding: 0 17px; border: 1px solid #eaded7; border-radius: 999px; color: #826c65; background: #fffaf7; cursor: pointer; transition: .2s ease; }
+.wall-cats button:hover { border-color: #ce777c; color: var(--wall-red); }
+.wall-cats button.active { border-color: var(--wall-red); color: #fff; background: linear-gradient(135deg, #bd343d, #9b1a22); box-shadow: 0 5px 12px rgba(165, 31, 40, .16); }
+
+.wall-main-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; padding: 20px 8px 0; }
+.wall-feed { min-width: 0; }
+.wall-list { display: flex; flex-direction: column; gap: 10px; }
+.wall-loading, .wall-empty { display: grid; min-height: 260px; place-items: center; border: 1px solid var(--wall-line); border-radius: 16px; background: rgba(255, 255, 255, .86); }
+.wall-empty { align-content: center; gap: 10px; color: var(--wall-muted); }
+.wall-empty svg { width: 46px; height: 46px; fill: none; stroke: #c98589; stroke-width: 1.4; }
+.wall-empty p { margin: 0; }
+.wall-empty button { border: 0; color: var(--wall-red); background: transparent; cursor: pointer; font-weight: 700; }
+.wall-load-more-btn { display: flex; width: 100%; height: 42px; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; border: 1px solid var(--wall-line); border-radius: 12px; color: #8a746d; background: rgba(255, 255, 255, .72); cursor: pointer; }
+.wall-load-more-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.wall-load-more-btn:hover { border-color: #cf8c90; color: var(--wall-red); background: #fff; }
+
+/* ===== 左右翻页控件 ===== */
+.wall-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 16px 0 8px;
+}
+.wall-pager-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 38px;
+  padding: 0 18px;
+  border: 1px solid var(--wall-line);
+  border-radius: 10px;
+  color: #7a615a;
+  background: rgba(255, 255, 255, .82);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: .82rem;
+  transition: all .18s ease;
+}
+.wall-pager-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.wall-pager-btn:hover:not(:disabled) {
+  border-color: #cc8c91;
+  color: var(--wall-red);
+  background: #fff;
+}
+.wall-pager-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+.wall-pager-info {
+  font-size: .88rem;
+  color: #7a615a;
+  letter-spacing: .04em;
+  user-select: none;
+}
+.wall-pager-info strong {
+  color: var(--wall-red);
+  font-size: 1.05rem;
+  font-weight: 800;
+}

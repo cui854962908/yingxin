@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-ForumCategory = Literal["报到", "生活", "学习", "社团", "其他"]
+ForumCategory = Literal["报到", "宿舍", "生活", "学习", "社团", "其他"]
 ForumSort = Literal["latest", "hot", "open"]
 
 
@@ -33,6 +33,7 @@ class ForumAuthorBrief(BaseModel):
 
     name: str
     class_name: str
+    forum_role: Literal["teacher", "assistant"] | None = None
 
 
 class ForumPostBrief(BaseModel):
@@ -46,6 +47,7 @@ class ForumPostBrief(BaseModel):
     is_closed: bool
     is_pinned: bool
     like_count: int = 0
+    view_count: int = 0
     liked_by_me: bool = False
     created_at: datetime
     is_mine: bool = False
@@ -74,6 +76,7 @@ class ForumPostDetail(BaseModel):
     is_closed: bool
     is_pinned: bool
     like_count: int = 0
+    view_count: int = 0
     liked_by_me: bool = False
     created_at: datetime
     is_mine: bool = False

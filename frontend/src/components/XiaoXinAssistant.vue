@@ -29,6 +29,7 @@ const { lottieRef, x, y, dragging, isMobile, onPointerDown, reclampPosition } = 
 // 校园地图页 / 手机端侧边栏打开时隐藏悬浮球
 const hideOnCampus = computed(() => route.path.startsWith('/campus'))
 const hideBySidebar = computed(() => isMobile.value && sidebarOpen.value)
+const showTypingIndicator = computed(() => sending.value && !messages.value.some(m => m.role === 'xin' && !m.done))
 
 function onKeyup(e: KeyboardEvent) { if (e.key === 'Escape') closeChatAndStop() }
 
@@ -165,7 +166,7 @@ onUnmounted(() => {
           @navigate="navigateTo"
         />
         <!-- 正在输入 -->
-        <div v-if="sending" class="msg-row xin">
+        <div v-if="showTypingIndicator" class="msg-row xin">
           <div class="msg-avatar">
             <XinAvatar :size="26" />
           </div>

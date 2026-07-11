@@ -1,0 +1,98 @@
+.wall-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 15px;
+  min-height: 118px;
+  padding: 16px 18px;
+  border: 1px solid #eadfd9;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 6px 20px rgba(91, 48, 37, .045);
+  cursor: pointer;
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+}
+.wall-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--wall-accent) 34%, #eadfd9); box-shadow: 0 12px 30px rgba(91, 48, 37, .09); }
+.wall-card--pinned { background: linear-gradient(90deg, rgba(181, 52, 58, .035), #fff 32%); }
+.wall-card-icon { display: grid; width: 56px; height: 56px; place-items: center; border-radius: 50%; color: var(--wall-accent); background: var(--wall-icon-bg); }
+.wall-card-icon svg { width: 29px; height: 29px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.wall-card-body { min-width: 0; }
+.wall-card-head, .wall-card-title-row, .wall-card-foot, .wall-card-meta, .wall-card-stats { display: flex; align-items: center; }
+.wall-card-head { min-width: 0; justify-content: space-between; gap: 14px; }
+.wall-card-title-row { min-width: 0; gap: 7px; }
+.wall-card-title { overflow: hidden; margin: 0; color: #352725; font-size: 1rem; font-weight: 700; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+.wall-pin { flex: 0 0 auto; padding: 2px 7px; border-radius: 5px; color: #fff; background: #ba3038; font-size: .66rem; }
+.wall-status { flex: 0 0 auto; padding: 5px 10px; border-radius: 999px; font-size: .72rem; font-weight: 700; }
+.wall-status--await { color: #bb3940; background: #fde9e9; }
+.wall-status--solved { color: #4a8c60; background: #e9f5ec; }
+.wall-status--closed { color: #83716a; background: #f0ece9; }
+.wall-card-preview { overflow: hidden; margin: 5px 0 12px; color: #8b7972; font-size: .8rem; line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
+.wall-card-foot { justify-content: space-between; gap: 18px; color: #9b8982; font-size: .74rem; }
+.wall-card-meta { min-width: 0; gap: 8px; }
+.wall-cat { padding: 3px 9px; border: 1px solid color-mix(in srgb, var(--wall-accent) 38%, #fff); border-radius: 5px; color: var(--wall-accent); background: var(--wall-icon-bg); }
+.wall-author-dot { width: 18px; height: 18px; border: 3px solid #f7dfc9; border-radius: 50%; background: var(--wall-accent); }
+.wall-meta-separator { color: #c7b9b3; }
+.wall-card-stats { flex: 0 0 auto; gap: 22px; }
+.wall-card-stats span { display: inline-flex; min-width: 34px; align-items: center; gap: 5px; }
+.wall-card-stats svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+.wall-del-btn { position: absolute; z-index: 2; top: 8px; right: 8px; display: none; padding: 4px 8px; border: 0; border-radius: 6px; color: #a51f28; background: #fff0f0; cursor: pointer; font-size: .68rem; }
+.wall-card:hover .wall-del-btn { display: block; }
+.wall-card:has(.wall-del-btn) .wall-status { margin-right: 40px; }
+
+.wall-aside { display: flex; flex-direction: column; gap: 14px; }
+.wall-aside-card { padding: 20px; border: 1px solid #eadfd9; border-radius: 16px; background: rgba(255, 255, 255, .92); box-shadow: 0 8px 24px rgba(91, 48, 37, .055); }
+.wall-aside-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+.wall-aside-title { display: flex; align-items: center; gap: 9px; margin: 0; color: #3c2b28; font-size: 1rem; font-weight: 700; }
+.wall-aside-title > svg { width: 20px; height: 20px; fill: none; stroke: #c6383e; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.wall-aside-link { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; color: #ad9a92; background: transparent; cursor: pointer; font-size: .72rem; }
+.wall-aside-link svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.wall-aside-link:hover { color: var(--wall-red); }
+.wall-aside-tips { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.wall-aside-tips li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 9px; align-items: start; color: #796760; font-size: .78rem; line-height: 1.55; }
+.wall-aside-tips span { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; color: #a86127; background: #fff0d8; font-weight: 700; }
+.wall-aside-tags { display: flex; flex-wrap: wrap; gap: 9px 8px; }
+.wall-aside-tags button { height: 31px; padding: 0 11px; border: 1px solid #f1d2cf; border-radius: 999px; color: #bc4145; background: #fff7f5; cursor: pointer; font-size: .74rem; }
+.wall-aside-tags button:hover { border-color: #c65b60; background: #fff0ee; }
+.wall-aside-xin { position: relative; display: flex; min-height: 164px; align-items: center; overflow: hidden; background: linear-gradient(135deg, #fff 0%, #fffaf7 50%, #eef6ff 100%); }
+.wall-aside-xin::after { content: ""; position: absolute; right: -30px; bottom: -40px; width: 150px; height: 150px; border-radius: 50%; background: rgba(99, 161, 223, .08); }
+.wall-aside-xin-text { position: relative; z-index: 2; }
+.wall-xin-title { gap: 10px; }
+.wall-xin-mini { display: grid; width: 28px; height: 28px; place-items: center; filter: drop-shadow(0 3px 5px rgba(64, 158, 255, .24)); }
+.wall-aside-xin-text p { margin: 14px 0 15px; color: #675650; font-size: .82rem; line-height: 1.65; }
+.wall-aside-xin-btn { height: 34px; padding: 0 17px; border: 0; border-radius: 999px; color: #fff; background: linear-gradient(105deg, #aa2028, #e68151); cursor: pointer; font-weight: 700; font-size: .76rem; }
+.wall-aside-xin-btn:hover { filter: brightness(.94); transform: translateY(-1px); }
+.wall-aside-robot { position: absolute; z-index: 1; right: -2px; bottom: -2px; width: 118px; opacity: .62; filter: drop-shadow(0 8px 12px rgba(82, 139, 196, .14)); }
+.wall-aside-robot svg { width: 100%; overflow: visible; stroke-linecap: round; stroke-linejoin: round; }
+.robot-head { fill: #d7e8f9; stroke: #9fc3e6; stroke-width: 2.5; }
+.robot-face { fill: #759cc3; stroke: none; }
+.robot-eye { fill: #b7fff3; stroke: none; }
+.robot-smile { fill: none; stroke: #b7fff3; stroke-width: 2.5; }
+.robot-body, .robot-arm, .robot-hand { fill: #e2eefb; stroke: #b5d2ee; stroke-width: 2.3; }
+.robot-leg { fill: none; stroke: #8bb3d9; stroke-width: 5; }
+.robot-joint { fill: #71c9cf; stroke: none; }
+.wall-robot-antenna { position: absolute; z-index: 2; top: 3px; left: 58px; width: 3px; height: 16px; border-radius: 3px; background: #6aa7d5; }
+.wall-robot-antenna::before { content: ""; position: absolute; top: -4px; left: -3px; width: 9px; height: 9px; border-radius: 50%; background: #76d7d0; }
+
+.login-required-overlay { position: fixed; z-index: 10000; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(49, 34, 30, .38); backdrop-filter: blur(3px); }
+.login-required-card { position: relative; width: min(420px, 100%); padding: 42px 38px 34px; border-radius: 24px; background: #fffcf8; box-shadow: 0 22px 60px rgba(48, 27, 22, .24); text-align: center; }
+.login-required-close { position: absolute; top: 14px; right: 14px; display: grid; width: 38px; height: 38px; place-items: center; border: 0; border-radius: 50%; color: #a78f84; background: #f7eee7; cursor: pointer; }
+.login-required-close svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; }
+.login-required-brand-tag { display: inline-block; padding: 5px 14px; border-radius: 999px; color: #a51f28; background: #f8e8e6; font-size: .78rem; font-weight: 700; }
+.login-required-msg { margin: 24px 0 28px; color: #3b2925; font-size: 1.08rem; font-weight: 700; }
+.login-required-goto { width: 100%; height: 50px; border: 0; border-radius: 14px; color: #fff; background: #92171e; cursor: pointer; font-weight: 700; }
+.login-required-modal-enter-active, .login-required-modal-leave-active { transition: opacity .2s ease; }
+.login-required-modal-enter-from, .login-required-modal-leave-to { opacity: 0; }
+.forum-role-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border: 1px solid rgba(181, 52, 58, .24);
+  border-radius: 999px;
+  background: rgba(181, 52, 58, .08);
+  color: #b5343a;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
