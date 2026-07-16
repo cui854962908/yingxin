@@ -17,10 +17,18 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Step 1: rename
-    op.alter_column("students", "id_number", new_column_name="id_number_hash")
-    # Step 2: widen to fit SHA-256 hash (64 chars)
-    op.alter_column("students", "id_number_hash", type_=sa.String(64), existing_type=sa.String(32), nullable=False)
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = [c["name"] for c in inspector.get_columns("students")]
+
+    if "id_number" in columns:
+        # Step 1: rename（仅当旧列名 id_number 还存在时执行）
+        op.alter_column("students", "id_number", new_column_name="id_number_hash")
+
+    # Step 2: widen to fit SHA-256 hash (64 chars) — id_number_hash 可能已是 VARCHAR(64)
+    col_info = next((c for c in inspector.get_columns("students") if c["name"] == "id_number_hash"), None)
+    if col_info and isinstance(col_info["type"], sa.String) and col_info["type"].length and col_info["type"].length < 64:
+        op.alter_column("students", "id_number_hash", type_=sa.String(64), existing_type=sa.String(32), nullable=False)
 
 
 def downgrade() -> None:

@@ -22,7 +22,7 @@ class Student(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     student_id: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)
-    id_number_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(128), nullable=False)
     photo: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     class_name: Mapped[str] = mapped_column(String(200), nullable=False)
     dormitory: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)

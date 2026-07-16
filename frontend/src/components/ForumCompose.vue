@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { ForumCategory } from '../types/forum'
 import { FORUM_CATEGORIES, FORUM_CATEGORY_COLORS } from '../types/forum'
-import { authHeaders, useAuth } from '../composables/useAuth'
+import { authFetch, useAuth } from '../composables/useAuth'
 import { useAppNavigate } from '../composables/useAppNavigate'
 import { FORUM_MODULE_NAME } from '../constants/product'
 import '../styles/forum-mobile.css'
@@ -23,22 +23,28 @@ const fromXin = ref(false)
 const titleFocused = ref(false)
 const contentFocused = ref(false)
 
+const TITLE_MAX = 20
+
 const titleLen = computed(() => title.value.length)
 const contentLen = computed(() => content.value.length)
-const canSubmit = computed(() => title.value.trim() && content.value.trim().length >= 5 && !saving.value)
+const titleTrimLen = computed(() => title.value.trim().length)
+const contentTrimLen = computed(() => content.value.trim().length)
+const canSubmit = computed(
+  () => titleTrimLen.value >= 2 && contentTrimLen.value > 0 && !saving.value,
+)
 
 async function submit() {
   if (!canSubmit.value) {
-    if (!title.value.trim()) errMsg.value = '请填写标题'
-    else if (content.value.trim().length < 5) errMsg.value = '描述至少需要 5 个字'
+    if (!titleTrimLen.value) errMsg.value = '请填写标题'
+    else if (titleTrimLen.value < 2) errMsg.value = '标题至少 2 个字'
+    else if (!contentTrimLen.value) errMsg.value = '请填写问题描述'
     return
   }
   saving.value = true
   errMsg.value = ''
   try {
-    const res = await fetch('/api/forum/posts', {
+    const res = await authFetch('/api/forum/posts', {
       method: 'POST',
-      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: title.value.trim(),
         content: content.value.trim(),
@@ -62,7 +68,7 @@ onMounted(() => {
   }
   const raw = route.query.title
   if (typeof raw === 'string' && raw.trim()) {
-    title.value = raw.trim().slice(0, 120)
+    title.value = raw.trim().slice(0, TITLE_MAX)
     fromXin.value = true
     router.replace({ path: '/wall/new' })
   }
@@ -104,10 +110,10 @@ onMounted(() => {
         </p>
 
         <label class="fcompose-field" :class="{ focused: titleFocused }">
-          <span class="fcompose-label"><b>01</b> 问题标题 <em>必填</em></span>
+          <span class="fcompose-label"><b>01</b> 问题标题 <em>最多 {{ TITLE_MAX }} 字</em></span>
           <div class="fcompose-input-wrap">
-            <input v-model="title" maxlength="120" placeholder="用一句话概括你的问题" @focus="titleFocused = true" @blur="titleFocused = false" />
-            <span class="fcompose-count" :class="{ near: titleLen > 100 }">{{ titleLen }}<span class="fcompose-count-max"> / 120</span></span>
+            <input v-model="title" :maxlength="TITLE_MAX" placeholder="一句话概括，如：宿舍晚上几点关门" @focus="titleFocused = true" @blur="titleFocused = false" />
+            <span class="fcompose-count" :class="{ near: titleLen > TITLE_MAX - 3 }">{{ titleLen }}<span class="fcompose-count-max"> / {{ TITLE_MAX }}</span></span>
           </div>
         </label>
 
@@ -119,9 +125,9 @@ onMounted(() => {
         </fieldset>
 
         <label class="fcompose-field" :class="{ focused: contentFocused }">
-          <span class="fcompose-label"><b>03</b> 详细描述 <em>至少 5 个字</em></span>
+          <span class="fcompose-label"><b>03</b> 详细描述 <em>必填</em></span>
           <div class="fcompose-input-wrap">
-            <textarea v-model="content" rows="8" maxlength="2000" placeholder="补充事情经过、时间地点或你已经尝试过的方法，方便大家准确回答" @focus="contentFocused = true" @blur="contentFocused = false" />
+            <textarea v-model="content" rows="8" maxlength="2000" placeholder="请写清楚具体情况：时间、地点、你已经试过什么、希望了解什么。细节越多，越容易得到准确回答" @focus="contentFocused = true" @blur="contentFocused = false" />
             <span class="fcompose-count" :class="{ near: contentLen > 1700 }">{{ contentLen }}<span class="fcompose-count-max"> / 2000</span></span>
           </div>
         </label>

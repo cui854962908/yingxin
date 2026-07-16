@@ -653,6 +653,15 @@ body{font-family:'PingFang SC','Microsoft YaHei','Noto Serif SC',-apple-system,B
   transition:background .2s,border-color .2s,color .2s;
 }
 .guest-btn:hover{border-color:#b5343a;color:#b5343a;background:#fff8f8}
+.password-recovery{
+  margin-top:14px;font-size:.78rem;color:#8b7b65;text-align:center;line-height:1.65;
+}
+.password-recovery-contact{display:block;margin-top:4px;color:#5c4f42;font-weight:500}
+.password-recovery-phone{
+  margin-left:6px;color:#b5343a;font-weight:600;text-decoration:none;
+  font-family:'SF Mono','Consolas',monospace;letter-spacing:.02em;
+}
+.password-recovery-phone:hover{text-decoration:underline}
 .footer-tip{margin-top:24px;font-size:.76rem;color:#c4b8a8;text-align:center;line-height:1.6}
 
 /* 平板竖屏 */

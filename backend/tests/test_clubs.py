@@ -236,13 +236,13 @@ class TestClubAdminOwnership:
 
     @pytest.fixture
     def club_admin_headers(self, db):
-        from app.core.security import create_access_token, hash_id_number
+        from app.core.security import DEFAULT_INITIAL_PASSWORD, create_access_token, hash_password
         from app.models.student import Student
 
         s = Student(
             name="社团长",
             student_id="20260909999",
-            id_number_hash=hash_id_number("410105200509010099"),
+            password_hash=hash_password(DEFAULT_INITIAL_PASSWORD),
             class_name="动科2026-1班",
             role="club_admin",
         )

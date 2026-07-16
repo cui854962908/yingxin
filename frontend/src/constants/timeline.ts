@@ -1,4 +1,4 @@
-// 迎新时间轴 & 功能入口 — 占位数据，后续可替换为 /api/timeline 接口
+// 迎新时间轴 — 依据 2026~2027 学年校历
 export interface Milestone {
   id: string
   date: string
@@ -11,20 +11,18 @@ export interface ServiceCard {
   link?: string  // 可选外部跳转链接，有则新标签页打开
 }
 
-// ===== 特殊事件节点 =====
-export const MILESTONES: Milestone[] = [
-  { id: 'admit',     date: '2026-07-20', title: '录取结果',    icon: 'letter' },
-  { id: 'fee',       date: '2026-08-20', title: '学费缴纳',    icon: 'card' },
-  { id: 'dorm',      date: '2026-08-28', title: '宿舍选择',    icon: 'home' },
-  { id: 'health',    date: '2026-09-01', title: '入学体检',    icon: 'heart' },
-  { id: 'uniform',   date: '2026-09-04', title: '军训服领取',  icon: 'shirt' },
-  { id: 'ceremony',  date: '2026-09-06', title: '开学典礼',    icon: 'star' },
-  { id: 'military',  date: '2026-09-08', title: '军训开始',    icon: 'flag' },
-  { id: 'parade',    date: '2026-09-20', title: '军训汇演',    icon: 'check' },
-  { id: 'class',     date: '2026-09-22', title: '正式上课',    icon: 'book' },
-]
+/** 2026 级新生报到日（校历备注第 2 条） */
+export const REGISTER_DATE = '2026-09-12'
 
-export const REGISTER_DATE = '2026-09-06'
+// ===== 迎新关键节点（2026 级新生） =====
+export const MILESTONES: Milestone[] = [
+  { id: 'fee',        date: '2026-08-25', title: '学费缴纳',      icon: 'card' },
+  { id: 'dorm',       date: '2026-09-01', title: '宿舍准备',      icon: 'home' },
+  { id: 'register',   date: '2026-09-12', title: '新生报到',      icon: 'letter' },
+  { id: 'orient',     date: '2026-09-14', title: '入学教育·军训', icon: 'flag' },
+  { id: 'orient-end', date: '2026-09-30', title: '军训结束',      icon: 'medal' },
+  { id: 'class',      date: '2026-10-08', title: '正式上课',      icon: 'book' },
+]
 
 // ===== 功能入口 =====
 export const SERVICE_CARDS: ServiceCard[] = [
@@ -34,6 +32,6 @@ export const SERVICE_CARDS: ServiceCard[] = [
   { id: 'course',  icon: 'course',  title: '选课系统',   desc: '教务管理系统选课与课表', link: 'http://jiaowu.hnuahe.edu.cn/' },
   { id: 'map',     icon: 'map',     title: '校园导览',   desc: '教学楼、食堂、宿舍位置' },
   { id: 'web',     icon: 'web',     title: '学校官网',   desc: '河南牧业经济学院网上服务大厅', link: 'http://ehall.hnuahe.edu.cn/' },
-  { id: 'tips',    icon: 'tips',    title: '新生攻略',   desc: '校园生活指南、快递地址、食堂分布' },
+  { id: 'tips',    icon: 'tips',    title: '新生攻略',   desc: '在校常用 App 图标一览' },
   { id: 'ai',      icon: 'ai',      title: 'AI迎新助手', desc: '基于迎新知识库的智能问答，答不上可去牧院新生说' },
 ]

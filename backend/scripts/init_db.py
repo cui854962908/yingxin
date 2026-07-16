@@ -12,31 +12,28 @@ from app.db.database import SessionLocal
 from app.models.announcement import Announcement
 from app.models.faq import FAQ
 from app.models.student import Student
-from app.core.security import hash_id_number
+from app.core.security import DEFAULT_INITIAL_PASSWORD, hash_password
 
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from faq_operational_seed import OPERATIONAL_FAQ  # noqa: E402
 from faq_sort_order import sort_order_for  # noqa: E402
+from guide_announcement_seed import GUIDE_ANNOUNCEMENTS, TIPS_ANNOUNCEMENTS  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_ADMIN_ID_NUMBER = "000000000000000000"
+def _default_password_hash() -> str:
+    return hash_password(DEFAULT_INITIAL_PASSWORD)
 
 
 def _build_admin_seed() -> dict:
-    id_number = os.getenv("ADMIN_SEED_ID_NUMBER", "").strip() or _DEFAULT_ADMIN_ID_NUMBER
     name = os.getenv("ADMIN_SEED_NAME", "崔志远").strip() or "崔志远"
     student_id = os.getenv("ADMIN_SEED_STUDENT_ID", "admin").strip() or "admin"
-    if id_number == _DEFAULT_ADMIN_ID_NUMBER:
-        logger.warning(
-            "管理员种子使用默认身份证；生产部署请设置环境变量 ADMIN_SEED_ID_NUMBER"
-        )
     return {
         "name": name,
         "student_id": student_id,
-        "id_number_hash": hash_id_number(id_number),
+        "password_hash": _default_password_hash(),
         "class_name": "系统管理",
         "role": "admin",
     }
@@ -47,7 +44,7 @@ DEMO_STUDENTS = [
     {
         "name": "张三",
         "student_id": "20260901001",
-        "id_number_hash": hash_id_number("410105200509010011"),
+        "password_hash": _default_password_hash(),
         "class_name": "计算机科学与技术2026-1班",
         "dormitory": "北苑3号楼412室",
         "advisor_name": "李明辉",
@@ -62,7 +59,7 @@ DEMO_STUDENTS = [
     {
         "name": "李思雨",
         "student_id": "20260902001",
-        "id_number_hash": hash_id_number("410105200510150022"),
+        "password_hash": _default_password_hash(),
         "class_name": "软件工程2026-2班",
         "dormitory": "南苑5号楼608室",
         "advisor_name": "陈雅婷",
@@ -77,7 +74,7 @@ DEMO_STUDENTS = [
     {
         "name": "王浩然",
         "student_id": "20260903001",
-        "id_number_hash": hash_id_number("410105200508200033"),
+        "password_hash": _default_password_hash(),
         "class_name": "数据科学与大数据2026-1班",
         "dormitory": "西苑2号楼315室",
         "advisor_name": "张丽",
@@ -92,7 +89,7 @@ DEMO_STUDENTS = [
     {
         "name": "刘子涵",
         "student_id": "20260904001",
-        "id_number_hash": hash_id_number("410105200509050044"),
+        "password_hash": _default_password_hash(),
         "class_name": "物联网工程2026-6班",
         "dormitory": "北苑12号楼419室",
         "advisor_name": "王子钰",
@@ -164,23 +161,23 @@ DEMO_FAQ = [
     {
         "question": "军训什么时候开始？军训服装怎么领取？",
         "answer": (
-            "军训为期两周，9月初正式开始。具体日期以学校通知为准。\n\n"
-            "军训服装领取：8月28日至8月30日在体育馆一楼发放，"
-            "需携带录取通知书或校园卡。含迷彩服一套、帽子一顶、腰带一条、解放鞋一双。"
+            "依据 2026~2027 学年校历：2026 级新生 9 月 12 日报到，"
+            "9 月 14 日至 9 月 30 日为入学教育和军训，10 月 8 日正式上课。\n\n"
+            "军训服装领取时间与地点以学院通知为准，请报到后关注班级群消息。"
         ),
-        "keywords": "军训,军训时间,军训服装,军训服,迷彩服,体育馆,领取服装",
+        "keywords": "军训,军训时间,军训安排,入学教育,9月12,9月14,10月8,军训服装,迷彩服",
         "category": "新生军训",
     },
     {
         "question": "新生报到需要带什么材料？报到流程是什么？",
         "answer": (
-            "报到必备材料：\n"
-            "① 录取通知书原件 → ② 身份证原件及复印件2份 → "
-            "③ 高考准考证 → ④ 近期一寸免冠照片4张（蓝底）→ "
-            "⑤ 学生档案（部分省份由招办统一邮寄）→ ⑥ 团员档案/党员组织关系介绍信\n\n"
-            "报到流程：校门口签到 → 学院报到点登记 → 领取校园卡 → 宿舍入住 → 缴纳费用"
+            "报到时请携带：录取通知书、身份证原件及复印件、高考准考证、"
+            "本人纸质档案（密封件）、一寸免冠照片若干（建议 5 张，以学院通知为准）；"
+            "团员须带组织关系材料，党员另备介绍信。\n\n"
+            "建议流程：学院报到处签到 → 提交材料登记 → 领取校园卡 → 宿舍入住 → 完成缴费。"
+            "具体以录取通知书及学院现场指引为准。"
         ),
-        "keywords": "报到,报到材料,报到流程,新生报到,入学材料,证件,录取通知书",
+        "keywords": "报到,报到材料,报到流程,新生报到,入学材料,证件,录取通知书,档案",
         "category": "新生报到",
     },
     {
@@ -279,7 +276,7 @@ DEMO_FAQ = [
         "question": "学校三个校区地址分别在哪里？",
         "answer": (
             "河南牧业经济学院现有三个校区：\n"
-            "① 龙子湖校区：郑州市郑东新区龙子湖北路6号（学校主校区）；\n"
+            "① 龙子湖校区：郑州市郑东新区龙子湖北路6号（学校主校区，紧邻地铁1号线文苑北路站）；\n"
             "② 英才校区：郑州市惠济区英才街146号（信息工程学院等在此办学）；\n"
             "③ 北林校区：郑州市金水区北林路16号。\n\n"
             "报到与日常上课地点以录取通知书和学院通知为准，出行前建议用地图 App 确认具体门牌与入校路线。"
@@ -292,8 +289,9 @@ DEMO_FAQ = [
         "answer": (
             "校训：尚严崇实，善知敏行。\n\n"
             "校庆日：9月19日。\n\n"
-            "学校秉承「区域性、行业性、开放型、应用型」办学定位，"
-            "由原郑州牧业工程高等专科学校（1957年建校）与河南商业高等专科学校（1960年建校）于2013年合并组建。"
+            "学校由原郑州牧业工程高等专科学校（1957年建校）与河南商业高等专科学校（1960年建校）于2013年合并组建，"
+            "秉承「区域性、行业性、开放型、应用型」办学定位。"
+            "2021年通过教育部本科教学工作合格评估；2024年获批河南省硕士学位立项建设单位。"
         ),
         "keywords": "校训,校庆,尚严崇实,善知敏行,9月19,校史",
         "category": "认识牧院",
@@ -328,36 +326,59 @@ DEMO_FAQ = [
     },
 ]
 
+_OBSOLETE_FAQ_QUESTIONS = (
+    "新生报到需要带什么材料？",
+)
+
+_OBSOLETE_TIPS_TITLES = (
+    "App 一览",
+    "教务与学籍",
+    "课堂与网课",
+    "校园服务与生活",
+    "活动、体育与第二课堂",
+    "其它常用工具",
+)
+
 # ── 校园公告 ──
+_OBSOLETE_ANNOUNCEMENT_TITLES = (
+    "2026级新生入学教育安排通知",
+    "关于2026级新生体检的通知",
+    "关于新生军训服装领取的通知",
+)
+
 DEMO_ANNOUNCEMENTS = [
     {
-        "title": "2026级新生入学教育安排通知",
+        "title": "2026级新生入学教育与军训安排",
+        "category": "campus",
         "content": (
-            "2026级新生入学教育将于9月1日至9月5日在校礼堂举行，请全体新生按时参加。"
-            "内容包括：校史校情介绍、安全教育、心理健康教育、专业导论等。"
-            "具体日程安排请关注各学院通知公告栏。"
+            "依据校历，2026 级新生 9 月 12 日报到，"
+            "9 月 14 日至 9 月 30 日为入学教育和军训，10 月 8 日正式上课。"
+            "请按时到校，具体日程以学院通知为准。"
         ),
         "date": date(2026, 8, 20),
     },
     {
-        "title": "关于2026级新生体检的通知",
+        "title": "2026级新生报到提醒",
+        "category": "campus",
         "content": (
-            "新生体检定于9月6日至9月8日，地点为校医院。请携带身份证和校园卡，"
-            "空腹参加抽血项目。各学院分批次前往，具体时间安排见学院通知。"
+            "2026 级新生报到日期为 9 月 12 日（星期六）。"
+            "请携带录取通知书、身份证等材料，按学院指引完成报到。"
+            "老生 9 月 5 日至 6 日返校报到，9 月 7 日上课，请勿混淆。"
         ),
         "date": date(2026, 8, 25),
     },
     {
-        "title": "关于新生军训服装领取的通知",
+        "title": "2026级新生体检安排",
+        "category": "campus",
         "content": (
-            "军训服装将于8月28日至8月30日在体育馆一楼发放。请携带录取通知书或校园卡，"
-            "按学院分批领取。服装含迷彩服一套、帽子一顶、腰带一条、解放鞋一双。"
-            "如有尺码不合适可在8月31日统一调换。"
+            "新生体检时间与批次由学院统一安排，报到后请关注班级群与学院通知。"
+            "体检一般需携带身份证，部分项目需空腹，请提前做好准备。"
         ),
         "date": date(2026, 8, 26),
     },
     {
         "title": "2026年秋季学期选课通知",
+        "category": "campus",
         "content": (
             "2026年秋季学期选课时间与安排以辅导员通知为准。"
             "请在「喜鹊儿」APP 完成选课，并及时关注班级群与学院通知。"
@@ -366,6 +387,10 @@ DEMO_ANNOUNCEMENTS = [
         "date": date(2026, 8, 22),
     },
 ]
+
+_ALL_ANNOUNCEMENT_SEEDS = (
+    [*DEMO_ANNOUNCEMENTS, *GUIDE_ANNOUNCEMENTS, *TIPS_ANNOUNCEMENTS]
+)
 
 
 def _ensure_rows(
@@ -384,6 +409,14 @@ def _ensure_rows(
 
 
 def ensure_admin(db: Session) -> None:
+    existing = db.scalars(select(Student).where(Student.role == "admin")).first()
+    if existing:
+        logger.info(
+            "已有管理员账号 %s（student_id=%s），跳过 admin 种子",
+            existing.name,
+            existing.student_id,
+        )
+        return
     _ensure_rows(db, Student, "student_id", [_build_admin_seed()])
 
 
@@ -392,7 +425,11 @@ def ensure_students(db: Session) -> None:
 
 
 def ensure_faq(db: Session) -> None:
-    """种子 FAQ：仅新增或更新，不删除库内已有条目。"""
+    """种子 FAQ：仅新增或更新，不删除库内已有条目（废弃问法除外）。"""
+    for q in _OBSOLETE_FAQ_QUESTIONS:
+        row = db.scalars(select(FAQ).where(FAQ.question == q)).first()
+        if row:
+            db.delete(row)
     for d in [*DEMO_FAQ, *OPERATIONAL_FAQ]:
         payload = dict(d)
         q = payload["question"]
@@ -408,7 +445,19 @@ def ensure_faq(db: Session) -> None:
 
 
 def ensure_announcements(db: Session) -> None:
-    _ensure_rows(db, Announcement, "title", DEMO_ANNOUNCEMENTS)
+    """种子公告：按标题新增或更新正文，并清理已废弃的演示标题。"""
+    for title in (*_OBSOLETE_ANNOUNCEMENT_TITLES, *_OBSOLETE_TIPS_TITLES):
+        row = db.scalars(select(Announcement).where(Announcement.title == title)).first()
+        if row:
+            db.delete(row)
+    for d in _ALL_ANNOUNCEMENT_SEEDS:
+        row = db.scalars(select(Announcement).where(Announcement.title == d["title"])).first()
+        if row:
+            row.content = d["content"]
+            row.date = d["date"]
+            row.category = d.get("category")
+        else:
+            db.add(Announcement(**d))
 
 
 def main() -> None:
@@ -425,7 +474,7 @@ def main() -> None:
         print(f"  管理员：student_id={admin_row['student_id']}（{admin_row['name']}）")
         print(f"  学生：{len(DEMO_STUDENTS)} 人")
         print(f"  FAQ：种子 {len(DEMO_FAQ) + len(OPERATIONAL_FAQ)} 条，库内合计 {faq_total} 条")
-        print(f"  公告：{len(DEMO_ANNOUNCEMENTS)} 条")
+        print(f"  公告：种子 {len(_ALL_ANNOUNCEMENT_SEEDS)} 条（报到须知 {len(GUIDE_ANNOUNCEMENTS)}、新生攻略 {len(TIPS_ANNOUNCEMENTS)}）")
 
         try:
             from app.crud.document import rebuild_documents_best_effort

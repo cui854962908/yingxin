@@ -14,10 +14,10 @@ export const INTRO_WIKI_CATEGORY = 'intro_campus_wiki'
 export const INTRO_WIKI_HERO_IMAGE = '/campus-official/hero-longzi-gate.webp'
 export const INTRO_WIKI_OFFICIAL_URL = 'https://www.hnuahe.edu.cn'
 
-/** 首页亮点数据 */
+/** 首页亮点数据（据学校公开资料，2026年） */
 export const INTRO_WIKI_STATS = [
   { label: '办学渊源', value: '1957年' },
-  { label: '本科专业', value: '53个' },
+  { label: '本科专业', value: '57个' },
   { label: '全日制在校生', value: '3万余' },
 ] as const
 
@@ -83,7 +83,7 @@ export const INTRO_CAMPUSES: IntroCampusConfig[] = [
     overview:
       '龙子湖校区位于郑州市郑东新区龙子湖北路6号，为河南牧业经济学院主校区。2013年两校合并组建本科院校后，学校行政、教务与大部分本科专业的日常教学、科研与管理工作在此集中开展。' +
       '校区规划现代开阔，与龙子湖高校园区、龙子湖湿地公园相邻，周边高校与商业配套成熟，学习、实习与生活条件便利。' +
-      '新生报到、学籍注册、大型校级活动多在此校区进行，是了解牧院整体面貌的首选入口。',
+      '学校行政、学籍注册与大型校级活动多在此校区开展；具体报到校区以录取通知书与学院通知为准。',
     features: [
       '学校行政与综合教学功能最集中的校区，校级职能部门与主要教学单位多在此办公',
       '图书馆、综合实验楼、体育场馆、学生公寓与双餐厅（醒园、随园）等核心资源配套齐全',
@@ -102,7 +102,7 @@ export const INTRO_CAMPUSES: IntroCampusConfig[] = [
       '校医院与健康服务',
     ],
     transport:
-      '可乘郑州地铁、公交至龙子湖高校园区，再步行或骑行至龙子湖北路6号。郑东新区道路较宽，高峰时段仍可能拥堵。' +
+      '可乘郑州地铁 1 号线至文苑北路站，或乘公交至龙子湖高校园区，再步行或骑行至龙子湖北路 6 号。郑东新区道路较宽，高峰时段仍可能拥堵。' +
       '报到季建议使用地图 App 搜索「河南牧业经济学院龙子湖校区」，结合实时路况选择地铁或公交；大件行李较多时可考虑出租车/网约车直达校门。',
     gallery: [
       { src: '/campus-official/hero-longzi-gate.webp', caption: '校区校门' },
@@ -131,7 +131,7 @@ export const INTRO_CAMPUSES: IntroCampusConfig[] = [
       '学子广场、风景湖、教学楼群与实验楼共同构成日常学习动线，周边高校聚集，餐饮、购物与公交出行较为方便。',
     features: [
       '商科与应用型人才培养的重要基地，经管类学科在此有长期办学传统',
-      '信息工程学院日常教学、60 余个实验实训室及华为 ICT 学院等产教平台主要在此',
+      '信息工程学院日常教学、六十余个实验实训室及华为 ICT 学院等产教平台主要在此',
       '学子广场是集会、社团活动与课余交流的核心场所，风景湖为校园标志性水景',
       'A/B 栋教学楼、综合实验楼与图书馆支撑日常上课、上机与自习需求',
       '惠济区英才街沿线高校与生活配套丰富，适合新生快速熟悉校园周边',
@@ -301,7 +301,7 @@ export const INTRO_COLLEGES: IntroCollegeConfig[] = [
     shortName: '信工',
     tagline: '河南省特色化示范性软件学院',
     summary:
-      '位于英才校区，开设软件工程、物联网工程、数据科学与大数据技术、数字媒体技术 4 个本科专业，建有 60 余个实验实训室，与华为共建 ICT 学院，注重项目驱动教学与学科竞赛，培养能落地、能协作的信息技术应用型人才。',
+      '位于英才校区，强化「信息技术+畜牧」交叉培养，开设软件工程、物联网工程、数据科学与大数据技术、数字媒体技术 4 个本科专业，建有六十余个实验实训室，与华为共建 ICT 学院，注重项目驱动教学与学科竞赛。',
     coverImage: '/campus-official/campus-yingcai-lake.webp',
     officialUrl: 'https://xxdz.hnuahe.edu.cn',
     stats: [

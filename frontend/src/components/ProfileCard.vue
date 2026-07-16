@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, inject, ref, type Ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { studentGradeBadge } from '../utils/gradeLabel'
 import { GUEST_STUDENT, isGuestRole, readStoredStudent } from '../composables/useGuest'
 import { GUEST_PROFILE_HINT, GUEST_PROFILE_STATUS } from '../constants/product'
 import type { Student } from '../types/student'
 
+const router = useRouter()
 const studentRef = inject<Ref<Student | null>>('student', ref(null))
 
 const student = computed(() => {
@@ -18,6 +20,10 @@ const student = computed(() => {
 const isGuest = computed(() => isGuestRole(student.value.role))
 const avatarChar = computed(() => (isGuest.value ? '访' : student.value.name?.charAt(0) || ''))
 const gradeBadge = computed(() => (isGuest.value ? '' : studentGradeBadge(student.value.student_id || '')))
+
+function goChangePassword() {
+  router.push('/account/password')
+}
 </script>
 
 <template>
@@ -77,6 +83,8 @@ const gradeBadge = computed(() => (isGuest.value ? '' : studentGradeBadge(studen
           <span class="ctc-phone">{{ student.assistants?.[0]?.phone || '' }}</span>
         </div>
       </div>
+
+      <button type="button" class="pwd-link" @click="goChangePassword">修改密码</button>
     </template>
   </div>
 </template>
@@ -168,6 +176,27 @@ const gradeBadge = computed(() => (isGuest.value ? '' : studentGradeBadge(studen
 .ctc-name small { font-size: .76rem; color: #a09888; font-weight: 400 }
 .ctc-sep { color: #d4c8b0; font-weight: 400 }
 .ctc-phone { font-size: .82rem; color: #8b7b65; font-family: 'SF Mono', 'Consolas', monospace }
+
+.pwd-link {
+  align-self: flex-start;
+  margin-top: 14px;
+  height: 36px;
+  padding: 0 16px;
+  border: 1.5px solid rgba(181,52,58,.3);
+  border-radius: 8px;
+  background: #fff8f8;
+  color: #b5343a;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .2s, border-color .2s;
+}
+.pwd-link:hover {
+  background: #fef0f0;
+  border-color: #b5343a;
+}
 
 @media(max-width:768px){
   .card{padding:22px;justify-content:flex-start}

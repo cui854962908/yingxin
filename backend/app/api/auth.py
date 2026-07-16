@@ -6,8 +6,8 @@ from app.core.response import fail_envelope, ok_envelope, verify_ok
 from app.core.security import create_access_token, get_current_payload
 from app.db.database import get_db
 from app.models.student import Student
-from app.schemas.auth import LogoutRequest, StudentVerifyRequest, TokenRefreshRequest
-from app.services.auth_service import verify_student_login
+from app.schemas.auth import ChangePasswordRequest, LogoutRequest, StudentVerifyRequest, TokenRefreshRequest
+from app.services.auth_service import change_student_password, verify_student_login
 from app.services.token_service import rotate_refresh_token, revoke_refresh_token
 from app.services import login_guard
 
@@ -31,7 +31,7 @@ def verify_student(body: StudentVerifyRequest, db: Session = Depends(get_db)):
         db,
         name=body.name.strip(),
         student_id=sid,
-        id_number=body.id_number.strip(),
+        password=body.password,
     )
     if not result:
         remaining = login_guard.record_failure(sid)
@@ -90,6 +90,28 @@ def logout(body: LogoutRequest, db: Session = Depends(get_db)):
         revoke_refresh_token(db, raw_token=body.refresh_token.strip())
     db.commit()
     return ok_envelope(message="已登出")
+
+
+@router.post("/auth/change-password")
+def change_password(
+    body: ChangePasswordRequest,
+    payload: dict = Depends(get_current_payload),
+    db: Session = Depends(get_db),
+):
+    sid = str(payload.get("sub", "")).strip()
+    if not sid:
+        return fail_envelope(message="未登录", data=None)
+    try:
+        change_student_password(
+            db,
+            student_id=sid,
+            current_password=body.current_password,
+            new_password=body.new_password,
+        )
+        db.commit()
+        return ok_envelope(message="密码已更新", data=None)
+    except ValueError as exc:
+        return fail_envelope(message=str(exc), data=None)
 
 
 @router.get("/auth/me")

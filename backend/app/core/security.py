@@ -3,18 +3,25 @@ from datetime import datetime, timedelta, timezone
 import time
 from typing import Any, Dict, Optional
 
+import bcrypt
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
 from app.core.config import settings
 
+DEFAULT_INITIAL_PASSWORD = "01234567"
 
-def hash_id_number(id_number: str) -> str:
-    """对身份证号做 SHA-256 加盐哈希，不可逆。"""
-    raw = id_number.strip()
-    salt = settings.ID_NUMBER_SALT.encode("utf-8")
-    return hashlib.sha256(raw.encode("utf-8") + salt).hexdigest()
+
+def hash_password(plain: str) -> str:
+    return bcrypt.hashpw(plain.strip().encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(plain: str, password_hash: str) -> bool:
+    try:
+        return bcrypt.checkpw(plain.strip().encode("utf-8"), password_hash.encode("utf-8"))
+    except ValueError:
+        return False
 
 http_bearer = HTTPBearer(auto_error=False)
 optional_http_bearer = HTTPBearer(auto_error=False)

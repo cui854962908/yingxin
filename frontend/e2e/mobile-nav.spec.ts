@@ -13,6 +13,7 @@ test.describe('移动端底栏导航', () => {
           success: true,
           message: '欢迎你，测试同学！',
           token: 'e2e-mobile-token',
+          refresh_token: 'e2e-mobile-refresh-mock',
           data: {
             name: '测试同学',
             student_id: '20260901001',
@@ -72,6 +73,7 @@ test.describe('移动端底栏导航', () => {
   test('底栏可直达 FAQ 页', async ({ page }) => {
     await page.getByPlaceholder('请输入你的姓名').fill('测试同学')
     await page.getByPlaceholder('请输入你的学号').fill('20260901001')
+    await page.getByPlaceholder('请输入登录密码').fill('01234567')
     await page.getByRole('button', { name: /验.*登.*录/ }).click()
 
     await expect(page.getByRole('heading', { name: '测试同学' })).toBeVisible({ timeout: 10000 })

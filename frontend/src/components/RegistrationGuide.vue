@@ -88,6 +88,10 @@ async function saveEdit(id: string) {
   } finally { saving.value = false }
 }
 
+function contentUsesHtml(text: string): boolean {
+  return /<[a-z][\s\S]*>/i.test(text)
+}
+
 onMounted(load)
 </script>
 
@@ -193,7 +197,12 @@ onMounted(load)
           <div class="guide-card-step">{{ idx + 1 }}</div>
           <div class="guide-card-body">
             <h3 class="guide-card-title">{{ item.title }}</h3>
-            <p class="guide-card-content">{{ item.content }}</p>
+            <div
+              v-if="contentUsesHtml(item.content)"
+              class="guide-card-content guide-card-content--html"
+              v-html="item.content"
+            />
+            <p v-else class="guide-card-content">{{ item.content }}</p>
           </div>
         </template>
       </div>
@@ -272,6 +281,19 @@ onMounted(load)
 .guide-card-body { flex: 1; min-width: 0 }
 .guide-card-title { font-size: .95rem; font-weight: 600; color: #3c3028; margin: 0 0 6px; line-height: 1.45 }
 .guide-card-content { font-size: .86rem; color: #5c5040; line-height: 1.7; white-space: pre-line; margin: 0 }
+.guide-card-content--html { white-space: normal }
+.guide-card-content--html :deep(p) { margin: 0 0 .65em }
+.guide-card-content--html :deep(p:last-child) { margin-bottom: 0 }
+.guide-card-content--html :deep(.guide-inline-img) {
+  display: block;
+  width: min(100%, 300px);
+  height: auto;
+  margin: 12px auto 0;
+  border-radius: 16px;
+  border: 1px solid #f2ebe0;
+  box-shadow: 0 6px 24px rgba(60, 48, 40, 0.08);
+  object-fit: contain;
+}
 
 /* 编辑面板 */
 .guide-edit { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 16px }
@@ -354,6 +376,10 @@ onMounted(load)
   .guide-card-step { width: 28px; height: 28px; font-size: .76rem; border-radius: 8px }
   .guide-card-title { font-size: .9rem }
   .guide-card-content { font-size: .84rem }
+  .guide-card-content--html :deep(.guide-inline-img) {
+    width: min(100%, 260px);
+    margin-top: 10px;
+  }
 
   .guide-edit { padding: 14px; gap: 14px }
   .guide-edit-title,

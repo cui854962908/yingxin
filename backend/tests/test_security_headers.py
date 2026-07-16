@@ -43,7 +43,7 @@ class TestSecurityHeaders:
 
     def test_security_headers_on_post(self):
         """POST 响应也应带安全头。"""
-        r = _client().post("/api/verify", json={"name": "", "student_id": "", "id_number": ""})
+        r = _client().post("/api/verify", json={"name": "", "student_id": "", "password": ""})
         for name, expected in HEADER_CHECKS:
             assert r.headers.get(name) == expected, f"{name} 缺失或值不符"
 
@@ -91,7 +91,7 @@ class TestUploadSizeLimit:
         r = _client().post(
             "/api/verify",
             headers={"Content-Length": str(MAX_BODY_BYTES + 1)},
-            json={"name": "", "student_id": "", "id_number": ""},
+            json={"name": "", "student_id": "", "password": ""},
         )
         # 不应该是 413
         assert r.status_code != 413

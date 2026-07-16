@@ -11,12 +11,17 @@ class StudentVerifyRequest(BaseModel):
         description="学号",
         validation_alias=AliasChoices("student_id", "studentId"),
     )
-    id_number: str = Field(
-        default="",
-        min_length=0,
-        description="身份证号",
-        validation_alias=AliasChoices("id_number", "idNumber"),
+    password: str = Field(
+        ...,
+        min_length=1,
+        description="登录密码",
+        validation_alias=AliasChoices("password", "pwd"),
     )
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., min_length=1, description="当前密码")
+    new_password: str = Field(..., min_length=8, max_length=64, description="新密码")
 
 
 class TokenRefreshRequest(BaseModel):

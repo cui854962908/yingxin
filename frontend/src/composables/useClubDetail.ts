@@ -83,8 +83,12 @@ const activityPhotosValue = () => {
 }
 
 async function loadClub() {
+  const id = route.params.id as string
+  if (!id) {
+    loading.value = false
+    return
+  }
   try {
-    const id = route.params.id as string
     const res = await fetch(`/api/clubs/${id}`)
     const d = await res.json()
     if (d.success) club.value = d.data
@@ -275,8 +279,8 @@ async function copyJoinQQ() {
 }
 
 onMounted(() => {
-  if (isNew && !isAdmin.value && !isClubAdmin.value) {
-    router.replace('/clubs')
+  if (isNew) {
+    if (!isAdmin.value && !isClubAdmin.value) router.replace('/clubs')
     return
   }
   loadClub()

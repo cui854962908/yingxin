@@ -9,17 +9,19 @@
 | 角色 | `students.role` | 登录方式 | 典型能力 |
 |------|-----------------|----------|----------|
 | 游客 | — | 无需登录 | 浏览认识牧院、FAQ、公告、**牧院新生说**列表（**不可用小信**） |
-| 新生 | `student` | **`POST /api/verify`** 三要素 | 个人信息、小信、**牧院新生说**发帖/回答 |
+| 新生 | `student` | **`POST /api/verify`** 姓名+学号+密码 | 个人信息、小信、**牧院新生说**发帖/回答 |
 | 系统管理员 | `admin` | 同上（库中 `student_id` 默认 **`admin`**） | FAQ / 公告 / 社团 / 论坛 moderation |
 | 社团管理员 | `club_admin` | 同上 | 仅维护**名下社团** |
 
 **无独立 `/api/admin/login`**：管理员与学生共用 **`POST /api/verify`**，JWT 内 `role` 区分权限。
 
-默认管理员（`init_db.py` 种子；**生产务必设置 `ADMIN_SEED_ID_NUMBER`**，勿用默认 18 个 0）：
+默认管理员（`init_db.py` 种子；**生产务必用 `manage_student_account.py --reset-password` 修改初始密码**）：
 
 ```json
-{ "name": "系统管理员", "student_id": "admin", "role": "admin" }
+{ "name": "崔志远", "student_id": "admin", "role": "admin" }
 ```
+
+初始密码默认为 `01234567`（与演示学生相同）。
 
 ---
 
@@ -96,8 +98,7 @@ uv run python -c "from app.crud.document import rebuild_documents_best_effort; r
 |----|------|
 | `JWT_SECRET_KEY` | ≥32 位随机串 |
 | `REQUIRE_SECURE_SETTINGS` | **`true`** |
-| `ADMIN_SEED_ID_NUMBER` | 生产部署前设置（`init_db` 管理员身份证；勿用默认 18 个 0） |
-| `ID_NUMBER_SALT` | 独立随机盐，非默认值 |
+| 管理员/新生初始密码 | 部署后批量通知改密，或用 `manage_student_account.py --reset-password` |
 | `DEEPSEEK_API_KEY` | 有效，小信可用 |
 | `BACKEND_CORS_ORIGINS` | 仅正式前端域名 |
 | 新生名单 | 运维写库 / 脚本，**无 Web 导入** |

@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from fastapi.testclient import TestClient
 
 from app.db.database import Base, get_db
-from app.core.security import create_access_token, hash_id_number
+from app.core.security import create_access_token, hash_password, DEFAULT_INITIAL_PASSWORD
 from app.models.student import Student
 
 # SQLite 临时文件库（不依赖 PostgreSQL）。:memory: 在不同连接间不共享，FastAPI
@@ -89,7 +89,7 @@ def seed_student(db: Session) -> Student:
     s = Student(
         name="张三",
         student_id="20260901001",
-        id_number_hash=hash_id_number("410105200509010011"),
+        password_hash=hash_password(DEFAULT_INITIAL_PASSWORD),
         class_name="计算机科学2026-1班",
         role="student",
     )
@@ -104,7 +104,7 @@ def seed_admin(db: Session) -> Student:
     a = Student(
         name="管理员",
         student_id="admin",
-        id_number_hash=hash_id_number("410105199001010000"),
+        password_hash=hash_password(DEFAULT_INITIAL_PASSWORD),
         class_name="信息工程学院",
         role="admin",
     )

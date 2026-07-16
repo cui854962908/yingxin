@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { authHeaders, useAuth } from '../composables/useAuth'
+import { authFetch, optionalAuthFetch, useAuth } from '../composables/useAuth'
 import type { ForumCategory, ForumPostBrief } from '../types/forum'
 import AppSpinner from './AppSpinner.vue'
 import ForumQuestionCard from './forum-wall/ForumQuestionCard.vue'
@@ -41,8 +41,11 @@ async function load() {
     if (category.value) params.set('category', category.value)
     if (searchQ.value.trim()) params.set('q', searchQ.value.trim())
     if (mineOnly.value) params.set('mine', 'true')
-    const headers = token.value ? authHeaders() : {}
-    const response = await fetch(`/api/forum/posts?${params}`, { headers })
+    const response = await optionalAuthFetch(
+      `/api/forum/posts?${params}`,
+      {},
+      !mineOnly.value,
+    )
     const result = await response.json()
     if (result.success) {
       items.value = result.data.items
@@ -104,10 +107,7 @@ async function deletePost(item: ForumPostBrief, event: Event) {
     ? '删除后所有回答也将一并移除，确定删除这条提问吗？'
     : '确定删除这条提问吗？'
   if (!confirm(message)) return
-  const response = await fetch(`/api/forum/posts/${item.id}`, {
-    method: 'DELETE',
-    headers: authHeaders(),
-  })
+  const response = await authFetch(`/api/forum/posts/${item.id}`, { method: 'DELETE' })
   const result = await response.json()
   if (!response.ok || !result.success) {
     console.warn(result.message || '删除失败')

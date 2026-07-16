@@ -182,7 +182,7 @@ Authorization: Bearer <token>
 
 **POST** `/api/verify`
 
-学生与管理员 **同一接口**：后端根据匹配到的 `students` 记录上的 **`role`** 区分（`student` / `admin`）。
+学生与管理员 **同一接口**：后端根据匹配到的 `students` 记录上的 **`role`** 区分（`student` / `admin` / `club_admin`）。
 
 **Body：**
 
@@ -190,9 +190,9 @@ Authorization: Bearer <token>
 |------|------|------|------|
 | name | string | 是 | 姓名 |
 | student_id | string | 是 | 学号（管理员默认账号见下） |
-| id_number | string | 是 | 身份证号 |
+| password | string | 是 | 登录密码 |
 
-亦支持 **camelCase**：`studentId`、`idNumber`。
+亦支持 **camelCase**：`studentId`（password 字段名不变）。
 
 **学生请求示例：**
 
@@ -200,7 +200,7 @@ Authorization: Bearer <token>
 {
   "name": "张三",
   "student_id": "20260901001",
-  "id_number": "410105200509010011"
+  "password": "01234567"
 }
 ```
 
@@ -208,13 +208,13 @@ Authorization: Bearer <token>
 
 ```json
 {
-  "name": "系统管理员",
+  "name": "崔志远",
   "student_id": "admin",
-  "id_number": "000000000000000000"
+  "password": "01234567"
 }
 ```
 
-**成功（HTTP 200）：** 顶层含 `success`、`message`、`token`、`data`。
+**成功（HTTP 200）：** 顶层含 `success`、`message`、`token`（access token）、`refresh_token`、`data`。
 
 - **学生：** `message` 为「欢迎你，{姓名}同学！」；`data` 含完整迎新嵌套结构（见下表「学生字段」）。
 - **管理员：** `message` 为「管理员登录成功」；`data` 为：
@@ -237,9 +237,38 @@ Authorization: Bearer <token>
 | assistants | array | 代班列表，每项含 `name`、`phone`、`class_name` |
 | role | string | `student` |
 
-**失败（HTTP 200）：** `success: false`，三要素不匹配等。
+**失败（HTTP 200）：** `success: false`，姓名/学号/密码不匹配等。
 
-### 4.2 校验 Token（学生 / 管理员通用）
+### 4.2 刷新 Access Token
+
+**POST** `/api/refresh`
+
+**Body：** `{ "refresh_token": "<refresh_token>" }`
+
+**成功：** `data.access_token`、`data.refresh_token`（轮换，旧 refresh 立即失效）。
+
+### 4.3 主动登出
+
+**POST** `/api/logout`
+
+**Body：** `{ "refresh_token": "<refresh_token>" }`
+
+### 4.4 修改密码
+
+**POST** `/api/auth/change-password`
+
+**Headers：** `Authorization: Bearer <access_token>`
+
+**Body：**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| current_password | string | 是 | 当前密码 |
+| new_password | string | 是 | 新密码（≥8 位，不能与当前相同） |
+
+**成功：** `success: true`；服务端撤销该账号全部 refresh token，其他设备需重新登录。
+
+### 4.5 校验 Token（学生 / 管理员通用）
 
 **GET** `/api/auth/me`
 

@@ -40,7 +40,7 @@ const isAdmin = computed(() => student.value.role === 'admin')
 const isClubAdmin = computed(() => student.value.role === 'club_admin')
 // computed 改为 ref + watch + nextTick，避免布局类切换与 Vue Transition 动画同时触发导致组件被"淹没"
 function isFullBleedPath(path: string): boolean {
-  return path.startsWith('/clubs') || path.startsWith('/wall')
+  return path.startsWith('/clubs') || path.startsWith('/wall') || path.startsWith('/account')
 }
 
 const isIntroModule = computed(() => route.path.startsWith('/intro'))
@@ -378,6 +378,13 @@ onUnmounted(() => {
 }
 
 @media(max-width:768px){ .section-card { border-radius: 12px; padding: 14px } }
+@media (max-width: 768px) {
+  .section-card--wall,
+  .section-card--fullbleed.section-card--wall {
+    padding: 0;
+    border-radius: 10px;
+  }
+}
 @media (max-width: 768px) {
   .section-card--intro {
     padding: 0;

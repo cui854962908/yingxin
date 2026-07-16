@@ -1,7 +1,7 @@
 import { inject, computed, type Ref, type ComputedRef } from 'vue'
 import type { Student } from '../types/student'
 import { isGuestRole } from './useGuest'
-import { setAccessToken, getAccessToken, onForceLogout, authFetch } from './useAuthFetch'
+import { setAccessToken, getAccessToken, onForceLogout, authFetch, optionalAuthFetch } from './useAuthFetch'
 
 /**
  * 共享的认证请求头构造器。
@@ -14,7 +14,7 @@ export function authHeaders(): Record<string, string> {
     : { 'Content-Type': 'application/json' }
 }
 
-export { authFetch, onForceLogout, setAccessToken, getAccessToken }
+export { authFetch, optionalAuthFetch, onForceLogout, setAccessToken, getAccessToken }
 
 /**
  * 响应式认证状态 —— 替代各组件中直接的 localStorage.getItem 读取。
@@ -34,7 +34,7 @@ export function useAuth(): {
   const isAdmin = computed(() => student.value?.role === 'admin')
   const isClubAdmin = computed(() => student.value?.role === 'club_admin')
   const isGuest = computed(() => isGuestRole(student.value?.role))
-  const token = computed(() => getAccessToken())
+  const token = computed(() => getAccessToken() || localStorage.getItem('token'))
 
   return { student, isAdmin, isClubAdmin, isGuest, token }
 }

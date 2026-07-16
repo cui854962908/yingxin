@@ -3,7 +3,7 @@
   .wall-aside { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 768px) {
   .wall { padding: 0 0 88px; background: #fbf8f5; }
   .wall-hero { min-height: 132px; padding: 24px 20px; border-radius: 0; }
   .wall-title { font-size: 1.75rem; }

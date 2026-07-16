@@ -15,6 +15,7 @@ test.describe('学生核心用户流', () => {
           success: true,
           message: '欢迎你，测试同学！',
           token: 'e2e-test-token-mock',
+          refresh_token: 'e2e-test-refresh-mock',
           data: {
             name: '测试同学',
             student_id: '20260901001',
@@ -74,7 +75,7 @@ test.describe('学生核心用户流', () => {
     // === 阶段 2：填写登录表单 ===
     await nameInput.fill('测试同学')
     await page.locator('#studentId').fill('20260901001')
-    await page.locator('#idNumber').fill('410105200509010011')
+    await page.locator('#password').fill('01234567')
 
     // 点击登录按钮
     await page.locator('button[type="submit"]').click()
@@ -122,7 +123,7 @@ test.describe('学生核心用户流', () => {
     await expect(nameInput).toBeVisible({ timeout: 8000 })
     await nameInput.fill('测试同学')
     await page.locator('#studentId').fill('20260901001')
-    await page.locator('#idNumber').fill('410105200509010011')
+    await page.locator('#password').fill('01234567')
     await page.locator('button[type="submit"]').click()
 
     // 等待小信出现

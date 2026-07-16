@@ -7,14 +7,14 @@ const emit = defineEmits<{
 
 const name = ref('')
 const studentId = ref('')
-const idNumber = ref('')
+const password = ref('')
 const errorMsg = ref('')
 const loading = ref(false)
 
 async function handleSubmit() {
   errorMsg.value = ''
-  if (!name.value.trim() || !studentId.value.trim()) {
-    errorMsg.value = '请填写姓名和学号'
+  if (!name.value.trim() || !studentId.value.trim() || !password.value) {
+    errorMsg.value = '请填写姓名、学号和密码'
     return
   }
   loading.value = true
@@ -25,7 +25,7 @@ async function handleSubmit() {
       body: JSON.stringify({
         name: name.value.trim(),
         student_id: studentId.value.trim(),
-        id_number: idNumber.value.trim(),
+        password: password.value,
       }),
     })
     const data = await res.json()
@@ -74,17 +74,16 @@ async function handleSubmit() {
     </div>
 
     <div class="field">
-      <label class="field-label" for="idNumber">
-        <span class="field-num">叁</span> 身份证号
+      <label class="field-label" for="password">
+        <span class="field-num">叁</span> 密 码
       </label>
       <input
-        id="idNumber"
-        v-model="idNumber"
-        type="text"
-        inputmode="numeric"
+        id="password"
+        v-model="password"
+        type="password"
         class="field-input"
-        placeholder="选填，未录入可不填"
-        autocomplete="off"
+        placeholder="请输入登录密码"
+        autocomplete="current-password"
       />
     </div>
 

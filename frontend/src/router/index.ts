@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { shouldMobileBackToHome } from '../composables/useAppNavigate'
 import { MOBILE_MAX } from '../composables/useBreakpoint'
+import { getAccessToken } from '../composables/useAuthFetch'
 
 function getStoredRole(): string | null {
   try {
@@ -27,6 +28,11 @@ const router = createRouter({
       children: [
         { path: '', name: 'dashboard', component: () => import('../components/HomePanel.vue') },
         {
+          path: 'account/password',
+          name: 'account-password',
+          component: () => import('../components/ChangePasswordPage.vue'),
+        },
+        {
           path: 'announcements',
           children: [
             { path: '', name: 'announcements', component: () => import('../components/AnnouncementPanel.vue') },
@@ -50,7 +56,7 @@ const router = createRouter({
           path: 'tips',
           name: 'tips',
           component: () => import('../components/RegistrationGuide.vue'),
-          props: { category: 'tips', pageTitle: '新生攻略', pageSubtitle: '校园生活实用信息，帮你快速适应大学生活' },
+          props: { category: 'tips', pageTitle: '新生攻略', pageSubtitle: '在校常用 App 图标，建议提前下载熟悉' },
         },
         {
           path: 'wall',
@@ -127,7 +133,7 @@ const router = createRouter({
 })
 
 function hasToken(): boolean {
-  return !!localStorage.getItem('token')
+  return !!(getAccessToken() || localStorage.getItem('token'))
 }
 
 router.beforeEach((to) => {
@@ -142,6 +148,9 @@ router.beforeEach((to) => {
   }
   if (path === '/wall/new' && !hasToken()) {
     return '/wall'
+  }
+  if (path === '/account/password' && !hasToken()) {
+    return '/'
   }
 })
 

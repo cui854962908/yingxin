@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, type CSSProperties } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { ForumPostDetail } from '../types/forum'
-import { FORUM_CATEGORY_COLORS } from '../types/forum'
-import { authHeaders, useAuth } from '../composables/useAuth'
+import { authFetch, optionalAuthFetch, useAuth } from '../composables/useAuth'
 import { formatForumAuthor } from '../utils/forumAuthor'
-import { forumRoleLabel } from '../utils/forumRole'
+import { categoryAccent, categoryIconPath, categoryTint } from '../utils/forumCategoryUi'
 import { useAppNavigate } from '../composables/useAppNavigate'
 import { formatRelativeTime } from '../utils/formatTime'
 import { FORUM_MODULE_NAME } from '../constants/product'
 import AppSpinner from './AppSpinner.vue'
+import ForumDetailAside from './forum-wall/ForumDetailAside.vue'
+import ForumDetailAnswerCard from './forum-wall/ForumDetailAnswerCard.vue'
 import '../styles/forum-mobile.css'
+import '../styles/forum/forum-content.css'
+import '../styles/forum/forum-detail.css'
 
 const route = useRoute()
 const router = useRouter()
@@ -27,11 +30,44 @@ const msg = ref('')
 const postId = computed(() => route.params.id as string)
 const canAnswer = computed(() => token.value && post.value && !post.value.is_closed)
 
+const questionStyle = computed((): CSSProperties | undefined => {
+  if (!post.value) return undefined
+  return {
+    '--wall-accent': categoryAccent(post.value.category),
+    '--wall-icon-bg': categoryTint(post.value.category),
+  } as CSSProperties
+})
+
+const statusLabel = computed(() => {
+  if (!post.value) return ''
+  if (post.value.has_accepted) return '已解决'
+  if (post.value.is_closed) return '已关闭'
+  if (post.value.answer_count === 0) return '待解答'
+  return '讨论中'
+})
+
+const statusClass = computed(() => {
+  if (!post.value) return ''
+  if (post.value.has_accepted) return 'fthread-status--solved'
+  if (post.value.is_closed) return 'fthread-status--closed'
+  if (post.value.answer_count === 0) return 'fthread-status--await'
+  return 'fthread-status--active'
+})
+
+function authorInitial(name: string): string {
+  return (name.trim()[0] || '?').toUpperCase()
+}
+
+function canAcceptAnswer(answerId: string): boolean {
+  if (!post.value || isGuest.value) return false
+  const ans = post.value.answers.find(a => a.id === answerId)
+  return !!(post.value.is_mine && !post.value.has_accepted && ans && !ans.is_accepted)
+}
+
 async function load() {
   loading.value = true
   try {
-    const headers = token.value ? authHeaders() : {}
-    const res = await fetch(`/api/forum/posts/${postId.value}`, { headers })
+    const res = await optionalAuthFetch(`/api/forum/posts/${postId.value}`)
     const d = await res.json()
     if (d.success) post.value = d.data
     else router.replace('/wall')
@@ -47,9 +83,8 @@ async function submitAnswer() {
   submitting.value = true
   msg.value = ''
   try {
-    const res = await fetch(`/api/forum/posts/${post.value.id}/answers`, {
+    const res = await authFetch(`/api/forum/posts/${post.value.id}/answers`, {
       method: 'POST',
-      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: answerText.value.trim() }),
     })
     const d = await res.json()
@@ -66,25 +101,21 @@ async function submitAnswer() {
 }
 
 async function acceptAnswer(answerId: string) {
-  const res = await fetch(`/api/forum/answers/${answerId}/accept`, {
-    method: 'POST', headers: authHeaders(),
-  })
+  const res = await authFetch(`/api/forum/answers/${answerId}/accept`, { method: 'POST' })
   const d = await res.json()
   if (d.success) post.value = d.data
 }
 
 async function closePost() {
   if (!post.value) return
-  const res = await fetch(`/api/forum/posts/${post.value.id}/close`, {
-    method: 'POST', headers: authHeaders(),
-  })
+  const res = await authFetch(`/api/forum/posts/${post.value.id}/close`, { method: 'POST' })
   const d = await res.json()
   if (d.success) post.value = d.data
 }
 
 async function adminHide() {
   if (!post.value) return
-  await fetch(`/api/admin/forum/posts/${post.value.id}/hide`, { method: 'POST', headers: authHeaders() })
+  await authFetch(`/api/admin/forum/posts/${post.value.id}/hide`, { method: 'POST' })
   appGoBackTo('/wall')
 }
 
@@ -102,10 +133,7 @@ async function deletePost() {
 
   deleting.value = true
   try {
-    const res = await fetch(`/api/forum/posts/${post.value.id}`, {
-      method: 'DELETE',
-      headers: authHeaders(),
-    })
+    const res = await authFetch(`/api/forum/posts/${post.value.id}`, { method: 'DELETE' })
     const d = await res.json()
     if (!res.ok || !d.success) throw new Error(d.message || '删除失败')
     appGoBackTo('/wall')
@@ -124,9 +152,7 @@ function requireLoginForLike(): boolean {
 
 async function togglePostLike() {
   if (!post.value || !requireLoginForLike()) return
-  const res = await fetch(`/api/forum/posts/${post.value.id}/like`, {
-    method: 'POST', headers: authHeaders(),
-  })
+  const res = await authFetch(`/api/forum/posts/${post.value.id}/like`, { method: 'POST' })
   const d = await res.json()
   if (d.success && post.value) {
     post.value.like_count = d.data.like_count
@@ -136,9 +162,7 @@ async function togglePostLike() {
 
 async function toggleAnswerLike(answerId: string) {
   if (!post.value || !requireLoginForLike()) return
-  const res = await fetch(`/api/forum/answers/${answerId}/like`, {
-    method: 'POST', headers: authHeaders(),
-  })
+  const res = await authFetch(`/api/forum/answers/${answerId}/like`, { method: 'POST' })
   const d = await res.json()
   if (!d.success || !post.value) return
   const ans = post.value.answers.find(a => a.id === answerId)
@@ -152,259 +176,111 @@ onMounted(load)
 </script>
 
 <template>
-  <div v-if="loading" class="wd-loading"><AppSpinner /></div>
-  <div v-else-if="post" class="wall-detail" :class="{ 'wall-detail--reply': canAnswer }">
-    <div class="forum-mobile-sticky-top">
-      <button type="button" class="forum-mobile-back" @click="appGoBackTo('/wall')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-        返回{{ FORUM_MODULE_NAME }}
-      </button>
-    </div>
+  <div v-if="loading" class="fthread"><div class="fthread-loading"><AppSpinner /></div></div>
+  <div v-else-if="post" class="fthread" :class="{ 'fthread--reply': canAnswer }">
+    <div class="fthread-inner">
+      <header class="fthread-top">
+        <button type="button" class="fthread-back" @click="appGoBackTo('/wall')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+          返回{{ FORUM_MODULE_NAME }}
+        </button>
+      </header>
 
-    <article class="wd-question">
-      <div class="wd-tags">
-        <span v-if="post.is_pinned" class="wd-pin">置顶</span>
-        <span class="wd-cat" :style="{ color: FORUM_CATEGORY_COLORS[post.category], background: FORUM_CATEGORY_COLORS[post.category] + '18' }">{{ post.category }}</span>
-        <span v-if="post.has_accepted" class="wd-solved">已采纳</span>
-        <span v-if="post.is_closed" class="wd-closed">已关闭</span>
-      </div>
-      <h1 class="wd-title">{{ post.title }}</h1>
-      <p class="wd-content">{{ post.content }}</p>
-      <div class="wd-meta">
-        <span>{{ formatForumAuthor(post.author.name, post.author.class_name, isGuest) }}</span>
-        <span v-if="forumRoleLabel(post.author.forum_role)" class="forum-role-badge">
-          {{ forumRoleLabel(post.author.forum_role) }}
-        </span>
-        <span>{{ formatRelativeTime(post.created_at) }} · {{ post.answer_count }} 回答</span>
-      </div>
-      <button
-        v-if="!isGuest"
-        type="button"
-        class="wd-like"
-        :class="{ 'wd-like--on': post.liked_by_me }"
-        @click="togglePostLike"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
-        {{ post.like_count > 0 ? post.like_count : '赞' }}
-      </button>
-      <div v-if="!isGuest && (post.is_mine || isAdmin)" class="wd-actions">
-        <button v-if="post.is_mine && !post.is_closed" type="button" class="wd-act" @click="closePost">关闭提问</button>
-        <button
-          v-if="post.is_mine || isAdmin"
-          type="button"
-          class="wd-act wd-act--danger"
-          :disabled="deleting"
-          @click="deletePost"
-        >{{ deleting ? '删除中…' : (isAdmin && !post.is_mine ? '删除帖子' : '删除提问') }}</button>
-        <button v-if="isAdmin" type="button" class="wd-act" @click="adminHide">隐藏帖子</button>
-      </div>
-      <p v-if="msg && !canAnswer" class="wd-action-msg wd-action-msg--err">{{ msg }}</p>
-    </article>
+      <div class="fthread-grid">
+        <div class="fthread-head">
+          <div class="fthread-post">
+            <header class="fthread-hero" :style="questionStyle">
+            <div class="fthread-hero-inner">
+              <div class="fthread-title-row">
+                <div class="fthread-cat-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path :d="categoryIconPath(post.category)" /></svg>
+                </div>
+                <div class="fthread-title-main">
+                  <h1 class="fthread-title">{{ post.title }}</h1>
+                  <span class="fthread-tag fthread-tag--cat">{{ post.category }}</span>
+                </div>
+              </div>
+              <div v-if="post.is_pinned || post.has_accepted || post.is_closed" class="fthread-tags">
+                <span v-if="post.is_pinned" class="fthread-tag fthread-tag--pin">置顶</span>
+                <span v-if="post.has_accepted" class="fthread-tag fthread-tag--solved">已采纳</span>
+                <span v-if="post.is_closed" class="fthread-tag fthread-tag--closed">已关闭</span>
+              </div>
+              <div class="fthread-hero-meta">
+                <span class="fthread-avatar fthread-avatar--sm">{{ authorInitial(post.author.name) }}</span>
+                <span>{{ formatForumAuthor(post.author.name, post.author.class_name, isGuest) }}</span>
+                <span class="fthread-hero-dot" aria-hidden="true">·</span>
+                <time :datetime="post.created_at">{{ formatRelativeTime(post.created_at) }}</time>
+              </div>
+            </div>
+            <span class="fthread-hero-mark" aria-hidden="true">问</span>
+          </header>
 
-    <section class="wd-answers">
-      <h3 class="wd-ans-head">回答 ({{ post.answers.length }})</h3>
-      <div v-if="post.answers.length === 0" class="wd-ans-empty">还没有回答，来做第一个帮忙的人吧</div>
-      <div v-for="a in post.answers" :key="a.id" class="wd-ans-card" :class="{ accepted: a.is_accepted }">
-        <div class="wd-ans-top">
-          <span v-if="a.is_accepted" class="wd-accept-badge">最佳回答</span>
-          <span class="wd-ans-author">{{ formatForumAuthor(a.author.name, a.author.class_name, isGuest) }}</span>
-          <span v-if="forumRoleLabel(a.author.forum_role)" class="forum-role-badge">
-            {{ forumRoleLabel(a.author.forum_role) }}
-          </span>
-          <span class="wd-ans-time">{{ formatRelativeTime(a.created_at) }}</span>
-          <button
-            v-if="!isGuest"
-            type="button"
-            class="wd-like wd-like--sm"
-            :class="{ 'wd-like--on': a.liked_by_me }"
-            @click="toggleAnswerLike(a.id)"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
-            {{ a.like_count > 0 ? a.like_count : '赞' }}
-          </button>
+          <article class="fthread-question">
+            <p class="fthread-body-label">问题描述</p>
+            <div class="fthread-body">{{ post.content }}</div>
+            <div v-if="!isGuest && (post.is_mine || isAdmin)" class="fthread-actions">
+              <button v-if="post.is_mine && !post.is_closed" type="button" class="fthread-act" @click="closePost">关闭提问</button>
+              <button
+                v-if="post.is_mine || isAdmin"
+                type="button"
+                class="fthread-act fthread-act--danger"
+                :disabled="deleting"
+                @click="deletePost"
+              >{{ deleting ? '删除中…' : (isAdmin && !post.is_mine ? '删除帖子' : '删除提问') }}</button>
+              <button v-if="isAdmin" type="button" class="fthread-act" @click="adminHide">隐藏帖子</button>
+            </div>
+            <p v-if="msg && !canAnswer" class="fthread-msg" :class="{ 'fthread-msg--err': msg !== '回答已发布' }">{{ msg }}</p>
+          </article>
+          </div>
+
+          <ForumDetailAside
+            :post="post"
+            :is-guest="isGuest"
+            :author-initial="authorInitial(post.author.name)"
+            :status-label="statusLabel"
+            :status-class="statusClass"
+            @like="togglePostLike"
+          />
         </div>
-        <p class="wd-ans-body">{{ a.content }}</p>
-        <button
-          v-if="!isGuest && post.is_mine && !post.has_accepted && !a.is_accepted"
-          type="button" class="wd-accept-btn" @click="acceptAnswer(a.id)"
-        >采纳此回答</button>
-      </div>
-    </section>
 
-    <div v-if="canAnswer" class="wd-reply-dock">
-      <div class="wd-reply">
-        <textarea v-model="answerText" rows="3" maxlength="2000" placeholder="写下你的回答…" />
-        <div class="wd-reply-bar">
-          <span v-if="msg" class="wd-msg" :class="{ 'wd-msg--err': msg !== '回答已发布' }">{{ msg }}</span>
-          <button type="button" :disabled="submitting || !answerText.trim()" @click="submitAnswer">
-            {{ submitting ? '发送中…' : '发布回答' }}
-          </button>
+        <section class="fthread-answers">
+          <div class="fthread-ans-head">
+              <h2 class="fthread-ans-title">全部回答</h2>
+              <span class="fthread-ans-count">{{ post.answers.length }}</span>
+            </div>
+            <div v-if="post.answers.length === 0" class="fthread-ans-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4V5Z"/><path d="M8 9h8M8 12h5"/></svg>
+              <p>还没有回答，来做第一个帮忙的人吧</p>
+            </div>
+            <div v-else class="fthread-ans-list">
+              <ForumDetailAnswerCard
+                v-for="(a, idx) in post.answers"
+                :key="a.id"
+                :answer="a"
+                :index="idx"
+                :author-initial="authorInitial(a.author.name)"
+                :is-guest="isGuest"
+                :can-accept="canAcceptAnswer(a.id)"
+                @like="toggleAnswerLike(a.id)"
+                @accept="acceptAnswer(a.id)"
+              />
+            </div>
+        </section>
+
+        <div v-if="canAnswer" class="fthread-reply-dock">
+          <div class="fthread-reply">
+            <textarea v-model="answerText" rows="2" maxlength="2000" placeholder="写下你的回答…" />
+            <div class="fthread-reply-bar">
+              <span v-if="msg" class="fthread-msg" :class="{ 'fthread-msg--err': msg !== '回答已发布' }">{{ msg }}</span>
+              <button type="button" class="fthread-reply-btn" :disabled="submitting || !answerText.trim()" @click="submitAnswer">
+                {{ submitting ? '…' : '发布' }}
+              </button>
+            </div>
+          </div>
         </div>
+        <p v-else-if="!token || isGuest" class="fthread-hint">登录后可回答提问</p>
+        <p v-else-if="post.is_closed" class="fthread-hint">楼主已关闭此提问</p>
       </div>
     </div>
-    <p v-else-if="!token || isGuest" class="wd-login-hint">登录后可回答提问</p>
-    <p v-else-if="post.is_closed" class="wd-login-hint">楼主已关闭此提问</p>
   </div>
 </template>
-
-<style scoped>
-.wall-detail { display: flex; flex-direction: column; gap: 16px; padding-bottom: 24px; min-height: 100% }
-.wd-loading { display: flex; justify-content: center; padding: 48px 0 }
-.forum-mobile-sticky-top { display: flex; align-items: center; min-height: 44px; padding-top: 2px }
-.forum-mobile-back {
-  display: inline-flex; align-items: center; gap: 9px; min-height: 42px; padding: 5px 18px 5px 6px;
-  border: 1px solid rgba(143, 16, 28, .18); border-radius: 999px;
-  background: linear-gradient(135deg, #fff 0%, #fff8f4 100%); color: #76101a;
-  box-shadow: 0 5px 16px rgba(91, 27, 25, .08); cursor: pointer;
-  font-family: inherit; font-size: .84rem; font-weight: 700; letter-spacing: .01em;
-  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background .22s ease;
-}
-.forum-mobile-back svg {
-  width: 30px; height: 30px; padding: 7px; border-radius: 50%; color: #fff;
-  background: linear-gradient(145deg, #bd2734, #86121c); box-shadow: 0 3px 8px rgba(134, 18, 28, .24);
-  transition: transform .22s ease;
-}
-.forum-mobile-back:hover {
-  transform: translateY(-1px); border-color: rgba(143, 16, 28, .34);
-  background: #fff; box-shadow: 0 9px 22px rgba(91, 27, 25, .13);
-}
-.forum-mobile-back:hover svg { transform: translateX(-2px) }
-.forum-mobile-back:focus-visible { outline: 3px solid rgba(181, 52, 58, .2); outline-offset: 3px }
-.forum-mobile-back:active { transform: translateY(0); box-shadow: 0 3px 10px rgba(91, 27, 25, .1) }
-.wd-question {
-  padding: 20px 22px; border-radius: 14px; background: #fff;
-  border: 1px solid #f2ebe0; border-left: 4px solid #b5343a;
-  box-shadow: 0 4px 16px rgba(60,48,40,.05);
-}
-.wd-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px }
-.wd-pin, .wd-cat, .wd-solved, .wd-closed { font-size: .68rem; font-weight: 600; padding: 2px 8px; border-radius: 999px }
-.wd-pin { background: #3d1114; color: #f2e6d0 }
-.wd-solved { background: #edf6ef; color: #4a8c5c }
-.wd-closed { background: #f5f0ea; color: #8b7b65 }
-.wd-title { margin: 0 0 12px; font-size: 1.15rem; color: #3c3028; line-height: 1.45; font-weight: 700 }
-.wd-content { margin: 0 0 14px; font-size: .9rem; color: #5c5040; line-height: 1.75; white-space: pre-wrap }
-.wd-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: .74rem; color: #b0a090 }
-.wd-like {
-  display: inline-flex; align-items: center; gap: 5px; margin-top: 10px;
-  height: 32px; padding: 0 12px; border: 1px solid #e5dbcc; border-radius: 999px;
-  background: #fefcf9; color: #8b7b65; font-size: .76rem; cursor: pointer; font-family: inherit;
-  -webkit-tap-highlight-color: transparent; transition: background .15s, border-color .15s, color .15s;
-}
-.wd-like--on { background: #fff5f5; border-color: rgba(181,52,58,.35); color: #b5343a }
-.wd-like--sm { margin-top: 0; margin-left: auto; height: 28px; padding: 0 10px; font-size: .72rem }
-.wd-actions { display: flex; gap: 8px; margin-top: 14px }
-.wd-act {
-  height: 32px; padding: 0 12px; border: 1px solid #e5dbcc; border-radius: 8px;
-  background: #fefcf9; font-size: .76rem; cursor: pointer; font-family: inherit; color: #6b5e4e;
-}
-.wd-act--danger { color: #b5343a; border-color: rgba(181,52,58,.35) }
-.wd-act:disabled { opacity: .5; cursor: default }
-.wd-action-msg { margin: 10px 0 0; font-size: .78rem; color: #4a8c5c }
-.wd-action-msg--err { color: #b5343a }
-
-.wd-ans-head { margin: 0 0 10px; font-size: .95rem; color: #3c3028; font-weight: 600 }
-.wd-ans-empty { text-align: center; color: #b0a090; font-size: .84rem; padding: 20px 0 }
-.wd-ans-card {
-  padding: 14px 16px; margin-bottom: 10px; border-radius: 12px;
-  background: #fefcf9; border: 1px solid #f2ebe0;
-}
-.wd-ans-card.accepted { border-color: #4a8c5c; background: #f6fbf7 }
-.wd-ans-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; font-size: .72rem; color: #b0a090 }
-.wd-accept-badge { background: #4a8c5c; color: #fff; padding: 2px 8px; border-radius: 999px; font-weight: 600 }
-.wd-ans-author { color: #6b5e4e; font-weight: 600 }
-.wd-ans-body { margin: 0; font-size: .86rem; color: #5c5040; line-height: 1.65; white-space: pre-wrap }
-.wd-accept-btn {
-  margin-top: 10px; height: 30px; padding: 0 12px; border: 1px solid #4a8c5c; border-radius: 8px;
-  background: #fff; color: #4a8c5c; font-size: .74rem; cursor: pointer; font-family: inherit;
-}
-
-.wd-msg { font-size: .78rem; color: #4a8c5c; flex: 1; min-width: 0 }
-.wd-msg--err { color: #b5343a }
-.wd-reply button {
-  flex-shrink: 0;
-  height: 38px; padding: 0 18px; border: none; border-radius: 10px; cursor: pointer;
-  background: #b5343a; color: #fff; font-size: .82rem; font-weight: 600; font-family: inherit;
-}
-.wd-reply button:disabled { opacity: .5; cursor: default }
-.wd-login-hint {
-  text-align: center; color: #b0a090; font-size: .84rem; padding: 12px;
-  margin: 0 -4px; border-radius: 12px; background: #fefcf9; border: 1px dashed #e5dbcc;
-}
-
-.wd-reply-dock { position: sticky; bottom: 8px; z-index: 6 }
-.wd-reply {
-  padding: 16px; border-radius: 12px; background: #fff; border: 1px solid #e5dbcc;
-  box-shadow: 0 -4px 20px rgba(60,48,40,.08);
-}
-.wd-reply textarea {
-  width: 100%; padding: 10px 12px; border: 1.5px solid #e5dbcc; border-radius: 10px;
-  font-size: .86rem; font-family: inherit; resize: vertical; outline: none; box-sizing: border-box;
-  min-height: 72px;
-}
-.wd-reply textarea:focus { border-color: #b5343a; box-shadow: 0 0 0 3px rgba(181,52,58,.08) }
-.wd-reply-bar { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; gap: 10px }
-
-@media (max-width: 768px) {
-  .wall-detail {
-    gap: 12px;
-    padding-bottom: var(--yx-mobile-nav, calc(52px + env(safe-area-inset-bottom, 0px)));
-  }
-  .wall-detail--reply {
-    padding-bottom: calc(140px + var(--yx-mobile-nav, calc(52px + env(safe-area-inset-bottom, 0px))));
-  }
-  .forum-mobile-sticky-top { padding: 8px 12px 0 }
-  .forum-mobile-back { min-height: 40px; padding-right: 15px; font-size: .8rem }
-  .wd-question {
-    margin: 0; padding: 16px 14px;
-    border-radius: 0;
-    border-left-width: 3px;
-    box-shadow: none;
-    border-top: 1px solid #f2ebe0;
-    border-right: none;
-    border-bottom: 1px solid #f2ebe0;
-  }
-  .wd-title { font-size: 1.05rem; line-height: 1.5 }
-  .wd-content { font-size: .88rem; line-height: 1.7 }
-  .wd-meta { flex-direction: column; align-items: flex-start; gap: 4px }
-  .wd-actions { flex-wrap: wrap; gap: 10px }
-  .wd-act { min-height: 44px; padding: 0 16px; font-size: .78rem; flex: 1; min-width: calc(50% - 5px) }
-  .wd-like { min-height: 40px; padding: 0 14px }
-  .wd-like--sm { min-height: 36px }
-  .wd-answers { padding: 0 14px }
-  .wd-ans-card { padding: 12px 14px; border-radius: 14px; margin-bottom: 12px }
-  .wd-accept-btn { min-height: 44px; padding: 0 14px; font-size: .78rem; width: 100% }
-  .wd-reply-dock {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 8500;
-    padding: 8px 14px var(--yx-mobile-nav, calc(52px + env(safe-area-inset-bottom, 0px)));
-    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.92) 28%, #fff 100%);
-    pointer-events: none;
-  }
-  .wd-reply-dock .wd-reply {
-    pointer-events: auto;
-    padding: 12px 14px; border-radius: 16px;
-    border: 1px solid rgba(181,52,58,.15);
-    box-shadow: 0 8px 28px rgba(84,11,19,.12);
-  }
-  .wd-reply textarea {
-    font-size: 16px; min-height: 64px; border-radius: 12px;
-  }
-  .wd-reply button {
-    min-height: 44px; padding: 0 20px; border-radius: 12px; width: 100%;
-    background: linear-gradient(135deg, #bd1f2e, #8f101c);
-    box-shadow: 0 6px 16px rgba(143,16,28,.25);
-  }
-  .wd-reply-bar {
-    flex-direction: column; align-items: stretch; gap: 8px;
-  }
-  .wd-login-hint {
-    margin: 0 14px; padding: 16px; font-size: .82rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .wd-answers { padding: 0 12px }
-  .wd-question { padding: 14px 12px }
-  .wd-reply-dock { padding-left: 12px; padding-right: 12px }
-  .wd-login-hint { margin: 0 12px }
-}
-</style>

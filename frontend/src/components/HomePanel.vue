@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, inject, type Ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, inject, type Ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { MILESTONES, SERVICE_CARDS, REGISTER_DATE } from '../constants/timeline'
 import { ICON_PATHS, TL_TO_PHOSPHOR } from '../constants/icons'
@@ -48,8 +48,19 @@ function updateSizes() {
   else NODE_W.value = 170
   viewW.value = scrollEl.value?.clientWidth ?? 900
 }
-onMounted(() => { updateSizes(); window.addEventListener('resize', updateSizes) })
-onUnmounted(() => window.removeEventListener('resize', updateSizes))
+onMounted(() => {
+  nextTick(updateSizes)
+  window.addEventListener('resize', updateSizes)
+  document.addEventListener('pointermove', onPointerMove)
+  document.addEventListener('pointerup', finishDrag)
+  document.addEventListener('pointercancel', finishDrag)
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', updateSizes)
+  document.removeEventListener('pointermove', onPointerMove)
+  document.removeEventListener('pointerup', finishDrag)
+  document.removeEventListener('pointercancel', finishDrag)
+})
 
 // 已过百分比
 const pastPct = computed(() => {
@@ -58,9 +69,16 @@ const pastPct = computed(() => {
   return Math.round((nextIdx.value / MILESTONES.length) * 100)
 })
 
-const GAP_PX = 50
-const totalW = computed(() => (MILESTONES.length - 1) * (NODE_W.value + GAP_PX))
-const trackW = computed(() => (MILESTONES.length - 1) * (NODE_W.value + GAP_PX))
+const GAP_PX = computed(() => {
+  const w = window.innerWidth
+  if (w <= 480) return 24
+  if (w <= 768) return 32
+  return 50
+})
+const contentW = computed(
+  () => MILESTONES.length * NODE_W.value + (MILESTONES.length - 1) * GAP_PX.value,
+)
+const trackW = computed(() => (MILESTONES.length - 1) * (NODE_W.value + GAP_PX.value))
 const trackTop = computed(() => {
   if (window.innerWidth <= 480) return 22  // dot 44px / 2
   if (window.innerWidth <= 768) return 26  // dot 52px / 2
@@ -69,7 +87,7 @@ const trackTop = computed(() => {
 const trackLeft = computed(() => NODE_W.value / 2)
 const scrollX = ref(0)
 const scrollEl = ref<HTMLElement | null>(null)
-const maxScroll = computed(() => Math.max(0, totalW.value - viewW.value))
+const maxScroll = computed(() => Math.max(0, contentW.value - viewW.value))
 
 function scrollLeft() {
   if (!scrollEl.value) return
@@ -94,6 +112,7 @@ let activePointerId: number | null = null
 let captureEl: HTMLElement | null = null
 
 function onPointerDown(e: PointerEvent) {
+  if (maxScroll.value <= 0) return
   e.preventDefault()
   dragging.value = true
   dragStart.value = e.clientX
@@ -117,18 +136,6 @@ function finishDrag(e: PointerEvent) {
   }
   captureEl = null
 }
-
-onMounted(() => {
-  document.addEventListener('pointermove', onPointerMove)
-  document.addEventListener('pointerup', finishDrag)
-  document.addEventListener('pointercancel', finishDrag)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('pointermove', onPointerMove)
-  document.removeEventListener('pointerup', finishDrag)
-  document.removeEventListener('pointercancel', finishDrag)
-})
 
 function shortDate(d: string): string {
   return d.slice(5, 7).replace(/^0/, '') + '/' + d.slice(8, 10).replace(/^0/, '')
@@ -165,7 +172,7 @@ function dayLabel(d: string, i: number): 'past' | 'today' | 'future' {
         :class="{ dragging }"
         @pointerdown.prevent="onPointerDown"
       >
-        <div class="tl-nodes" :style="{ transform: `translateX(${-clampedX}px)`, width: totalW + 'px' }">
+        <div class="tl-nodes" :style="{ transform: `translateX(${-clampedX}px)`, width: contentW + 'px' }">
           <div class="tl-track" :style="{ width: trackW + 'px', top: trackTop + 'px', left: trackLeft + 'px' }" />
           <div
             v-for="(m, i) in MILESTONES"
@@ -192,10 +199,10 @@ function dayLabel(d: string, i: number): 'past' | 'today' | 'future' {
           </div>
         </div>
       </div>
-      <button class="tl-arrow tl-arrow--left" @click="scrollLeft">
+      <button v-show="maxScroll > 0" class="tl-arrow tl-arrow--left" @click="scrollLeft">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
-      <button class="tl-arrow tl-arrow--right" @click="scrollRight">
+      <button v-show="maxScroll > 0" class="tl-arrow tl-arrow--right" @click="scrollRight">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
       </button>
     </section>
@@ -262,12 +269,12 @@ function dayLabel(d: string, i: number): 'past' | 'today' | 'future' {
   margin-top: -20px; margin-right: 44px; padding-top: 20px; touch-action: none;
 }
 .tl-scroll.dragging { cursor: grabbing }
+.tl-scroll.dragging .tl-nodes { transition: none }
 .tl-nodes {
   display: flex; justify-content: flex-start; gap: 50px;
   position: relative; z-index: 1;
   transition: transform .1s linear;
 }
-.tl-nodes.dragging { transition: none }
 
 /* 箭头 */
 .tl-arrow {

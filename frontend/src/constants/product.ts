@@ -34,6 +34,13 @@ export const GUEST_ROLE_LABEL = '访客 · 迎新门户'
 export const GUEST_PROFILE_STATUS = '正在游客浏览中'
 export const GUEST_PROFILE_HINT = '登录后可查看学号、宿舍与联系人信息'
 
+/** 忘记密码：联系管理员邮箱协助重置 */
+export const PASSWORD_RECOVERY = {
+  contactEmail: '854962908@qq.com',
+} as const
+
+export const PASSWORD_RECOVERY_HINT = '忘记密码？请联系管理员核实身份后重置。'
+
 /** 3D 校园漫游标注试用版；2D / 3D 由用户在导览入口自行选择 */
 export const CAMPUS_3D_TRIAL_LABEL = '试用版'
 export const CAMPUS_3D_TRIAL_NOTE =

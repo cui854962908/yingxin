@@ -109,7 +109,7 @@ class TestRateLimitIntegration:
 
     def test_post_verify_rate_limit(self, client_with_low_limits):
         """登录接口限流生效。"""
-        body = {"name": "test", "student_id": "2024001", "id_number": ""}
+        body = {"name": "test", "student_id": "2024001", "password": ""}
         for _ in range(2):
             r = client_with_low_limits.post("/api/verify", json=body)
             # 可能是 401（凭据错）但不能是 429

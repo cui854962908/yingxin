@@ -283,7 +283,18 @@ onMounted(loadClubs)
   gap: 16px;
   min-width: 0;
 }
-.clubs-header--compact { justify-content: flex-end }
+.clubs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+.clubs-header--compact { justify-content: flex-start }
+.clubs-header--compact .clubs-add-btn {
+  margin-left: auto;
+  margin-right: clamp(12px, 1.2vw, 20px);
+}
 .clubs-title { font-size: 1.15rem; font-weight: 700; color: #2c2c2c; letter-spacing: .06em; margin: 0 }
 .clubs-add-btn {
   height: 32px; padding: 0 14px; border: 1px solid #c9a96e; border-radius: 8px;

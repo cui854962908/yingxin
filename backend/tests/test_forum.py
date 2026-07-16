@@ -14,13 +14,13 @@ def student_headers(seed_student):
 
 @pytest.fixture
 def other_student_headers(db, seed_student):
-    from app.core.security import hash_id_number
+    from app.core.security import DEFAULT_INITIAL_PASSWORD, hash_password
     from app.models.student import Student
 
     s = Student(
         name="李四",
         student_id="20260901002",
-        id_number_hash=hash_id_number("410105200509010022"),
+        password_hash=hash_password(DEFAULT_INITIAL_PASSWORD),
         class_name="软件工程2026-1班",
         role="student",
     )
@@ -30,11 +30,11 @@ def other_student_headers(db, seed_student):
     return {"Authorization": f"Bearer {token}"}
 
 
-def _create_post(client, headers, title="宿舍几点关门？"):
+def _create_post(client, headers, title="宿舍晚上一般几点关门？"):
     return client.post(
         "/api/forum/posts",
         headers=headers,
-        json={"title": title, "content": "想了解一下晚上回寝时间。", "category": "生活"},
+        json={"title": title, "content": "想了解一下晚上回寝室的具体时间安排。", "category": "生活"},
     )
 
 
@@ -42,7 +42,7 @@ def _create_dorm_post(client, headers):
     return client.post(
         "/api/forum/posts",
         headers=headers,
-        json={"title": "宿舍有独立卫浴吗？", "content": "想提前了解宿舍洗浴条件。", "category": "宿舍"},
+        json={"title": "宿舍里有独立卫浴吗？", "content": "想提前了解一下宿舍里面有没有独立卫浴设施。", "category": "宿舍"},
     )
 
 
@@ -106,20 +106,20 @@ class TestForumPosts:
         assert data["data"]["items"][0]["author"]["name"] == "2026 级新生"
 
     def test_list_public_shows_other_grade_label(self, client, db):
-        from app.core.security import hash_id_number, create_access_token
+        from app.core.security import DEFAULT_INITIAL_PASSWORD, create_access_token, hash_password
         from app.models.student import Student
 
         s = Student(
             name="王五",
             student_id="20250901001",
-            id_number_hash=hash_id_number("410105200409010033"),
+            password_hash=hash_password(DEFAULT_INITIAL_PASSWORD),
             class_name="动科2025-1班",
             role="student",
         )
         db.add(s)
         db.commit()
         token = create_access_token(subject="20250901001", name="王五", role="student")
-        _create_post(client, {"Authorization": f"Bearer {token}"}, title="老生发帖")
+        _create_post(client, {"Authorization": f"Bearer {token}"}, title="老学长发的帖子测试题")
         resp = client.get("/api/forum/posts")
         names = [it["author"]["name"] for it in resp.json()["data"]["items"]]
         assert "2025 级" in names
@@ -147,7 +147,7 @@ class TestForumPosts:
         resp = _create_post(client, student_headers)
         assert resp.status_code == 200
         data = resp.json()["data"]
-        assert data["title"] == "宿舍几点关门？"
+        assert data["title"] == "宿舍晚上一般几点关门？"
         assert data["author"]["name"] == "张三"
 
         post_id = data["id"]
@@ -157,6 +157,20 @@ class TestForumPosts:
     def test_create_requires_auth(self, client):
         resp = client.post("/api/forum/posts", json={"title": "x", "content": "hello world", "category": "其他"})
         assert resp.status_code == 401
+
+    def test_create_rejects_long_title(self, client, student_headers):
+        long_title = "一二三四五六七八九十一二三四五六七八九一超"
+        assert len(long_title) > 20
+        resp = client.post(
+            "/api/forum/posts",
+            headers=student_headers,
+            json={
+                "title": long_title,
+                "content": "这条描述足够长了，用来测试标题长度校验规则。",
+                "category": "其他",
+            },
+        )
+        assert resp.status_code == 422
 
     def test_answer_and_accept(self, client, student_headers, other_student_headers):
         post_id = _create_post(client, student_headers).json()["data"]["id"]

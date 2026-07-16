@@ -29,7 +29,7 @@ const KB_HINT_LINKS = [
 ] as const
 
 function wallAskTo(question: string, loggedIn: boolean): string {
-  const q = question.trim().slice(0, 120)
+  const q = question.trim().slice(0, 20)
   if (!loggedIn || !q) return '/wall'
   return `/wall/new?title=${encodeURIComponent(q)}`
 }

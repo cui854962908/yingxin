@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import LoginForm from './LoginForm.vue'
-import { PRODUCT_TAGLINE, GUEST_ENTRY_LABEL } from '../constants/product'
+import {
+  GUEST_ENTRY_LABEL,
+  PASSWORD_RECOVERY,
+  PASSWORD_RECOVERY_HINT,
+  PRODUCT_TAGLINE,
+} from '../constants/product'
 
 const emit = defineEmits<{
   'login-success': [student: Record<string, any>, token: string, refreshToken?: string]
@@ -51,18 +56,26 @@ import '../styles/pages/login-page.css'
       <span class="watermark">2026</span>
 
       <div class="form-inner">
-        <p class="form-eyebrow">NEW STUDENT · IDENTITY VERIFICATION</p>
-        <h2 class="form-heading">新生入学验证</h2>
+        <p class="form-eyebrow">NEW STUDENT · PASSWORD LOGIN</p>
+        <h2 class="form-heading">新生登录</h2>
         <div class="heading-rule" />
 
         <LoginForm @login-success="(s, t, rt) => emit('login-success', s, t, rt)" />
+
+        <p class="password-recovery">
+          {{ PASSWORD_RECOVERY_HINT }}
+          <a
+            :href="`mailto:${PASSWORD_RECOVERY.contactEmail}`"
+            class="password-recovery-phone"
+          >{{ PASSWORD_RECOVERY.contactEmail }}</a>
+        </p>
 
         <div class="guest-divider"><span>或</span></div>
         <button type="button" class="guest-btn" @click="emit('guest-enter')">
           {{ GUEST_ENTRY_LABEL }}
         </button>
 
-        <p class="footer-tip">已录取新生：姓名 · 学号 · 身份证号（未录入可留空）验证登录</p>
+        <p class="footer-tip">已录取新生：姓名 · 学号 · 密码登录；初始密码为 01234567，登录后请尽快修改</p>
       </div>
     </main>
   </div>

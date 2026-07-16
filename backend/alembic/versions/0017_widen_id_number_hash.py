@@ -17,7 +17,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.alter_column("students", "id_number_hash", type_=sa.String(64), existing_type=sa.String(32), nullable=False)
+    conn = op.get_bind()
+    col_info = next((c for c in sa.inspect(conn).get_columns("students") if c["name"] == "id_number_hash"), None)
+    if col_info and isinstance(col_info["type"], sa.String) and (col_info["type"].length is None or col_info["type"].length < 64):
+        op.alter_column("students", "id_number_hash", type_=sa.String(64), existing_type=sa.String(32), nullable=False)
 
 
 def downgrade() -> None:

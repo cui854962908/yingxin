@@ -43,6 +43,7 @@ onMounted(async () => {
         // 刷新成功，用新 token 获取用户信息
         const newToken = refreshData.data.access_token
         setAccessToken(newToken)
+        localStorage.setItem('token', newToken)
         localStorage.setItem('refresh_token', refreshData.data.refresh_token)
 
         const res = await fetch('/api/auth/me', {
@@ -112,6 +113,7 @@ function applyLoginSession(s: Record<string, any>, token: string): Student {
   const safe = buildStudent(s)
   student.value = safe
   setAccessToken(token)
+  localStorage.setItem('token', token)
   localStorage.setItem('student', JSON.stringify(safe))
   preload()
   return safe
@@ -122,6 +124,7 @@ function onLoginSuccess(s: Record<string, any>, token: string, refreshToken?: st
   setGuestSession(false)
   const safe = buildStudent(s)
   setAccessToken(token)
+  localStorage.setItem('token', token)
   if (refreshToken) {
     localStorage.setItem('refresh_token', refreshToken)
   }
@@ -142,7 +145,9 @@ function clearAuth() {
 }
 
 async function onGuestEnter() {
+  setAccessToken(null)
   localStorage.removeItem('token')
+  localStorage.removeItem('refresh_token')
   localStorage.removeItem('student')
   setGuestSession(true)
   showWelcome.value = false

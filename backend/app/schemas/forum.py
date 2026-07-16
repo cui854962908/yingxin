@@ -9,14 +9,14 @@ ForumSort = Literal["latest", "hot", "open"]
 
 
 class ForumPostCreate(BaseModel):
-    title: str = Field(..., min_length=2, max_length=120)
-    content: str = Field(..., min_length=5, max_length=2000)
+    title: str = Field(..., min_length=2, max_length=20)
+    content: str = Field(..., min_length=1, max_length=2000)
     category: ForumCategory = "其他"
 
 
 class ForumPostUpdate(BaseModel):
-    title: str | None = Field(None, min_length=2, max_length=120)
-    content: str | None = Field(None, min_length=5, max_length=2000)
+    title: str | None = Field(None, min_length=2, max_length=20)
+    content: str | None = Field(None, min_length=1, max_length=2000)
     category: ForumCategory | None = None
 
 

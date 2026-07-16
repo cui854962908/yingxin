@@ -194,8 +194,10 @@ function enterCampus(path: '/campus/2d' | '/campus/3d') {
 .mode-copy--plain .mode-action,
 .mode-action { grid-column: 2 / 4; margin-top: 10px; color: #b5343a; font-weight: 700; font-size: 14px }
 .mode-copy--plain .mode-action { grid-column: 2 }
-@media (max-width: 760px) {
-  .mode-page { padding: 18px 14px 28px }
+@media (max-width: 768px) {
+  .mode-page {
+    padding: calc(18px + env(safe-area-inset-top, 0px)) 14px calc(28px + env(safe-area-inset-bottom, 0px));
+  }
   .mode-header { margin-bottom: 24px }
   .mode-header__bar { gap: 12px; margin-bottom: 32px }
   .campus-identity__name { gap: 4px; padding-right: 10px }
