@@ -1,4 +1,4 @@
-﻿@media (min-width: 769px) {
+@media (min-width: 769px) {
   .club-detail.club-detail--editing {
     --editor-red: #9b1d28;
     --editor-ink: #3a2b25;
@@ -149,8 +149,7 @@
     box-shadow: 0 12px 30px rgba(76, 39, 31, .09);
     overflow: hidden;
   }
-  .club-detail.club-detail--editing .cd-hero-bg,
-  .club-detail.club-detail--editing .cd-hero-gradient { height: 132px; }
+  .club-detail.club-detail--editing .cd-hero-cover { height: 132px; }
   .club-detail.club-detail--editing .cd-hero-gradient {
     background: linear-gradient(180deg, rgba(44, 27, 25, .28), rgba(55, 34, 30, .62));
   }

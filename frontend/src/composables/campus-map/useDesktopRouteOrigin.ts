@@ -15,7 +15,7 @@ interface DesktopRouteOriginOptions {
 
 export function useDesktopRouteOrigin(options: DesktopRouteOriginOptions) {
   const promptOpen = ref(false)
-  const promptMessage = ref('请选择路线起点')
+  const promptMessage = ref('导航需要先设置起点，请选择一种方式')
   const choosingOrigin = ref(false)
   const pendingTarget = ref<CampusPlace | null>(null)
 
@@ -43,8 +43,8 @@ export function useDesktopRouteOrigin(options: DesktopRouteOriginOptions) {
     }
     pendingTarget.value = target
     promptMessage.value = options.profileDormLabel.value
-      ? `电脑端可使用${options.profileDormLabel.value}作为路线起点`
-      : '电脑端未获得当前位置，请选择一个校内路线起点'
+      ? `导航到目的地前，请先设置起点。推荐使用「${options.profileDormLabel.value}」，也可定位当前位置或在地图上手动选点。`
+      : '导航到目的地前，请先设置起点：可定位当前位置，或在地图上手动选择当前位置。'
     promptOpen.value = true
   }
 
@@ -55,7 +55,7 @@ export function useDesktopRouteOrigin(options: DesktopRouteOriginOptions) {
   async function chooseDevice() {
     const success = await options.locateMyPosition()
     if (finishOriginChoice(success)) return
-    promptMessage.value = options.getGeoMessage() || '设备定位失败，请改用宿舍或地图选点'
+    promptMessage.value = options.getGeoMessage() || '定位失败，请改用手动选择当前位置或宿舍作为起点'
     promptOpen.value = true
   }
 

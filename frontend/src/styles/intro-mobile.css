@@ -36,23 +36,48 @@
   }
 
   .intro-choreo {
-    min-height: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
 
-  /* 顶栏吸顶：纯色底 + 底边阴影，避免负 spread 在 iOS 上透底/抖动 */
+  /* 五 Tab 底栏壳：外层 mobile-tab-body 滚动，勿再锁 intro-body 高度 */
+  .main--mobile-tab-shell .intro-choreo {
+    flex: none;
+    min-height: auto;
+    height: auto;
+    display: block;
+  }
+
+  /*
+   * 不用 position:sticky（外层 overflow 在 iOS 会导致顶部漏缝）。
+   * 顶栏固定、仅 intro-body 滚动，视觉效果同为吸顶。
+   */
   .intro-choreo .intro-head--sticky {
-    position: sticky;
-    top: 0;
-    z-index: 12;
-    isolation: isolate;
+    --intro-sticky-bleed: 8px;
+    position: relative;
+    top: auto;
+    z-index: 2;
+    flex-shrink: 0;
     border-left: 0;
     border-right: 0;
     border-radius: 0;
-    padding-top: env(safe-area-inset-top, 0px);
+    margin-inline: calc(-1 * var(--intro-sticky-bleed));
+    width: calc(100% + 2 * var(--intro-sticky-bleed));
+    padding-top: max(12px, env(safe-area-inset-top, 0px));
+    padding-inline: calc(12px + var(--intro-sticky-bleed));
+    padding-bottom: 10px;
     background: #fff;
     box-shadow:
       0 1px 0 var(--intro-line, #dedee3),
       0 4px 14px rgba(21, 21, 26, 0.05);
+  }
+
+  .intro-choreo .intro-head--sticky::before,
+  .intro-choreo .intro-head--sticky::after {
+    display: none;
   }
 
   .intro-choreo .intro-head__veil {
@@ -65,10 +90,6 @@
       0 4px 14px rgba(21, 21, 26, 0.05);
   }
 
-  .intro-body .campus-anchors {
-    top: var(--intro-sticky-h, 0px);
-  }
-
   .intro-choreo .intro-head::before {
     display: none;
   }
@@ -76,7 +97,18 @@
   .intro-body {
     flex: 1;
     min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     padding: 0 0 calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .main--mobile-tab-shell .intro-body {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+    overscroll-behavior: auto;
   }
 
   .intro-body > .clubs--intro-embed {
@@ -605,39 +637,6 @@
   .intro-body .detail-hero {
     border-radius: var(--intro-radius);
     min-height: 112px;
-  }
-
-  /* 入场动画：移动端略快 */
-  .panel-reveal--intro > .panel-reveal__item {
-    transform: translateY(18px);
-  }
-
-  .panel-reveal--intro.panel-reveal--ready > .panel-reveal__item {
-    animation-duration: 0.44s;
-  }
-
-  .panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(1) {
-    animation-delay: 0.06s;
-  }
-
-  .panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(2) {
-    animation-delay: 0.14s;
-  }
-
-  .panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(3) {
-    animation-delay: 0.22s;
-  }
-
-  .panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(4) {
-    animation-delay: 0.3s;
-  }
-
-  .panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(5) {
-    animation-delay: 0.38s;
-  }
-
-  .panel-reveal--intro.panel-reveal--ready > .panel-reveal__item:nth-child(6) {
-    animation-delay: 0.46s;
   }
 }
 

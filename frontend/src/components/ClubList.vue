@@ -7,6 +7,7 @@ import type { IntroClubGroup } from '../constants/intro'
 import { authHeaders, useAuth } from '../composables/useAuth'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import { usePanelReveal } from '../composables/usePanelReveal'
+import { usePreload } from '../composables/usePreload'
 import AppSpinner from './AppSpinner.vue'
 import ClubCard from './ClubCard.vue'
 import IntroOrgGroupCard from './IntroOrgGroupCard.vue'
@@ -19,8 +20,9 @@ const props = withDefaults(
 )
 const route = useRoute()
 const router = useRouter()
-const clubs = ref<Club[]>([])
-const loading = ref(true)
+const { clubs: cachedClubs } = usePreload()
+const clubs = ref<Club[]>(cachedClubs.value.length ? [...cachedClubs.value] : [])
+const loading = ref(!cachedClubs.value.length)
 const searchQuery = ref('')
 const activeCategory = ref(typeof route.query.cat === 'string' ? route.query.cat : '全部')
 const statusMenuClubId = ref<string | null>(null)
@@ -112,12 +114,15 @@ function backToIntroGroups() {
   router.replace({ path: '/intro/clubs' })
 }
 
-async function loadClubs() {
-  loading.value = true
+async function loadClubs(options: { silent?: boolean } = {}) {
+  if (!options.silent) loading.value = true
   try {
     const res = await fetch('/api/clubs')
     const d = await res.json()
-    if (d.success) clubs.value = d.data
+    if (d.success) {
+      clubs.value = d.data
+      cachedClubs.value = d.data
+    }
   } catch { console.warn('加载社团列表失败') }
   finally { loading.value = false }
 }
@@ -150,7 +155,13 @@ async function handleDelete(id: string) {
   } catch { console.warn('删除社团失败') }
 }
 
-onMounted(loadClubs)
+onMounted(() => {
+  if (cachedClubs.value.length) {
+    loadClubs({ silent: true })
+    return
+  }
+  loadClubs()
+})
 </script>
 
 <template>

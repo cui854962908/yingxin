@@ -199,34 +199,54 @@ function goChangePassword() {
 }
 
 @media(max-width:768px){
-  .card{padding:22px;justify-content:flex-start}
-  .card--guest{padding-bottom:18px}
-  .top-row{gap:14px}
-  .avatar-ring{width:60px;height:60px}
-  .avatar{font-size:1.5rem}
-  .name{font-size:1.4rem}
-  .guest-status,.guest-hint,.klass,.meta{margin-left:74px}
-  .guest-status{font-size:.92rem;margin-top:12px}
-  .guest-hint{font-size:.78rem}
-  .klass{font-size:.82rem}
-  .meta{gap:24px}
+  .card{
+    padding: 12px 14px 10px;
+    border-radius: 12px;
+    border: 1px solid #ebe4d8;
+    box-shadow: none;
+    background: #fff;
+    justify-content: flex-start;
+  }
+  .card--guest{padding-bottom:12px}
+  .card::after{width:80px;height:80px;opacity:.5}
+  .top-row{gap:12px;align-items:center}
+  .avatar-ring{width:48px;height:48px}
+  .avatar{font-size:1.25rem}
+  .avatar--guest{font-size:1.1rem}
+  .top-info{gap:8px;flex-wrap:wrap;row-gap:4px}
+  .name{font-size:1.18rem;letter-spacing:.08em;line-height:1.3}
+  .badge{font-size:.64rem;padding:2px 8px}
+  .guest-status,.guest-hint,.klass,.meta{margin-left:60px}
+  .guest-status{font-size:.86rem;margin-top:8px;line-height:1.4}
+  .guest-hint{font-size:.76rem;margin-top:6px;line-height:1.45}
+  .klass{font-size:.78rem;margin-top:4px}
+  .meta{gap:22px;margin-top:8px}
+  .meta-label{font-size:.66rem}
+  .meta-val{font-size:.82rem}
+  .divider{margin:8px 0 6px}
+  .contacts{gap:4px}
+  .ctc{padding:5px 10px;gap:8px;border-radius:7px}
+  .ctc-role{font-size:.64rem;min-width:38px}
+  .ctc-name{font-size:.78rem}
+  .ctc-name small{font-size:.68rem}
+  .ctc-phone{font-size:.72rem}
+  .pwd-link{
+    position:static;
+    margin:8px 0 0 60px;
+    height:30px;padding:0 12px;
+    font-size:.72rem;border-radius:7px;
+  }
 }
 @media(max-width:480px){
-  .card{padding:16px;border-radius:12px}
-  .top-row{gap:12px}
-  .avatar-ring{width:50px;height:50px}
-  .avatar{font-size:1.3rem}
-  .avatar--guest{font-size:1.15rem}
-  .name{font-size:1.2rem}
-  .guest-status,.guest-hint,.klass,.meta{margin-left:62px}
-  .guest-status{font-size:.88rem}
-  .guest-hint{font-size:.74rem}
-  .klass{font-size:.76rem;margin-top:6px}
-  .meta{gap:16px;margin-top:10px}
-  .meta-val{font-size:.8rem}
-  .divider{margin:12px 0 10px}
-  .ctc{padding:6px 10px}
-  .ctc-name{font-size:.78rem}
-  .ctc-phone{font-size:.72rem}
+  .card{padding:10px 12px 10px;border-radius:11px}
+  .avatar-ring{width:44px;height:44px}
+  .avatar{font-size:1.15rem}
+  .name{font-size:1.1rem}
+  .guest-status,.guest-hint,.klass,.meta{margin-left:56px}
+  .pwd-link{margin-left:56px}
+  .meta{gap:16px}
+  .meta-val{font-size:.78rem}
+  .ctc{padding:4px 8px}
+  .ctc-name{font-size:.74rem}
 }
 </style>

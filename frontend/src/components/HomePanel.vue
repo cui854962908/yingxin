@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, inject, type Ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { computed, ref, inject, type Ref, onMounted, onUnmounted, onActivated, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { MILESTONES, SERVICE_CARDS, REGISTER_DATE } from '../constants/timeline'
 import { ICON_PATHS, TL_TO_PHOSPHOR } from '../constants/icons'
@@ -54,6 +54,9 @@ onMounted(() => {
   document.addEventListener('pointermove', onPointerMove)
   document.addEventListener('pointerup', finishDrag)
   document.addEventListener('pointercancel', finishDrag)
+})
+onActivated(() => {
+  nextTick(updateSizes)
 })
 onUnmounted(() => {
   window.removeEventListener('resize', updateSizes)
@@ -284,6 +287,10 @@ function dayLabel(d: string, i: number): 'past' | 'today' | 'future' {
   color: #8b7b65; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: border-color .2s, color .2s, box-shadow .2s;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
 }
 .tl-arrow:hover { border-color: #b5343a; color: #b5343a; box-shadow: 0 0 0 4px rgba(181,52,58,.05) }
 .tl-arrow--left { left: 4px }
@@ -349,6 +356,7 @@ function dayLabel(d: string, i: number): 'past' | 'today' | 'future' {
   display: flex; align-items: center; gap: 18px;
   cursor: pointer; min-height: 110px;
   transition: transform .25s cubic-bezier(.33,1,.68,1), box-shadow .25s, border-color .25s;
+  -webkit-tap-highlight-color: transparent;
 }
 .svc-card:hover {
   transform: translateY(-4px);
@@ -393,36 +401,72 @@ function dayLabel(d: string, i: number): 'past' | 'today' | 'future' {
   .service-grid { grid-template-columns: repeat(2, 1fr) }
 }
 @media(max-width: 768px) {
-  .home-panel { padding: 4px 0 0; gap: 16px }
-  .top-bar { position: relative; flex-direction: column; align-items: flex-start; padding-right: 0 }
-  .tl-section { padding: 0 44px }
-  .tl-scroll { margin-right: 0; padding-top: 20px; padding-bottom: 4px }
+  .home-panel { padding: 4px 0 0; gap: 12px }
+  .svc-card { animation: none; opacity: 1; transform: none; }
+  .top-bar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px 10px;
+    padding-right: 0;
+    min-height: 0;
+  }
+  .top-left { flex: 1 1 160px; min-width: 0 }
+  .countdown-card {
+    position: static;
+    flex: 0 0 auto;
+    padding: 6px 12px 4px;
+    border-radius: 10px;
+  }
+  .tl-section {
+    position: relative;
+    padding: 4px 40px 8px;
+    margin-top: 0;
+    min-height: 108px;
+  }
+  .tl-scroll {
+    margin-top: 0;
+    margin-right: 0;
+    padding-top: 8px;
+    padding-bottom: 4px;
+  }
   .tl-nodes { gap: 32px }
   .tl-node { width: 140px }
   .tl-dot { width: 52px; height: 52px; margin-bottom: 8px }
+  .tl-node--today .tl-dot {
+    box-shadow: 0 0 0 8px rgba(181,52,58,.1);
+    animation: none;
+  }
   .tl-dot :deep(svg), .tl-icon { width: 26px; height: 26px }
   .tl-title { font-size: .66rem }
   .tl-date { font-size: .54rem }
-  .tl-arrow { width: 34px; height: 34px; top: 29px }
-  .tl-arrow--left { left: 6px }
-  .tl-arrow--right { right: 6px }
-  .countdown-card {
-    position: absolute; top: 4px; right: 0;
-    padding: 6px 14px 4px; border-radius: 10px;
-  }
+  .tl-arrow { width: 32px; height: 32px; top: 24px }
+  .tl-arrow--left { left: 2px }
+  .tl-arrow--right { right: 2px }
   .cd-days { font-size: 1.8rem }
   .cd-label { font-size: .7rem }
   .cd-unit { font-size: .72rem }
 }
 @media(max-width: 480px) {
-  .tl-section { padding: 0 40px }
-  .tl-scroll { margin-top: -14px; padding-top: 14px; padding-bottom: 2px }
+  .top-bar { gap: 6px 8px }
+  .top-left { flex-basis: 120px }
+  .countdown-card { padding: 5px 10px 3px }
+  .cd-days { font-size: 1.55rem }
+  .section-title { font-size: .86rem }
+  .tl-hint { font-size: .68rem; line-height: 1.4 }
+  .tl-section { padding: 2px 36px 6px; min-height: 96px }
+  .tl-scroll { padding-top: 6px; padding-bottom: 2px }
   .tl-nodes { gap: 24px }
   .tl-node { width: 120px }
   .tl-dot { width: 44px; height: 44px; margin-bottom: 6px }
+  .tl-node--today .tl-dot { box-shadow: 0 0 0 6px rgba(181,52,58,.08) }
   .tl-dot :deep(svg), .tl-icon { width: 22px; height: 22px }
   .tl-title { font-size: .62rem }
-  .tl-arrow { width: 30px; height: 30px; top: 21px }
+  .tl-arrow { width: 28px; height: 28px; top: 20px }
+  .tl-arrow--left { left: 0 }
+  .tl-arrow--right { right: 0 }
   .service-grid { grid-template-columns: repeat(2, 1fr); gap: 10px }
   .svc-card {
     padding: 16px 12px;

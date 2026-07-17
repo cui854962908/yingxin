@@ -8,7 +8,6 @@ import { categoryAccent, categoryIconPath, categoryTint } from '../../utils/foru
 
 const props = defineProps<{
   item: ForumPostBrief
-  index: number
   isGuest: boolean
   canDelete: boolean
 }>()
@@ -18,7 +17,6 @@ defineEmits<{ open: []; delete: [event: Event] }>()
 const cardStyle = {
   '--wall-accent': categoryAccent(props.item.category),
   '--wall-icon-bg': categoryTint(props.item.category),
-  '--enter-i': props.index,
 } as CSSProperties
 
 function statusInfo() {
@@ -31,7 +29,7 @@ function statusInfo() {
 
 <template>
   <article
-    class="wall-card panel-reveal__card"
+    class="wall-card"
     :class="{ 'wall-card--pinned': item.is_pinned }"
     :style="cardStyle"
     tabindex="0"

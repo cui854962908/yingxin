@@ -1,4 +1,4 @@
-﻿<!-- 瓒呮爣渚嬪锛歴cript+template=395琛岋紝2D鍦板浘闆嗘垚POI妫€绱?鍒嗙被/璇︽儏/鏍″噯闈㈡澘/搴曞浘浜や簰锛屾媶鍒嗕細閫犳垚澶ч噺prop-drilling -->
+<!-- 超标例外：script+template=395行，2D地图集成POI检索/分类/详情/校准面板/底图交互，拆分会造成大量prop-drilling -->
 <script setup lang="ts">
 import { computed, markRaw, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -130,7 +130,7 @@ const desktopOrigin = useDesktopRouteOrigin({
   locateMyPosition,
   setPlaceAsOrigin,
   planRoute: planRouteToPlace,
-  onMobileMissing: () => { geoMessage.value = '\u8bf7\u9009\u62e9\u5730\u56fe\u4e0a\u7684\u5730\u70b9\u4f5c\u4e3a\u8def\u7ebf\u8d77\u70b9\uff0c\u7136\u540e\u7ee7\u7eed\u5bfc\u822a' },
+  onMobileMissing: () => { geoMessage.value = '请先手动选择当前位置：点击地图标记或左侧地点，再点「我要去这」' },
   getGeoMessage: () => geoMessage.value,
 })
 const { promptOpen, promptMessage, choosingOrigin } = desktopOrigin
@@ -223,8 +223,17 @@ function goToSelectedPlace() {
   desktopOrigin.requestRoute(selected.value)
 }
 
+const showMapUsageHint = computed(() =>
+  !calibrateMode.value
+  && !userLocation.value
+  && !choosingOrigin.value
+  && !routeDistance.value
+  && !geoMessage.value
+  && !promptOpen.value,
+)
+
 function startMapOriginSelection() {
-  geoMessage.value = '璇烽€夋嫨鍦板浘鏍囪鎴栧乏渚у湴鐐癸紝浣滀负鏍″唴璺嚎璧风偣'
+  geoMessage.value = '手动选点已开启：请点击地图标记或左侧地点作为当前位置'
   desktopOrigin.beginMapSelection()
 }
 
@@ -241,7 +250,7 @@ async function initMap() {
     applyCampusViewport()
     renderMarkers(filteredPlaces.value)
     refreshRoadOverlay()
-    /* 鑷姩瀹氫綅鏄撹娴忚鍣ㄥ洜闈炵敤鎴锋墜鍔胯€岄潤榛樻嫆缁濓紱鏀逛负鐢ㄦ埛鏄惧紡鐐瑰嚮 "GPS瀹氫綅" */
+    /* 自动定位容易被浏览器因非用户手势而静默拒绝；改为用户显式点击「定位当前位置」 */
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '\u5730\u56fe\u521d\u59cb\u5316\u5931\u8d25'
   } finally {
@@ -356,23 +365,38 @@ onUnmounted(() => {
               @click="desktopOrigin.chooseDorm"
             >
               <span class="map-tool-btn__icon" aria-hidden="true">⌂</span>
-              <span class="map-tool-btn__label">{{ isDesktopMap ? profileDormLabel : '鎴戠殑瀹胯垗' }}</span>
+              <span class="map-tool-btn__label">{{ isDesktopMap ? profileDormLabel : '我的宿舍' }}</span>
             </button>
             <button
               class="locate-me map-tool-btn"
               type="button"
               :disabled="geoStatus === 'loading'"
-              aria-label="璁惧瀹氫綅"
+              aria-label="定位当前位置"
               @click="desktopOrigin.chooseDevice"
             >
               <span class="map-tool-btn__icon" aria-hidden="true">◎</span>
-              <span class="map-tool-btn__label">{{ geoStatus === 'loading' ? '\u5b9a\u4f4d\u4e2d' : (isDesktopMap ? '\u8bbe\u5907\u5b9a\u4f4d' : 'GPS\u5b9a\u4f4d') }}</span>
+              <span class="map-tool-btn__label">{{ geoStatus === 'loading' ? '定位中…' : (isDesktopMap ? '定位当前位置' : '定位') }}</span>
             </button>
             <button class="locate-me map-tool-btn" type="button" @click="startMapOriginSelection">
               <span class="map-tool-btn__icon" aria-hidden="true">⌖</span>
-              <span class="map-tool-btn__label">{{ choosingOrigin ? '\u6b63\u5728\u9009\u8d77\u70b9' : '\u9009\u62e9\u8d77\u70b9' }}</span>
+              <span class="map-tool-btn__label">{{ choosingOrigin ? (isDesktopMap ? '请点击地图选点' : '请点地图') : (isDesktopMap ? '手动选择当前位置' : '选位置') }}</span>
             </button>
           </div>
+          <p
+            v-if="showMapUsageHint"
+            class="map-usage-hint"
+            role="status"
+          >
+            <strong>怎么走？</strong>
+            <template v-if="isDesktopMap">
+              ① 点「定位当前位置」或「手动选择当前位置」设起点
+              ② 搜索或点选目的地
+              ③ 点「我要去这」查看路线
+            </template>
+            <template v-else>
+              ① 先设起点 ② 选目的地 ③ 点「我要去这」
+            </template>
+          </p>
           <p
             v-if="routeDistance && !calibrateMode"
             class="route-result-toast"
@@ -385,7 +409,7 @@ onUnmounted(() => {
             <span v-if="userLocation && !calibrateMode"><i class="legend-user-dot" />{{ routeOriginKind === 'gps' ? '当前位置' : `路线起点：${userLocationLabel}` }}</span>
             <span v-for="item in campusCategories" :key="item.key"><i :style="{ background: item.color }" />{{ item.label }}</span>
           </div>
-          <div v-if="showMapCoordinate" class="map-coordinate">涓績 {{ centerText }} 路 缂╂斁 {{ zoom }}</div>
+          <div v-if="showMapCoordinate" class="map-coordinate">中心 {{ centerText }} · 缩放 {{ zoom }}</div>
         </section>
         <CampusMapDetail
           v-if="!calibrateMode && placeDetailOpen"

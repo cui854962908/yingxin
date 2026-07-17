@@ -14,7 +14,6 @@ import {
   INTRO_WIKI_TAGLINE,
 } from '../constants/intro'
 import { usePanelReveal } from '../composables/usePanelReveal'
-import AppSpinner from './AppSpinner.vue'
 import '../styles/intro-theme.css'
 import '../styles/panel-enter.css'
 import '../styles/intro-school-wiki.css'
@@ -26,7 +25,6 @@ interface WikiBlock {
 }
 
 const blocks = ref<WikiBlock[]>([...INTRO_WIKI_FALLBACK])
-const loading = ref(true)
 const { ready: revealReady } = usePanelReveal()
 
 const parsedBlocks = computed(() =>
@@ -63,7 +61,6 @@ function removeOfficialUrlEntry(html: string): string {
 }
 
 async function load() {
-  loading.value = true
   try {
     const res = await fetch(`/api/announcements?category=${encodeURIComponent(INTRO_WIKI_CATEGORY)}`)
     const data = await res.json()
@@ -76,8 +73,6 @@ async function load() {
     }
   } catch {
     blocks.value = [...INTRO_WIKI_FALLBACK]
-  } finally {
-    loading.value = false
   }
 }
 
@@ -195,10 +190,6 @@ onMounted(load)
         </article>
       </div>
     </section>
-
-    <div v-if="loading" class="wiki-loading" aria-label="正在加载认识牧院内容">
-      <AppSpinner />
-    </div>
 
   </div>
 </template>

@@ -57,6 +57,6 @@ describe('useCampusRouteNavigation', () => {
     navigation.planRouteToPlace(destination)
 
     expect(planRoute).not.toHaveBeenCalled()
-    expect(geoMessage.value).toContain('GPS')
+    expect(geoMessage.value).toContain('起点')
   })
 })

@@ -109,6 +109,7 @@ onMounted(() => {
           <span>标题已从小信带入，请补充问题细节</span>
         </p>
 
+        <div class="fcompose-card-scroll">
         <label class="fcompose-field" :class="{ focused: titleFocused }">
           <span class="fcompose-label"><b>01</b> 问题标题 <em>最多 {{ TITLE_MAX }} 字</em></span>
           <div class="fcompose-input-wrap">
@@ -132,9 +133,11 @@ onMounted(() => {
           </div>
         </label>
 
+        </div>
+
         <div class="fcompose-foot">
-          <p v-if="errMsg" class="fcompose-err">{{ errMsg }}</p>
           <div class="fcompose-actions">
+            <p v-if="errMsg" class="fcompose-err">{{ errMsg }}</p>
             <p v-if="!errMsg" class="fcompose-foot-hint">发布后 24 小时内可编辑，每日限 5 条</p>
             <button type="button" class="fcompose-submit" :class="{ ready: canSubmit }" :disabled="!canSubmit" @click="submit">
               <span>{{ saving ? '发布中…' : '确认发布' }}</span>

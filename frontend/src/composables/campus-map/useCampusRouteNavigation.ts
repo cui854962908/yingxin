@@ -63,7 +63,7 @@ export function useCampusRouteNavigation(options: CampusRouteNavigationOptions) 
     const origin = options.getOrigin()
     if (!map || !AMap || routePlanning.value) return
     if (!origin) {
-      options.setGeoMessage('请先点击右下角「GPS定位」获取当前位置')
+      options.setGeoMessage('请先点「定位当前位置」或「手动选择当前位置」设置起点')
       return
     }
 

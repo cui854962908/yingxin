@@ -5,8 +5,8 @@ import { viewportWidth, onViewportChange, offViewportChange } from './useViewpor
 export const MOBILE_MAX = 768
 export const NARROW_MAX = 480
 
-/** 移动端底栏高度（与 MobileBottomNav 一致，不含 safe-area） */
-export const MOBILE_BOTTOM_NAV_H = 56
+/** 移动端底栏高度（与 MobileBottomNav：6+50+6 一致，不含 safe-area） */
+export const MOBILE_BOTTOM_NAV_H = 62
 
 function readWidth() {
   return viewportWidth()

@@ -162,6 +162,18 @@
     gap: 0;
   }
 
+  .intro.intro-choreo {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+  }
+
+  .main--mobile-tab-shell .intro.intro-choreo {
+    flex: none;
+    min-height: auto;
+    height: auto;
+  }
+
   .intro-head {
     display: flex;
     flex-direction: column;
@@ -267,6 +279,18 @@
 
   .intro-tab:hover {
     transform: none;
+  }
+
+  .intro-tab:focus,
+  .intro-tab:focus-visible,
+  .intro-tab:active {
+    outline: none !important;
+    box-shadow: none;
+  }
+
+  .intro-tab--on:focus,
+  .intro-tab--on:focus-visible {
+    box-shadow: 0 1px 3px rgba(21, 21, 26, 0.08);
   }
 
   .intro-head--detail {

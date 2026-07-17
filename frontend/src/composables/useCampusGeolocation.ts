@@ -283,8 +283,8 @@ export function useCampusGeolocation(options: CampusGeolocationOptions = {}) {
     if (browserFailure === 'insecure') return '当前页面不是安全连接，电脑定位需要使用 HTTPS'
     if (browserFailure === 'denied') return '定位权限被拒绝，请在浏览器网站设置中允许访问位置'
     if (browserFailure === 'unavailable') return '电脑定位服务不可用，请开启 Windows 定位服务'
-    if (browserFailure === 'timeout') return '设备定位超时，请重试或改用我的宿舍作为起点'
-    if (browserFailure === 'unsupported') return '当前电脑不支持设备定位，请改用我的宿舍或地图选点'
+    if (browserFailure === 'timeout') return '定位超时，请重试或改用手动选择当前位置'
+    if (browserFailure === 'unsupported') return '当前设备不支持 GPS 定位，请改用手动选择当前位置'
     return '无法获取当前位置，请检查浏览器与系统定位权限'
   }
 

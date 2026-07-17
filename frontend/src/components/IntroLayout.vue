@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch, KeepAlive } from 'vue'
+import { useRoute, useRouter, type RouteLocationNormalizedLoaded } from 'vue-router'
 import { INTRO_SCHOOL, INTRO_TABS, getIntroCollege, getIntroCampus, getIntroCollegeTabPath } from '../constants/intro'
 import { PRODUCT_TAGLINE } from '../constants/product'
 import '../styles/intro-theme.css'
@@ -65,6 +65,23 @@ const activeTab = computed(() => {
   return 'colleges'
 })
 
+const headTitle = computed(() => {
+  if (isDetailPage.value && detailCollege.value) return detailCollege.value.college
+  if (isCampusPage.value && detailCampus.value) return detailCampus.value.name
+  return INTRO_TABS.find((t) => t.id === activeTab.value)?.label ?? '认识牧院'
+})
+
+/** 牧院内部三 Tab 缓存 key（详情页仍按 path 区分） */
+function introChildKey(r: RouteLocationNormalizedLoaded): string {
+  const path = r.path
+  if (path === '/intro/wiki') return 'intro-wiki'
+  if (path.startsWith('/intro/campus/')) return path
+  if (path === '/intro/clubs') return 'intro-clubs'
+  if (path === '/intro/colleges' || path.startsWith('/intro/sie')) return 'intro-colleges'
+  if (r.name === 'intro-college-detail') return path
+  return path
+}
+
 const collegeTabPath = computed(() => getIntroCollegeTabPath())
 
 const subtitle = computed(() => {
@@ -115,7 +132,7 @@ import '../styles/pages/intro-layout.css'
       <div class="intro-head-top">
         <div class="intro-brand">
           <p class="intro-eyebrow">{{ INTRO_SCHOOL }}</p>
-          <h2 class="intro-title">认识牧院</h2>
+          <h2 class="intro-title">{{ headTitle }}</h2>
           <p v-if="subtitle" class="intro-sub">{{ subtitle }}</p>
         </div>
       </div>
@@ -165,7 +182,11 @@ import '../styles/pages/intro-layout.css'
       </div>
     </header>
     <div class="intro-body">
-      <router-view :key="route.path" />
+      <router-view v-slot="{ Component, route: childRoute }">
+        <KeepAlive :max="4">
+          <component :is="Component" v-if="Component" :key="introChildKey(childRoute)" />
+        </KeepAlive>
+      </router-view>
     </div>
   </div>
 </template>

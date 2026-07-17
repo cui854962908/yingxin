@@ -26,9 +26,8 @@ const activeKey = computed(() => {
 })
 
 function onClick(key: string) {
-  if (key !== activeKey.value) {
-    emit('navigate', key)
-  }
+  if (key === activeKey.value) return
+  emit('navigate', key)
 }
 </script>
 
@@ -167,8 +166,18 @@ function onClick(key: string) {
     cursor: pointer;
     font-family: inherit;
     -webkit-tap-highlight-color: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    outline: none;
     user-select: none;
     transition: color 0.18s ease, transform 0.18s ease;
+  }
+
+  .bottom-nav__tab:focus,
+  .bottom-nav__tab:focus-visible,
+  .bottom-nav__tab:active {
+    outline: none !important;
+    box-shadow: none;
   }
 
   .bottom-nav__tab::before {

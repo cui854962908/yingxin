@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { authFetch, optionalAuthFetch, useAuth } from '../composables/useAuth'
+import { usePreload } from '../composables/usePreload'
 import type { ForumCategory, ForumPostBrief } from '../types/forum'
 import AppSpinner from './AppSpinner.vue'
 import ForumQuestionCard from './forum-wall/ForumQuestionCard.vue'
@@ -14,11 +15,12 @@ import '../styles/panel-enter.css'
 
 const router = useRouter()
 const { token, isAdmin, isGuest } = useAuth()
+const { forumPosts: cachedPosts, forumTotal: cachedTotal } = usePreload()
 
-const items = ref<ForumPostBrief[]>([])
-const loading = ref(true)
+const items = ref<ForumPostBrief[]>(cachedPosts.value.length ? cachedPosts.value : [])
+const loading = ref(!cachedPosts.value.length)
 const switchingPage = ref(false)
-const total = ref(0)
+const total = ref(cachedTotal.value || 0)
 const page = ref(1)
 const sort = ref<ForumSort>('latest')
 const category = ref<ForumCategory | ''>('')
@@ -30,8 +32,8 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize))
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => page.value < totalPages.value)
 
-async function load() {
-  loading.value = true
+async function load(options: { silent?: boolean } = {}) {
+  if (!options.silent) loading.value = true
   try {
     const params = new URLSearchParams({
       page: String(page.value),
@@ -50,9 +52,13 @@ async function load() {
     if (result.success) {
       items.value = result.data.items
       total.value = result.data.total
+      if (page.value === 1 && !category.value && !searchQ.value.trim() && !mineOnly.value && sort.value === 'latest') {
+        cachedPosts.value = result.data.items
+        cachedTotal.value = result.data.total
+      }
     }
   } catch {
-    items.value = []
+    if (!options.silent) items.value = []
   } finally {
     loading.value = false
     switchingPage.value = false
@@ -124,7 +130,13 @@ watch(searchQ, () => {
   searchTimer = setTimeout(reload, 350)
 })
 
-onMounted(load)
+onMounted(() => {
+  if (cachedPosts.value.length) {
+    load({ silent: true })
+    return
+  }
+  load()
+})
 	</script>
 
 <template>
@@ -142,20 +154,19 @@ onMounted(load)
       @mine="toggleMine"
     />
 
-    <div class="wall-main-grid wall-enter-body">
+    <div class="wall-main-grid">
       <section class="wall-feed" aria-label="问题列表">
-        <div v-if="loading" class="wall-loading"><AppSpinner /></div>
-        <div v-else-if="items.length === 0" class="wall-empty">
+        <div v-show="loading && items.length === 0" class="wall-loading"><AppSpinner /></div>
+        <div v-show="!loading && items.length === 0" class="wall-empty">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4V5Z"/><path d="M8 9h8M8 12h5"/></svg>
           <p>暂时没有符合条件的问题</p>
           <button type="button" @click="goAsk">发布第一个提问</button>
         </div>
-        <div v-else class="wall-list">
+        <div v-show="items.length > 0" class="wall-list">
           <ForumQuestionCard
-            v-for="(item, index) in items"
+            v-for="item in items"
             :key="item.id"
             :item="item"
-            :index="index"
             :is-guest="isGuest"
             :can-delete="item.is_mine || isAdmin"
             @open="router.push(`/wall/${item.id}`)"

@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, inject, computed, watch, nextTick, onMounted, onUnmounted, type Ref, type ComputedRef } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, inject, computed, watch, onMounted, onUnmounted, type Ref, type ComputedRef } from 'vue'
+import { useRoute, type RouteLocationNormalizedLoaded } from 'vue-router'
 import { useAppNavigate } from '../composables/useAppNavigate'
 import { useBreakpoint } from '../composables/useBreakpoint'
+import { prefetchMobileTabChunks } from '../composables/usePreload'
 import ProfileCard from './ProfileCard.vue'
 import AdminSidebar from './AdminSidebar.vue'
 import MobileBottomNav from './MobileBottomNav.vue'
@@ -38,7 +39,7 @@ const { isMobile } = useBreakpoint()
 const isGuest = computed(() => isGuestRole(student.value.role))
 const isAdmin = computed(() => student.value.role === 'admin')
 const isClubAdmin = computed(() => student.value.role === 'club_admin')
-// computed 改为 ref + watch + nextTick，避免布局类切换与 Vue Transition 动画同时触发导致组件被"淹没"
+// ref + sync watch：布局类与路由同步切换，避免 nextTick 延迟导致闪动
 function isFullBleedPath(path: string): boolean {
   return path.startsWith('/clubs') || path.startsWith('/wall') || path.startsWith('/account')
 }
@@ -48,13 +49,64 @@ const isWallModule = computed(() => route.path.startsWith('/wall'))
 const isMotionModule = computed(() => isIntroModule.value || isWallModule.value)
 
 const isFullBleedModule = ref(isFullBleedPath(route.path))
-watch(() => route.path, (path) => {
-  if (isFullBleedPath(path)) {
-    nextTick(() => { isFullBleedModule.value = true })
-  } else {
-    isFullBleedModule.value = false
-  }
-})
+watch(
+  () => route.path,
+  (path) => {
+    isFullBleedModule.value = isFullBleedPath(path)
+  },
+  { flush: 'sync' },
+)
+
+/** 移动端底栏五 Tab 路由（统一外壳，减少切 Tab 闪屏） */
+function isMobileTabRoute(path: string): boolean {
+  if (path === '/') return true
+  if (path.startsWith('/intro')) return true
+  if (path.startsWith('/wall')) return true
+  if (path.startsWith('/announcements')) return true
+  if (path.startsWith('/faq')) return true
+  return false
+}
+
+const mobileTabShell = computed(() => isMobile.value && isMobileTabRoute(route.path))
+const mobileTabBodyRef = ref<HTMLElement | null>(null)
+
+/** 移动端切 Tab：统一滚动容器回顶（牧院内部子 Tab 切换除外） */
+function isIntroShellPath(path: string) {
+  return path === '/intro/wiki'
+    || path === '/intro/colleges'
+    || path === '/intro/clubs'
+    || path.startsWith('/intro/sie')
+}
+
+watch(
+  () => route.path,
+  (path, prev) => {
+    if (!mobileTabShell.value) return
+    if (prev && isIntroShellPath(path) && isIntroShellPath(prev)) return
+    if (path.startsWith('/intro')) {
+      const introBody = mobileTabBodyRef.value?.querySelector('.intro-body')
+      if (introBody instanceof HTMLElement) introBody.scrollTop = 0
+      return
+    }
+    if (mobileTabBodyRef.value) mobileTabBodyRef.value.scrollTop = 0
+  },
+  { flush: 'sync' },
+)
+
+/** 移动端底栏切 Tab：缓存主模块实例，避免每次销毁重建 */
+function mobileViewKey(r: RouteLocationNormalizedLoaded): string {
+  const path = r.path
+  if (path === '/') return 'home'
+  if (path.startsWith('/intro')) return 'intro'
+  if (path === '/wall') return 'wall'
+  if (path.startsWith('/wall/')) return r.fullPath
+  if (path === '/announcements') return 'announcements'
+  if (path.startsWith('/announcements/')) return r.fullPath
+  if (path === '/faq') return 'faq'
+  if (path.startsWith('/faq/')) return r.fullPath
+  if (path.startsWith('/clubs')) return path === '/clubs' ? 'clubs' : r.fullPath
+  return r.fullPath
+}
 
 /** 登录/游客均展示身份卡片（牧院新生说/社团全屏页除外；认识牧院移动端不展示） */
 const showProfileCard = computed(
@@ -86,8 +138,8 @@ const userRoleLabel = computed(() => {
 })
 
 const isNavigating = ref(false)
-function handleNavigate(key: string) {
-  if (isNavigating.value) return
+
+function tabRootPath(key: string): string | undefined {
   const routeMap: Record<string, string> = {
     home: '/',
     intro: '/intro/wiki',
@@ -96,11 +148,23 @@ function handleNavigate(key: string) {
     wall: '/wall',
     campus: '/campus',
   }
-  const target = routeMap[key]
-  if (!target || route.path === target) return // 同页不跳
-  isNavigating.value = true
+  return routeMap[key]
+}
+
+function handleNavigate(key: string) {
+  const target = tabRootPath(key)
+  if (!target) return
+  if (route.path === target) return
+
+  if (!isMobile.value) {
+    if (isNavigating.value) return
+    isNavigating.value = true
+    appNavigate(target)
+    setTimeout(() => { isNavigating.value = false }, 500)
+    return
+  }
+
   appNavigate(target)
-  setTimeout(() => { isNavigating.value = false }, 500)
 }
 
 function handleLogout() {
@@ -133,7 +197,7 @@ const touchSwipe = ref({ startX: 0, startY: 0, dx: 0, dy: 0, active: false })
 function onPageTouchStart(e: TouchEvent) {
   if (window.innerWidth > 768 || sidebarOpen.value || e.touches.length !== 1) return
   const target = e.target as HTMLElement
-  if (target.closest('input, textarea, select, [contenteditable="true"]')) return
+  if (target.closest('.bottom-nav, button, a, input, textarea, select, [contenteditable="true"]')) return
   const touch = e.touches[0]
   touchSwipe.value = { startX: touch.clientX, startY: touch.clientY, dx: 0, dy: 0, active: true }
 }
@@ -178,6 +242,7 @@ function finishEdge(e: PointerEvent) {
 }
 
 onMounted(() => {
+  if (isMobile.value) prefetchMobileTabChunks()
   window.addEventListener('resize', onResize)
   document.addEventListener('pointermove', onEdgeMove)
   document.addEventListener('pointerup', finishEdge)
@@ -204,34 +269,51 @@ onUnmounted(() => {
     <main
       class="main"
       :class="{
-        'main--fixed': isFullBleedModule,
-        'main--fullbleed': isFullBleedModule,
+        'main--mobile-tab-shell': mobileTabShell,
+        'main--fixed': isFullBleedModule || mobileTabShell,
+        'main--fullbleed': isFullBleedModule || mobileTabShell,
         'main--wall': isWallModule,
         'main--intro': isIntroModule,
       }"
     >
-      <section v-show="showProfileCard" class="profile-section">
-        <ProfileCard />
-      </section>
-
-      <section
-        class="bottom-section"
-        :class="{ 'bottom-section--full': isFullBleedModule, 'bottom-section--intro': isIntroModule }"
+      <div
+        ref="mobileTabBodyRef"
+        class="mobile-tab-body"
+        :class="{ 'mobile-tab-body--profile': mobileTabShell && showProfileCard }"
       >
-        <div
-          class="section-card"
+        <section v-show="showProfileCard" class="profile-section">
+          <ProfileCard />
+        </section>
+
+        <section
+          class="bottom-section"
           :class="{
-            'section-card--fullbleed': isFullBleedModule,
-            'section-card--intro': isIntroModule,
-            'section-card--motion': isMotionModule,
-            'section-card--wall': isWallModule,
+            'bottom-section--mobile-tab': mobileTabShell,
+            'bottom-section--full': isFullBleedModule || mobileTabShell,
+            'bottom-section--intro': isIntroModule,
           }"
         >
-          <Transition name="module" mode="out-in">
-            <router-view :key="route.fullPath" />
-          </Transition>
-        </div>
-      </section>
+          <div
+            class="section-card"
+            :class="{
+              'section-card--mobile-tab': mobileTabShell,
+              'section-card--fullbleed': isFullBleedModule || mobileTabShell,
+              'section-card--intro': isIntroModule,
+              'section-card--motion': isMotionModule,
+              'section-card--wall': isWallModule,
+            }"
+          >
+            <router-view v-slot="{ Component, route: childRoute }">
+              <KeepAlive v-if="isMobile" :max="6">
+                <component :is="Component" v-if="Component" :key="mobileViewKey(childRoute)" />
+              </KeepAlive>
+              <Transition v-else name="module" mode="out-in">
+                <component :is="Component" v-if="Component" :key="childRoute.fullPath" />
+              </Transition>
+            </router-view>
+          </div>
+        </section>
+      </div>
     </main>
 
     <!-- 侧边栏 -->
@@ -294,18 +376,20 @@ onUnmounted(() => {
   .dashboard {
     background-attachment: scroll;
     /* 论坛/社团等全屏模块与底栏、回答框共用 */
-    --yx-mobile-nav: calc(52px + env(safe-area-inset-bottom, 0px));
+    --yx-mobile-nav: calc(62px + env(safe-area-inset-bottom, 0px));
+    /* 底栏「牧院」圆形按钮上凸高度，固定底栏需额外让位 */
+    --yx-mobile-nav-brand-bump: 18px;
   }
   .dashboard::after {
     display: none;
   }
-  .main { margin-left: 0; padding: 8px 14px calc(68px + env(safe-area-inset-bottom, 0px)); gap: 10px }
+  .main { margin-left: 0; padding: 8px 14px calc(68px + env(safe-area-inset-bottom, 0px)); gap: 10px; transition: none }
   .main--intro {
-    padding: 6px 8px calc(68px + env(safe-area-inset-bottom, 0px));
-    gap: 8px;
+    padding: 0 8px calc(68px + env(safe-area-inset-bottom, 0px));
+    gap: 0;
   }
   .main--fullbleed {
-    padding: 4px 8px calc(52px + env(safe-area-inset-bottom, 0px));
+    padding: 4px 8px calc(62px + env(safe-area-inset-bottom, 0px));
     gap: 0;
   }
   .main--fullbleed.main--wall {
@@ -313,7 +397,165 @@ onUnmounted(() => {
     gap: 0;
   }
   .profile-section { flex: 0 0 auto }
-  .bottom-section { flex: 1; min-height: 0 }
+  .bottom-section { flex: 1; min-height: 0; transition: none }
+
+  /* 底栏五 Tab：统一外壳 padding，布局类（intro/wall/fullbleed）仍生效以撑满高度 */
+  .main--mobile-tab-shell {
+    padding: 0 0 var(--yx-mobile-nav);
+    gap: 0;
+    height: calc(var(--vh, 1vh) * 100);
+    max-height: calc(var(--vh, 1vh) * 100);
+    overflow: hidden;
+  }
+
+  .main--mobile-tab-shell.main--intro,
+  .main--mobile-tab-shell.main--fullbleed,
+  .main--mobile-tab-shell.main--wall {
+    padding: 0 0 var(--yx-mobile-nav);
+    gap: 0;
+  }
+
+  .mobile-tab-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  .main--mobile-tab-shell .mobile-tab-body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .main--mobile-tab-shell .mobile-tab-body--profile {
+    background: #f3ede3;
+  }
+
+  .main--mobile-tab-shell .mobile-tab-body--profile .profile-section {
+    padding: 4px 6px 0;
+    flex: 0 0 auto;
+    background: transparent;
+  }
+
+  .main--mobile-tab-shell .mobile-tab-body--profile :deep(.card) {
+    border-radius: 10px 10px 0 0;
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 8px;
+  }
+
+  .main--mobile-tab-shell .bottom-section--mobile-tab,
+  .main--mobile-tab-shell .bottom-section--full,
+  .main--mobile-tab-shell .bottom-section--intro {
+    flex: 0 0 auto;
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
+
+  .main--mobile-tab-shell .mobile-tab-body--profile .bottom-section--mobile-tab,
+  .main--mobile-tab-shell .mobile-tab-body--profile .bottom-section--full {
+    padding: 0 6px;
+    background: transparent;
+  }
+
+  .main--mobile-tab-shell .section-card--mobile-tab:not(.section-card--intro):not(.section-card--wall),
+  .main--mobile-tab-shell .section-card--fullbleed:not(.section-card--intro):not(.section-card--wall) {
+    flex: 0 0 auto;
+    min-height: auto;
+    height: auto;
+    overflow: visible;
+    padding: 10px 10px 14px;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+  }
+
+  .main--mobile-tab-shell .mobile-tab-body--profile .section-card--mobile-tab:not(.section-card--intro):not(.section-card--wall),
+  .main--mobile-tab-shell .mobile-tab-body--profile .section-card--fullbleed:not(.section-card--intro):not(.section-card--wall) {
+    border: 1px solid #ebe4d8;
+    border-top: 1px solid #f2ebe0;
+    border-radius: 0 0 10px 10px;
+  }
+
+  .main--mobile-tab-shell .section-card--mobile-tab:not(.section-card--intro):not(.section-card--wall) > *,
+  .main--mobile-tab-shell .section-card--fullbleed:not(.section-card--intro):not(.section-card--wall) > * {
+    flex: 0 1 auto;
+    min-height: auto;
+    display: block;
+    width: 100%;
+  }
+
+  /* 牧院：与新生说/首页一致，由 mobile-tab-body 整页纵向滚动 */
+  .main--mobile-tab-shell .section-card--intro {
+    flex: 0 0 auto;
+    min-height: auto;
+    height: auto;
+    width: 100%;
+    display: block;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+    overflow: visible;
+  }
+
+  .main--mobile-tab-shell .section-card--mobile-tab.section-card--wall {
+    flex: 0 0 auto;
+    min-height: auto;
+    height: auto;
+    overflow: visible;
+    padding: 0;
+    background: #fffaf6;
+  }
+
+  .main--mobile-tab-shell .section-card--intro > * {
+    flex: 0 1 auto;
+    min-height: auto;
+    display: block;
+    width: 100%;
+  }
+
+  .main--mobile-tab-shell .section-card--wall > * {
+    flex: 0 1 auto;
+    min-height: auto;
+    display: block;
+    width: 100%;
+  }
+
+  /* 认识牧院贴边顶栏（父级已无 horizontal padding） */
+  .main--mobile-tab-shell .section-card--intro :deep(.intro-choreo .intro-head--sticky) {
+    --intro-sticky-bleed: 0;
+    margin-inline: 0;
+    width: 100%;
+    padding-inline: 12px;
+  }
+
+  @media (max-width: 480px) {
+    .main--mobile-tab-shell .mobile-tab-body--profile .profile-section {
+      padding: 3px 4px 0;
+    }
+
+    .main--mobile-tab-shell .mobile-tab-body--profile .bottom-section--mobile-tab,
+    .main--mobile-tab-shell .mobile-tab-body--profile .bottom-section--full {
+      padding: 0 4px;
+    }
+
+    .main--mobile-tab-shell .mobile-tab-body--profile :deep(.card) {
+      border-radius: 8px 8px 0 0;
+    }
+
+    .main--mobile-tab-shell .mobile-tab-body--profile .section-card--mobile-tab:not(.section-card--intro):not(.section-card--wall),
+    .main--mobile-tab-shell .mobile-tab-body--profile .section-card--fullbleed:not(.section-card--intro):not(.section-card--wall) {
+      border-radius: 0 0 8px 8px;
+      padding: 8px 8px 12px;
+    }
+  }
 }
 
 /* ===== 内容区 ===== */
@@ -326,6 +568,13 @@ onUnmounted(() => {
 }
 .bottom-section { flex: 1; min-height: 0; transition: flex .45s cubic-bezier(.33,1,.68,1) }
 .bottom-section--full { flex: 1 }
+
+.mobile-tab-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
 
 .section-card {
   height: 100%; background: #fff; border-radius: 16px;
@@ -350,7 +599,7 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
-/* 认识牧院：PC 整页滚动；移动端顶栏 sticky 时滚动锁在卡片内 */
+/* 认识牧院：PC 整页滚动；移动端顶栏固定、intro-body 内滚动 */
 @media (min-width: 769px) {
   .section-card--intro {
     height: auto;
@@ -359,30 +608,52 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-  .main--intro {
+  /* 非底栏 Tab 壳（旧布局）：顶栏固定、intro-body 内滚动 */
+  .main--intro:not(.main--mobile-tab-shell) {
     height: calc(var(--vh, 1vh) * 100);
     max-height: calc(var(--vh, 1vh) * 100);
     overflow: hidden;
   }
 
-  .main--intro .bottom-section--intro {
+  .main--intro:not(.main--mobile-tab-shell) .bottom-section--intro {
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
   }
 
-  .main--intro .section-card--intro {
+  .main--intro:not(.main--mobile-tab-shell) .section-card--intro {
     flex: 1;
     min-height: 0;
     height: auto;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    overscroll-behavior: none;
+    isolation: auto;
+  }
+
+  /* 底栏 Tab 壳：覆盖上方 intro 内滚动规则，整页交给 mobile-tab-body */
+  .main--mobile-tab-shell.main--intro .section-card--intro {
+    flex: 0 0 auto;
+    min-height: auto;
+    overflow: visible;
+    display: block;
+  }
+
+  .main--mobile-tab-shell.main--intro .section-card--intro > * {
+    flex: 0 1 auto;
+    min-height: auto;
+    display: block;
   }
 }
 
-@media(max-width:768px){ .section-card { border-radius: 12px; padding: 14px } }
+@media(max-width:768px){
+  .section-card:not(.section-card--mobile-tab):not(.section-card--fullbleed):not(.section-card--intro):not(.section-card--wall) {
+    border-radius: 12px;
+    padding: 14px;
+  }
+}
 @media (max-width: 768px) {
   .section-card--wall,
   .section-card--fullbleed.section-card--wall {
@@ -391,11 +662,32 @@ onUnmounted(() => {
   }
 }
 @media (max-width: 768px) {
-  .section-card--intro {
+  .main--mobile-tab-shell .section-card--intro {
+    overflow: visible;
+  }
+
+  .main--mobile-tab-shell .section-card--intro > * {
+    flex: 0 1 auto;
+    min-height: auto;
+    display: block;
+    flex-direction: unset;
+  }
+
+  .section-card--intro:not(.section-card--mobile-tab) {
     padding: 0;
-    border-radius: 12px;
-    overflow-x: hidden;
-    overflow-y: auto;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
+    overflow: hidden;
+  }
+
+  /* Transition 根节点与 intro 页同高，滚动交给 intro-body */
+  .section-card--intro:not(.section-card--mobile-tab) > * {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 }
 @media(max-width:768px){
@@ -409,6 +701,10 @@ onUnmounted(() => {
   .main--fullbleed {
     height: calc(var(--vh, 1vh) * 100);
     max-height: calc(var(--vh, 1vh) * 100);
+    overflow: hidden;
+  }
+
+  .main--mobile-tab-shell.main--fullbleed {
     overflow: hidden;
   }
 
@@ -428,8 +724,25 @@ onUnmounted(() => {
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
+
+  .main--mobile-tab-shell .bottom-section--full {
+    flex: 0 0 auto;
+    min-height: auto;
+  }
+
+  .main--mobile-tab-shell .section-card--fullbleed {
+    flex: 0 0 auto;
+    min-height: auto;
+    height: auto;
+    overflow: visible;
+  }
 }
-@media(max-width:480px){ .section-card { border-radius: 10px; padding: 14px 12px } }
+@media(max-width:480px){
+  .section-card:not(.section-card--mobile-tab):not(.section-card--fullbleed):not(.section-card--intro):not(.section-card--wall) {
+    border-radius: 10px;
+    padding: 14px 12px;
+  }
+}
 @media(max-width:480px){ .section-card--fullbleed { padding: 0; border-radius: 10px } }
 
 /* ===== 模块切换动画 ===== */
@@ -472,10 +785,29 @@ onUnmounted(() => {
   .main{padding:20px 24px 24px}
 }
 @media(max-width:480px){
-  .main{padding:12px 12px calc(68px + env(safe-area-inset-bottom, 0px));gap:12px}
+  .main:not(.main--mobile-tab-shell){padding:12px 12px calc(68px + env(safe-area-inset-bottom, 0px));gap:12px}
 }
 
 @media (max-width: 768px) {
+  .main--mobile-tab-shell .mobile-tab-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1 1 0;
+  }
+
+  .main:not(.main--mobile-tab-shell):not(.main--fullbleed) .bottom-section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .main:not(.main--mobile-tab-shell):not(.main--fullbleed) .section-card {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+  }
+
   .dashboard { touch-action: pan-y }
 }
 </style>

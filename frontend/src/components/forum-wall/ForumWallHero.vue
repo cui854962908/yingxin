@@ -5,7 +5,7 @@ defineEmits<{ ask: [] }>()
 </script>
 
 <template>
-  <header class="wall-hero wall-enter-head">
+  <header class="wall-hero">
     <div class="wall-hero-text">
       <h1 class="wall-title">{{ FORUM_MODULE_NAME }}</h1>
       <p class="wall-sub">新生互助 · 学长学姐答疑 · 小信答不上来这里问</p>

@@ -1,8 +1,14 @@
 /* 学院详情页移动端页头：返回、学院身份与栏目导航合并为一个整体。 */
 @media (max-width: 768px) {
   .intro.intro--college-detail .intro-head.intro-head--detail {
+    --intro-sticky-bleed: 8px;
     gap: 14px;
-    padding: calc(env(safe-area-inset-top, 0px) + 12px) 14px 0;
+    margin-inline: calc(-1 * var(--intro-sticky-bleed));
+    width: calc(100% + 2 * var(--intro-sticky-bleed));
+    padding:
+      calc(env(safe-area-inset-top, 0px) + 12px)
+      calc(14px + var(--intro-sticky-bleed))
+      0;
     border-bottom: 0;
     background: #fff;
     box-shadow: 0 1px 0 #dedee3, 0 8px 24px rgba(21, 21, 26, 0.06);

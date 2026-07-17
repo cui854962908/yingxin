@@ -16,6 +16,17 @@
 .wall button, .wall input { font: inherit; }
 .wall button:focus-visible, .wall input:focus-visible, .wall article:focus-visible { outline: 3px solid rgba(181, 52, 58, .24); outline-offset: 2px; }
 
+@media (max-width: 768px) {
+  .wall button:focus,
+  .wall button:focus-visible,
+  .wall button:active,
+  .wall input:focus,
+  .wall input:focus-visible,
+  .wall article:focus-visible {
+    outline: none !important;
+  }
+}
+
 .wall-hero {
   position: relative;
   isolation: isolate;

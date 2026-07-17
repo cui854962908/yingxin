@@ -17,6 +17,9 @@
   .wall-tabs button { flex: 0 0 auto; }
   .wall-cats { padding-bottom: 2px; }
   .wall-main-grid { padding: 12px 12px 0; }
+  .wall-pager {
+    padding: 16px 12px calc(12px + var(--yx-mobile-nav, calc(62px + env(safe-area-inset-bottom, 0px))));
+  }
   .wall-card { grid-template-columns: 42px minmax(0, 1fr); gap: 10px; padding: 14px 12px; }
   .wall-card-icon { width: 42px; height: 42px; }
   .wall-card-title { font-size: .9rem; }
@@ -26,6 +29,22 @@
   .wall-status { position: absolute; top: 12px; right: 12px; }
   .wall-card-head { padding-right: 54px; }
   .wall-aside { display: none; }
+
+  .wall { contain: layout style; }
+
+  /* Tab 切换直出：禁用新生说模块内所有入场动画 */
+  .wall,
+  .wall-hero,
+  .wall-filter-panel,
+  .wall-main-grid,
+  .wall-feed,
+  .wall-list,
+  .wall-card,
+  .panel-reveal__card {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

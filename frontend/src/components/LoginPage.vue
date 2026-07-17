@@ -15,7 +15,7 @@ import '../styles/pages/login-page.css'
 </script>
 
 <template>
-  <div class="page">
+  <div class="page login-shell">
     <!-- 左：品牌面板 -->
     <aside class="brand-panel">
       <!-- 背景水印：欢左迎�?-->

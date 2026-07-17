@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import DOMPurify from 'dompurify'
 import AppSpinner from './AppSpinner.vue'
 import ClubDetailGallery from './ClubDetailGallery.vue'
 import { useClubDetail } from '../composables/useClubDetail'
+import { useBreakpoint } from '../composables/useBreakpoint'
 import '../styles/club-detail-editor.css'
 import '../styles/components/club-detail.css'
 
@@ -12,6 +14,20 @@ const {
   cancelEdit, saveEdit, uploadAndSet, uploadPhoto, removePhoto, uploadQr, backLabel,
   joinModal, joinCopyOk, openJoinModal, closeJoinModal, copyJoinQQ,
 } = useClubDetail()
+const { isMobile } = useBreakpoint()
+const showHeroToolbar = computed(() => {
+  if (editing.value) return true
+  if (isNew) return false
+  return canEdit() || isAdmin.value
+})
+/** 横幅图：优先 hero，无则用 logo，保证移动端封面区高度一致 */
+const heroBannerSrc = computed(() => {
+  if (editing.value && editForm.hero_image) return editForm.hero_image
+  const c = club.value
+  if (c?.hero_image) return c.hero_image
+  if (c?.cover_image) return c.cover_image
+  return ''
+})
 </script>
 
 <template>
@@ -20,28 +36,29 @@ const {
   <div v-else-if="club || isNew" class="club-detail" :class="{ 'club-detail--editing': editing }" style="--tc: #4a8c5c; --tcl: #e8f5e9">
     <!-- Hero Banner -->
     <div class="cd-hero-wrapper">
-      <div class="cd-hero">
+      <div class="cd-hero" :class="{ 'cd-hero--no-toolbar': !showHeroToolbar, 'cd-hero--no-banner': !heroBannerSrc }">
+        <div class="cd-hero-cover">
+          <img v-if="heroBannerSrc" :src="heroBannerSrc" class="cd-hero-bg"
+            @error="($event.target as HTMLImageElement).style.display='none'" />
+          <div class="cd-hero-gradient" />
+        </div>
         <button type="button" class="cd-back" :aria-label="backLabel" @click="goBack">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
-          {{ backLabel }}
+          <span class="cd-back__text">{{ isMobile ? '返回' : backLabel }}</span>
         </button>
-        <img v-if="club?.hero_image || (editing && editForm.hero_image)" :src="(editing && editForm.hero_image) || club?.hero_image!" class="cd-hero-bg"
-          @error="($event.target as HTMLImageElement).style.display='none'" />
-        <div class="cd-hero-gradient" />
 
-        <div class="cd-hero-actions">
+        <div v-if="showHeroToolbar" class="cd-hero-actions">
           <template v-if="editing">
             <button class="cd-tag cd-tag-save" :disabled="saving" @click="saveEdit">{{ saving ? '保存中…' : (isNew ? '添加' : '保存') }}</button>
             <button class="cd-tag cd-tag-cancel" @click="cancelEdit">取消</button>
           </template>
           <template v-else>
-            <button v-if="!isNew && (canEdit() || isAdmin)" class="cd-tag cd-tag-edit" @click="enterEdit">编辑</button>
+            <button v-if="canEdit() || isAdmin" class="cd-tag cd-tag-edit" @click="enterEdit">编辑</button>
           </template>
           <select v-if="editing" v-model="editForm.status" class="cd-tag cd-tag-status-select">
             <option value="招新中">招新中</option>
             <option value="已结束">已结束</option>
           </select>
-          <span v-else class="cd-tag cd-tag-status" :class="{ ended: club?.status === '已结束' }">{{ club?.status || '招新中' }}</span>
         </div>
 
         <div class="cd-hero-content">
@@ -57,16 +74,23 @@ const {
             </label>
           </div>
           <div class="cd-hero-info">
-            <input v-if="editing" v-model="editForm.name" class="cd-hero-name-input" placeholder="社团名称" />
-            <h1 v-else class="cd-hero-name">{{ club?.name || '新社团' }}</h1>
-            <input v-if="editing" v-model="editForm.intro" class="cd-hero-intro-input" placeholder="一句话简介" maxlength="300" />
-            <p v-else-if="club?.intro || isNew" class="cd-hero-intro">{{ club?.intro || '请填写社团简介' }}</p>
-            <select v-if="editing" v-model="editForm.category" class="cd-hero-cat-select">
-              <option value="信工团学会">信工团学会</option>
-              <option value="校级组织">校级组织</option>
-              <option value="兴趣社团">兴趣社团</option>
-            </select>
-            <span v-else class="cd-tag cd-tag-category">{{ club?.category || '兴趣社团' }}</span>
+            <template v-if="editing">
+              <input v-model="editForm.name" class="cd-hero-name-input" placeholder="社团名称" />
+              <input v-model="editForm.intro" class="cd-hero-intro-input" placeholder="一句话简介" maxlength="300" />
+              <select v-model="editForm.category" class="cd-hero-cat-select">
+                <option value="信工团学会">信工团学会</option>
+                <option value="校级组织">校级组织</option>
+                <option value="兴趣社团">兴趣社团</option>
+              </select>
+            </template>
+            <template v-else>
+              <h1 class="cd-hero-name">{{ club?.name || '新社团' }}</h1>
+              <p v-if="club?.intro || isNew" class="cd-hero-intro">{{ club?.intro || '请填写社团简介' }}</p>
+              <div class="cd-hero-badges">
+                <span class="cd-tag cd-tag-category">{{ club?.category || '兴趣社团' }}</span>
+                <span class="cd-tag cd-tag-status" :class="{ ended: club?.status === '已结束' }">{{ club?.status || '招新中' }}</span>
+              </div>
+            </template>
           </div>
         </div>
 

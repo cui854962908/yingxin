@@ -4,6 +4,13 @@
 /* Hero */
 .cd-hero-wrapper { padding: 16px 32px 0; margin: 0 auto }
 .cd-hero { position: relative; height: 280px; overflow: hidden; background-color: #e8e8e8 }
+.cd-hero-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: linear-gradient(135deg, #355842 0%, #4a8c5c 48%, #6aad7a 100%);
+}
 .cd-hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 75% center }
 .cd-hero-gradient { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.25) 55%, rgba(0,0,0,.65) 100%); z-index: 1 }
 .cd-hero-actions { position: absolute; top: 16px; right: 24px; z-index: 3; display: flex; align-items: center; gap: 8px }
@@ -94,6 +101,13 @@
 
 .cd-tag { padding: 5px 16px; border-radius: 14px; font-size: .78rem; font-weight: 600; letter-spacing: .03em; white-space: nowrap }
 .cd-tag-category { background: rgba(0,0,0,.38); color: #fff; border: 1px solid rgba(255,255,255,.25); display: inline-block }
+.cd-hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
 .cd-tag-status { background: #E26A6A; color: #fff }
 .cd-tag-status.ended { background: #999 }
 .cd-tag-status-select {
@@ -216,12 +230,32 @@
     box-shadow: none;
   }
 
-  .cd-hero-bg {
+  .cd-hero--no-toolbar {
+    grid-template-areas:
+      'cover'
+      'content'
+      'meta';
+  }
+
+  .cd-hero-cover {
     grid-area: cover;
     position: relative;
     inset: auto;
-    width: 100%;
     height: 172px;
+    background: linear-gradient(135deg, #355842 0%, #4a8c5c 48%, #6aad7a 100%);
+  }
+
+  .cd-hero--no-banner .cd-hero-cover {
+    background:
+      radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.16), transparent 42%),
+      linear-gradient(135deg, #355842 0%, #4a8c5c 48%, #6aad7a 100%);
+  }
+
+  .cd-hero-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     display: block;
     object-fit: cover;
     object-position: center;
@@ -229,10 +263,8 @@
 
   .cd-hero-gradient {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 172px;
+    inset: 0;
+    height: auto;
     z-index: 1;
     pointer-events: none;
   }
@@ -243,10 +275,14 @@
     left: 10px;
     z-index: 6;
     min-height: 40px;
-    max-width: min(46vw, 168px);
+    max-width: none;
     padding: 0 12px 0 10px;
     font-size: 0.8rem;
     white-space: nowrap;
+  }
+
+  .cd-back__text {
+    max-width: 12em;
     overflow: hidden;
     text-overflow: ellipsis;
   }
@@ -307,9 +343,19 @@
   .cd-hero-info .cd-hero-intro {
     font-size: 0.82rem;
     color: #666;
-    margin-bottom: 8px;
+    margin-bottom: 0;
     line-height: 1.5;
     word-break: break-word;
+  }
+
+  .cd-hero-badges {
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .cd-hero-badges .cd-tag {
+    font-size: 0.72rem;
+    padding: 4px 10px;
   }
 
   .cd-hero-info .cd-hero-name-input,
@@ -577,15 +623,13 @@
 
   .cd-main { padding: 10px 10px calc(14px + env(safe-area-inset-bottom, 0px)) }
 
-  .cd-hero-bg,
-  .cd-hero-gradient { height: 156px }
+  .cd-hero-cover { height: 156px }
 
   .cd-back {
     top: 8px;
     left: 8px;
     min-height: 38px;
     font-size: 0.76rem;
-    max-width: min(44vw, 150px);
   }
 
   .cd-hero-actions { min-height: 56px; padding: 8px 12px 0; gap: 6px }

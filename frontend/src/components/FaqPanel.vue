@@ -409,7 +409,7 @@ defineExpose({ refresh: loadAllFaq })
   .faq-header { flex-wrap: wrap; gap: 10px }
   .faq-header-actions { flex-wrap: wrap; gap: 8px }
   .faq-sort-btn, .faq-add-btn, .faq-mode-btn { min-height: 44px; padding: 0 14px; font-size: .8rem }
-  .faq-search-bar { gap: 10px; padding-top: 8px }
+  .faq-search-bar { position: static; gap: 10px; padding-top: 8px }
   .faq-search-input { min-height: 44px; font-size: 16px }
   .faq-search-btn { min-height: 44px; padding: 0 18px }
   .faq-q { flex-wrap: wrap; gap: 8px }

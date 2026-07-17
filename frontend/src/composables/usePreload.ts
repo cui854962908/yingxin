@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { MOBILE_MAX } from './useBreakpoint'
+import type { ForumPostBrief } from '../types/forum'
 
 // 全局缓存：登录后预加载，切换模块时数据已就绪，消除空白闪烁
 interface Announcement { id: string; date: string; title: string; content: string }
@@ -9,8 +10,33 @@ const announcements = ref<Announcement[]>([])
 const faqItems = ref<FaqItem[]>([])
 const faqTotal = ref(0)
 const clubs = ref<any[]>([])
+const forumPosts = ref<ForumPostBrief[]>([])
+const forumTotal = ref(0)
 
 let preloaded = false
+let mobileTabsPrefetched = false
+
+async function loadForumPreview() {
+  try {
+    const res = await fetch('/api/forum/posts?page=1&page_size=4&sort=latest')
+    const data = await res.json()
+    if (data.success) {
+      forumPosts.value = data.data.items
+      forumTotal.value = data.data.total
+    }
+  } catch { /* 新生说非首屏必需 */ }
+}
+
+/** 移动端底栏 Tab：预拉组件 chunk，减少切 Tab 白屏 */
+export function prefetchMobileTabChunks() {
+  if (mobileTabsPrefetched || window.innerWidth > MOBILE_MAX) return
+  mobileTabsPrefetched = true
+  void import('../components/ForumPanel.vue')
+  void import('../components/IntroLayout.vue')
+  void import('../components/IntroSchoolWiki.vue')
+  void import('../components/IntroCollegeList.vue')
+  void import('../components/ClubList.vue')
+}
 
 async function preload() {
   if (preloaded) return
@@ -35,11 +61,26 @@ async function preload() {
         if (cData.success) clubs.value = cData.data
       } catch { /* 社团列表非首屏必需 */ }
     }
-    if (isMobile) setTimeout(loadClubs, 400)
-    else await loadClubs()
+
+    if (isMobile) {
+      prefetchMobileTabChunks()
+      setTimeout(loadForumPreview, 200)
+      setTimeout(loadClubs, 400)
+    } else {
+      await loadClubs()
+    }
   } catch { preloaded = false }
 }
 
 export function usePreload() {
-  return { announcements, faqItems, faqTotal, clubs, preload }
+  return {
+    announcements,
+    faqItems,
+    faqTotal,
+    clubs,
+    forumPosts,
+    forumTotal,
+    preload,
+    prefetchMobileTabChunks,
+  }
 }

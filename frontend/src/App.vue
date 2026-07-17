@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, provide, computed } from 'vue'
+import { ref, onMounted, onUnmounted, provide, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import LoginPage from './components/LoginPage.vue'
 import XiaoXinAssistant from './components/XiaoXinAssistant.vue'
@@ -21,7 +21,24 @@ const showWelcome = ref(false)
 const xinOpen = ref(false)
 const sidebarOpen = ref(typeof window !== 'undefined' ? window.innerWidth > 768 : true)
 
+/** 移动端触控结束后清掉 focus，避免 iOS/微信残留蓝色描边（底栏按钮除外，避免吞点击） */
+function blurTouchFocus(ev: Event) {
+  const target = ev.target
+  if (target instanceof Element && target.closest('.bottom-nav')) return
+
+  requestAnimationFrame(() => {
+    const el = document.activeElement
+    if (el instanceof HTMLElement && el !== document.body && !el.closest('.bottom-nav')) {
+      el.blur()
+    }
+  })
+}
+
 onMounted(async () => {
+  if (typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches) {
+    document.addEventListener('touchend', blurTouchFocus, { passive: true })
+    document.addEventListener('touchcancel', blurTouchFocus, { passive: true })
+  }
   // 注册强制登出回调（供 authFetch 在 refresh 也失败时调用）
   onForceLogout(() => {
     student.value = null
@@ -85,6 +102,11 @@ onMounted(async () => {
   loading.value = false
   showWelcome.value = true
   setTimeout(() => { showWelcome.value = false }, 2800)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('touchend', blurTouchFocus)
+  document.removeEventListener('touchcancel', blurTouchFocus)
 })
 
 function buildStudent(s: Record<string, any>): Student {
@@ -227,6 +249,87 @@ html { scrollbar-width: thin; scrollbar-color: #d4c8b0 transparent }
 /* iOS：输入框字号 < 16px 会触发自动缩放，真机与 DevTools 表现不一致 */
 @media (max-width: 768px) {
   input, textarea, select { font-size: 16px; }
+
+  /*
+   * 移动端触控：去掉系统蓝/灰点击高亮与 focus 蓝框（PC 保留 focus-visible）。
+   * 含 div 等非 button 可点击区（如首页 svc-card）。
+   */
+  *, *::before, *::after {
+    -webkit-tap-highlight-color: transparent !important;
+    tap-highlight-color: transparent !important;
+  }
+
+  html, body, #app {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  a,
+  input,
+  textarea,
+  select,
+  label,
+  summary,
+  [role="button"],
+  [tabindex]:not([tabindex="-1"]) {
+    -webkit-tap-highlight-color: transparent !important;
+    tap-highlight-color: transparent !important;
+    -webkit-focus-ring-color: transparent;
+    outline: none !important;
+  }
+
+  button:focus,
+  button:focus-visible,
+  button:active,
+  a:focus,
+  a:focus-visible,
+  a:active {
+    outline: none !important;
+    box-shadow: none;
+  }
+
+  button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* 可点击 div 等也去掉触控 focus 蓝框（首页 svc-card、论坛卡片等） */
+  div:focus,
+  div:focus-visible,
+  article:focus,
+  article:focus-visible {
+    outline: none !important;
+  }
+}
+
+/* PC：仅去掉 tap 高亮，键盘 focus-visible 保留 */
+@media (min-width: 769px) {
+  button,
+  a,
+  input,
+  textarea,
+  select,
+  label,
+  summary,
+  [role="button"],
+  [tabindex]:not([tabindex="-1"]) {
+    -webkit-tap-highlight-color: transparent;
+    tap-highlight-color: transparent;
+  }
+
+  button:focus,
+  a:focus {
+    outline: none;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 2px solid rgba(181, 52, 58, 0.32);
+    outline-offset: 2px;
+  }
 }
 
 .app-main { width: 100%; min-height: 100vh; min-height: calc(var(--vh, 1vh) * 100); background: #fefcf9 }

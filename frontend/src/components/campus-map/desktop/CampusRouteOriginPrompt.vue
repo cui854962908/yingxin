@@ -15,20 +15,20 @@ defineEmits<{
 </script>
 
 <template>
-  <aside v-if="open" class="route-origin-prompt" role="dialog" aria-label="选择路线起点">
-    <button class="route-origin-prompt__close" type="button" aria-label="关闭起点选择" @click="$emit('cancel')">×</button>
-    <strong>选择路线起点</strong>
+  <aside v-if="open" class="route-origin-prompt" role="dialog" aria-label="设置路线起点">
+    <button class="route-origin-prompt__close" type="button" aria-label="关闭" @click="$emit('cancel')">×</button>
+    <strong>先设置路线起点</strong>
     <p>{{ message }}</p>
     <div class="route-origin-prompt__actions">
       <button v-if="dormLabel" class="primary" type="button" @click="$emit('dorm')">
         <span>◎</span> {{ dormLabel }}
       </button>
       <button type="button" :disabled="locating" @click="$emit('device')">
-        <span>⊙</span> {{ locating ? '定位中…' : '设备定位' }}
+        <span>⊙</span> {{ locating ? '定位中…' : '定位当前位置' }}
       </button>
-      <button type="button" @click="$emit('map')"><span>⌖</span> 从地图选择</button>
+      <button type="button" @click="$emit('map')"><span>⌖</span> 手动选择当前位置</button>
     </div>
-    <small>宿舍和地图选点是校内导览起点，不代表实时 GPS 位置。</small>
+    <small>宿舍与地图选点为校内导览坐标，不等同于实时 GPS。设好起点后，再点目的地「我要去这」即可规划路线。</small>
   </aside>
 </template>
 

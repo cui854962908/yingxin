@@ -118,56 +118,253 @@
 
 @media (max-width: 768px) {
   .fcompose {
-    padding: 0 0 calc(72px + var(--yx-mobile-nav, calc(52px + env(safe-area-inset-bottom, 0px))));
-    background: linear-gradient(180deg, #681018 0%, #681018 80px, #f3ece2 80px, #faf6f1 100%);
-  }
-  .fcompose-layout { border: 0; border-radius: 0; box-shadow: none; background: transparent; }
-  .fcompose-intro {
-    padding: 18px 16px 16px;
-    border-radius: 0 0 18px 18px;
-    box-shadow: 0 6px 20px rgba(80, 38, 30, .12);
-  }
-  .fcompose-intro-mark, .fcompose-intro-copy, .fcompose-steps { display: none; }
-  .fcompose-intro-kicker { margin-bottom: 6px; font-size: .72rem; }
-  .fcompose-intro h1 { font-size: 1.28rem; line-height: 1.42; }
-  .fcompose-intro h1 span { white-space: normal; }
-  .fcompose-card {
-    margin-top: -4px;
-    padding: 22px 16px 28px;
-    border-radius: 18px 18px 0 0;
+    --fcompose-dock-h: calc(76px + var(--yx-mobile-nav-brand-bump, 18px));
+    min-height: 100%;
+    padding: 0;
     background: #f8f4ec;
-    box-shadow: 0 -4px 18px rgba(80, 38, 30, .06);
   }
-  .fcompose-card-head { margin-bottom: 22px; gap: 12px; }
-  .fcompose-card-title { font-size: 1.32rem; }
-  .fcompose-card-close { min-height: 40px; padding-right: 11px; font-size: .72rem; }
+
+  .fcompose-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  /* 左侧说明在移动端与表单头重复，隐藏 */
+  .fcompose-intro {
+    display: none;
+  }
+
+  .fcompose-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    margin-top: 0;
+    padding: 0;
+    border-radius: 0;
+    background: #f8f4ec;
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  .fcompose-card-head {
+    position: relative;
+    top: auto;
+    z-index: 2;
+    flex-shrink: 0;
+    margin: 0;
+    padding: calc(env(safe-area-inset-top, 0px) + 10px) 14px 12px;
+    background: linear-gradient(155deg, #681018 0%, #941b25 58%, #b34a3f 100%);
+    box-shadow: 0 4px 16px rgba(80, 38, 30, 0.14);
+  }
+
+  .fcompose-xin-badge {
+    flex-shrink: 0;
+    margin: 12px 14px 0;
+  }
+
+  .fcompose-card-eyebrow {
+    color: #dcb792;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+  }
+
+  .fcompose-card-title {
+    color: #fff;
+    font-size: 1.18rem;
+    letter-spacing: 0.04em;
+  }
+
+  .fcompose-card-close {
+    flex-shrink: 0;
+    border-color: rgba(255, 255, 255, 0.28);
+    color: #fff5ea;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .fcompose-card-close svg {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  .fcompose-card-close:hover {
+    border-color: rgba(255, 255, 255, 0.42);
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: none;
+  }
+
+  .fcompose-xin-badge {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .fcompose-card-scroll {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px 14px calc(var(--fcompose-dock-h) + 12px);
+  }
+
+  .fcompose-cats {
+    margin: 0 0 18px;
+    min-width: 0;
+  }
+
   .fcompose-cats-row {
-    flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px;
-    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 9px;
+    margin: 0 -14px;
+    padding: 0 14px 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
   }
-  .fcompose-cats-row::-webkit-scrollbar { display: none; }
-  .fcompose-cat { flex: 0 0 auto; min-height: 38px; }
-  .fcompose-field { margin-bottom: 22px; }
-  .fcompose-field input, .fcompose-field textarea { font-size: 16px; border-radius: 12px; }
-  .fcompose-field input { height: 48px; }
-  .fcompose-field textarea { min-height: 168px; }
+
+  .fcompose-cats-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .fcompose-cat {
+    flex: 0 0 auto;
+    min-height: 38px;
+  }
+
+  .fcompose-field {
+    margin-bottom: 18px;
+  }
+
+  .fcompose-field input,
+  .fcompose-field textarea {
+    font-size: 16px;
+    border-radius: 12px;
+  }
+
+  .fcompose-field input {
+    height: 48px;
+  }
+
+  .fcompose-field textarea {
+    min-height: 156px;
+  }
+
+  .fcompose-foot {
+    padding-top: 0;
+    border-top: 0;
+  }
+
   .fcompose-actions {
-    position: fixed; z-index: 8500; right: 0;
-    bottom: var(--yx-mobile-nav, calc(52px + env(safe-area-inset-bottom, 0px)));
+    position: fixed;
+    z-index: 7900;
+    right: 0;
+    bottom: calc(var(--yx-mobile-nav, calc(62px + env(safe-area-inset-bottom, 0px))) + var(--yx-mobile-nav-brand-bump, 18px));
     left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
     padding: 10px 14px 8px;
-    background: rgba(232, 220, 199, .96);
-    backdrop-filter: blur(8px);
-    box-shadow: 0 -8px 24px rgba(80, 38, 30, .1);
+    background: rgba(248, 244, 236, 0.97);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 -8px 24px rgba(80, 38, 30, 0.1);
+    pointer-events: auto;
   }
-  .fcompose-foot-hint { display: none; }
-  .fcompose-submit { width: 100%; min-height: 48px; border-radius: 12px; }
-  .fcompose-err { margin-bottom: 8px; }
+
+  .fcompose-foot-hint {
+    display: none;
+  }
+
+  .fcompose-err {
+    margin: 0;
+    padding: 9px 12px;
+    font-size: 0.76rem;
+  }
+
+  .fcompose-submit {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    border-radius: 12px;
+  }
+
+  .fcompose-card-close:focus,
+  .fcompose-card-close:focus-visible,
+  .fcompose-cat:focus,
+  .fcompose-cat:focus-visible,
+  .fcompose-submit:focus,
+  .fcompose-submit:focus-visible {
+    outline: none !important;
+    box-shadow: none;
+  }
+
+  /* 发布页：外层卡片不滚，避免与内层表单滚动冲突 */
+  .section-card--fullbleed.section-card--wall:has(.fcompose) {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .section-card--fullbleed.section-card--wall:has(.fcompose) > * {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 420px) {
-  .fcompose-card-head { align-items: center; }
-  .fcompose-card-close { width: 40px; padding: 0; border: 0; background: transparent; font-size: 0; box-shadow: none; }
-  .fcompose-card-close svg { width: 34px; height: 34px; }
-  .fcompose-cat { min-width: 62px; padding: 0 13px; }
+  .fcompose-card-head {
+    align-items: center;
+    padding-inline: 12px;
+  }
+
+  .fcompose-xin-badge {
+    margin-inline: 12px;
+  }
+
+  .fcompose-card-scroll {
+    padding-inline: 12px;
+  }
+
+  .fcompose-cats-row {
+    margin-inline: -12px;
+    padding-inline: 12px;
+  }
+
+  .fcompose-card-close {
+    width: 40px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 0;
+    box-shadow: none;
+  }
+
+  .fcompose-card-close svg {
+    width: 34px;
+    height: 34px;
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  .fcompose-cat {
+    min-width: 62px;
+    padding: 0 13px;
+  }
+
+  .fcompose-actions {
+    padding-inline: 12px;
+  }
 }
