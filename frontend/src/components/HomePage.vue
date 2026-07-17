@@ -206,6 +206,7 @@ onUnmounted(() => {
       :class="{
         'main--fixed': isFullBleedModule,
         'main--fullbleed': isFullBleedModule,
+        'main--wall': isWallModule,
         'main--intro': isIntroModule,
       }"
     >
@@ -307,6 +308,10 @@ onUnmounted(() => {
     padding: 4px 8px calc(52px + env(safe-area-inset-bottom, 0px));
     gap: 0;
   }
+  .main--fullbleed.main--wall {
+    padding: 0 0 var(--yx-mobile-nav);
+    gap: 0;
+  }
   .profile-section { flex: 0 0 auto }
   .bottom-section { flex: 1; min-height: 0 }
 }
@@ -382,7 +387,7 @@ onUnmounted(() => {
   .section-card--wall,
   .section-card--fullbleed.section-card--wall {
     padding: 0;
-    border-radius: 10px;
+    border-radius: 0;
   }
 }
 @media (max-width: 768px) {

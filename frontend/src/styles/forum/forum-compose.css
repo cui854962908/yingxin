@@ -118,7 +118,7 @@
 
 @media (max-width: 768px) {
   .fcompose {
-    padding: 0 0 calc(110px + var(--yx-mobile-nav, calc(52px + env(safe-area-inset-bottom, 0px))));
+    padding: 0 0 calc(72px + var(--yx-mobile-nav, calc(52px + env(safe-area-inset-bottom, 0px))));
     background: linear-gradient(180deg, #681018 0%, #681018 80px, #f3ece2 80px, #faf6f1 100%);
   }
   .fcompose-layout { border: 0; border-radius: 0; box-shadow: none; background: transparent; }
@@ -152,8 +152,10 @@
   .fcompose-field input { height: 48px; }
   .fcompose-field textarea { min-height: 168px; }
   .fcompose-actions {
-    position: fixed; z-index: 8500; right: 0; bottom: 0; left: 0;
-    padding: 10px 14px var(--yx-mobile-nav, calc(52px + env(safe-area-inset-bottom, 0px)));
+    position: fixed; z-index: 8500; right: 0;
+    bottom: var(--yx-mobile-nav, calc(52px + env(safe-area-inset-bottom, 0px)));
+    left: 0;
+    padding: 10px 14px 8px;
     background: rgba(232, 220, 199, .96);
     backdrop-filter: blur(8px);
     box-shadow: 0 -8px 24px rgba(80, 38, 30, .1);

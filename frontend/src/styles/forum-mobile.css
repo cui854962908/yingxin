@@ -4,7 +4,7 @@
 }
 
 @media (max-width: 768px) {
-  .wall { padding: 0 0 88px; background: #fbf8f5; }
+  .wall { padding: 0 0 8px; background: #fbf8f5; }
   .wall-hero { min-height: 132px; padding: 24px 20px; border-radius: 0; }
   .wall-title { font-size: 1.75rem; }
   .wall-sub { max-width: 220px; font-size: .75rem; line-height: 1.65; }
@@ -16,7 +16,7 @@
   .wall-tabs { gap: 24px; overflow-x: auto; }
   .wall-tabs button { flex: 0 0 auto; }
   .wall-cats { padding-bottom: 2px; }
-  .wall-main-grid { padding: 12px; }
+  .wall-main-grid { padding: 12px 12px 0; }
   .wall-card { grid-template-columns: 42px minmax(0, 1fr); gap: 10px; padding: 14px 12px; }
   .wall-card-icon { width: 42px; height: 42px; }
   .wall-card-title { font-size: .9rem; }
