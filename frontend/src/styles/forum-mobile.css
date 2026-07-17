@@ -4,7 +4,21 @@
 }
 
 @media (max-width: 768px) {
-  .wall { padding: 0 0 8px; background: #fbf8f5; }
+  .wall {
+    display: flex;
+    flex-direction: column;
+    min-height: auto;
+    height: auto;
+    padding: 0 0 8px;
+    background: #fbf8f5;
+  }
+  .wall-hero,
+  .wall-filter-panel,
+  .wall-main-grid {
+    flex: 0 0 auto;
+    width: 100%;
+    position: relative;
+  }
   .wall-hero { min-height: 132px; padding: 24px 20px; border-radius: 0; }
   .wall-title { font-size: 1.75rem; }
   .wall-sub { max-width: 220px; font-size: .75rem; line-height: 1.65; }
@@ -29,8 +43,6 @@
   .wall-status { position: absolute; top: 12px; right: 12px; }
   .wall-card-head { padding-right: 54px; }
   .wall-aside { display: none; }
-
-  .wall { contain: layout style; }
 
   /* Tab 切换直出：禁用新生说模块内所有入场动画 */
   .wall,

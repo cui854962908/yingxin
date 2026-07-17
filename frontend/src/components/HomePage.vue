@@ -521,10 +521,13 @@ onUnmounted(() => {
     width: 100%;
   }
 
-  .main--mobile-tab-shell .section-card--wall > * {
-    flex: 0 1 auto;
+  /* 新生说：:deep 确保生产构建下 .wall 纵向堆叠，不被 fullbleed 内滚规则压扁 */
+  .main--mobile-tab-shell .section-card--wall :deep(.wall) {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
     min-height: auto;
-    display: block;
+    height: auto;
     width: 100%;
   }
 
@@ -698,7 +701,8 @@ onUnmounted(() => {
   }
 }
 @media (max-width: 768px) {
-  .main--fullbleed {
+  /* 仅旧布局（非底栏 Tab 壳）使用 fullbleed 内滚；Tab 壳由 mobile-tab-body 整页滚动 */
+  .main--fullbleed:not(.main--mobile-tab-shell) {
     height: calc(var(--vh, 1vh) * 100);
     max-height: calc(var(--vh, 1vh) * 100);
     overflow: hidden;
@@ -708,14 +712,14 @@ onUnmounted(() => {
     overflow: hidden;
   }
 
-  .main--fullbleed .bottom-section--full {
+  .main--fullbleed:not(.main--mobile-tab-shell) .bottom-section--full {
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
   }
 
-  .main--fullbleed .section-card--fullbleed {
+  .main--fullbleed:not(.main--mobile-tab-shell) .section-card--fullbleed {
     flex: 1;
     min-height: 0;
     height: auto;
@@ -734,6 +738,11 @@ onUnmounted(() => {
     flex: 0 0 auto;
     min-height: auto;
     height: auto;
+    overflow: visible;
+  }
+
+  .main--mobile-tab-shell .section-card--fullbleed.section-card--wall {
+    display: block;
     overflow: visible;
   }
 }
