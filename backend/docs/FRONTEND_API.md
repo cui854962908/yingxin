@@ -1,19 +1,19 @@
 # 河南牧业经济学院迎新系统 · 后端接口说明（供前端对接）
 
-**配套文档：** `docs/XIAOXIN_SSE.md`（小信 SSE / TTS 专项）、**`docs/ADMIN_GUIDE.md`**（管理员维护）
+配套文档：`docs/XIAOXIN_SSE.md`（小信 SSE / TTS）、`docs/ADMIN_GUIDE.md`（管理员维护）
 
-**版本：** 与当前仓库后端一致（FastAPI），含智能助手 Agent。  
-**交给前端建议一并提供：** 本文件；机器可读契约可在 `.env` 设 **`EXPOSE_API_DOCS=true`** 后访问 **`/openapi.json`**。
+版本与当前仓库后端一致（FastAPI），含智能助手 Agent。  
+需要 OpenAPI 契约时，可在 `.env` 设置 `EXPOSE_API_DOCS=true` 后访问 `/openapi.json`。
 
-**联调基址（开发）：**
+联调基址（开发）：
 
 - 本机：`http://localhost:8000` 或 `http://127.0.0.1:8000`
-- **局域网（手机 / 同事电脑访问你这台机器）：** `http://<你电脑的局域网IP>:8000`  
-  例如：`http://192.168.1.100:8000`（在 Windows 终端执行 `ipconfig` 查看 **IPv4 地址**）
+- 局域网（手机或其他设备访问开发机）：`http://<局域网IP>:8000`  
+  例如 `http://192.168.1.100:8000`（Windows 下用 `ipconfig` 查看 IPv4 地址）
 
-**生产：** 由运维/部署替换为实际域名，例如 `https://api.example.com`
+生产环境由运维配置实际域名，例如 `https://api.example.com`。
 
-**在线文档（Swagger）：** 仅当服务端 `.env` 中 **`EXPOSE_API_DOCS=true`** 时挂载 **`/docs`**、`/openapi.json`；默认关闭，避免匿名浏览完整 API 定义。
+Swagger 文档（`/docs`）仅在 `EXPOSE_API_DOCS=true` 时开放，默认关闭。
 
 ---
 
@@ -135,7 +135,7 @@
 Authorization: Bearer <token>
 ```
 
-**注意：** `Bearer` 与 token 之间有一个空格。
+Authorization 头格式为 `Bearer <token>`，Bearer 与 token 之间有一个空格。
 
 ### 2.2 令牌载荷（解码后字段约定）
 
@@ -153,7 +153,7 @@ Authorization: Bearer <token>
 - `role`：`"admin"`  
 - `exp`：过期时间  
 
-> **说明：** 管理员账号保存在 **`students`** 表中，`role = admin`，**不再提供** `/api/admin/login`。
+管理员账号保存在 `students` 表中，`role = admin`，与学生共用 `POST /api/verify`，无单独的 admin 登录接口。
 
 默认有效期：**24 小时**（服务端可配置）。
 
@@ -398,7 +398,7 @@ export async function agentChat(message: string, token?: string | null) {
 { "question": "报到需要带什么？" }
 ```
 
-**Headers：** `Content-Type: application/json`；（计划中未强制 Bearer，可自行扩展）。
+**Headers：** `Content-Type: application/json`；`Authorization: Bearer <token>`（须登录）
 
 **响应：** `Content-Type: text/event-stream`。每行为 **`data:` + JSON 对象**，形如：
 
@@ -560,7 +560,7 @@ data: {"event":"done","reply_mode":"knowledge_base","top_similarity":0.72}
 
 ## 9. 牧院新生说（Forum）
 
-前端模块名 **牧院新生说**，路由 **`/wall`**。详细维护说明见 **`docs/ADMIN_GUIDE.md`** §3。
+前端模块名「牧院新生说」，路由 `/wall`。维护说明见 `docs/ADMIN_GUIDE.md` 第 3 节。
 
 ### 9.1 帖子列表（匿名可读）
 
@@ -618,18 +618,16 @@ Web 详情页已实现 **隐藏**；置顶目前仅 API。
 
 ---
 
-## 10. 前端联调清单（建议）
+## 10. 前端联调清单
 
-1. 使用 Vite 默认 `http://localhost:5173` 调试，避免 CORS 问题；局域网调试见 **§1.3**。  
-2. **环境变量：** 配置 `VITE_API_BASE`（或项目约定名）指向后端，例如 `http://127.0.0.1:8000`，与后端 **`BACKEND_CORS_ORIGINS`** 中的前端 Origin 一致。  
-3. **管理端：** 使用 **`POST /api/verify`**，请求体为管理员的姓名 / 学号 / 身份证号（与 `students` 表中一致），成功后存 `token`，并判断 `data.role === 'admin'`。  
-4. **学生端：** 同样 **`POST /api/verify`**，存 `token`，`GET /api/auth/me` 做自动登录恢复。  
-5. **`GET /api/faq`、`GET /api/announcements`：** **可不带头**。**`GET /api/auth/me`、`GET /health`、全部 `/api/admin/*`：** 按 **§1.0** 携带 `Authorization: Bearer ${token}`。  
-6. **`POST /api/agent/chat`：** 须登录（Bearer）；FAQ 快车读 **`faq` 表**，未命中再走小信。
-7. **小信（SSE）：** `POST /api/chat` + **`question`**，`fetch` 读流解析 `text/event-stream`；需 **`EMBED_API_KEY` + `documents` 向量**；未命中时可引导 **牧院新生说**（`/wall`）；可选 **`POST /api/tts` 朗读。**  
-8. **牧院新生说：** 列表/详情可匿名 **`GET /api/forum/posts*`**；发帖/回答须学生 JWT。  
-9. 以 **`success` 字段** 区分业务成功与否；HTTP 状态码同时参考 401/403/404/422/503。  
-10. **交接物：** 提供 **`docs/FRONTEND_API.md`**、**`docs/ADMIN_GUIDE.md`**、`docs/XIAOXIN_SSE.md`（做小信 SSE 时）；约定后端 commit/tag；接口变更后同步前端。
+1. 本地调试优先用 Vite 默认 `http://localhost:5173`；局域网调试见 1.3 节。
+2. 配置 `VITE_API_BASE` 指向后端（如 `http://127.0.0.1:8000`），并与 `BACKEND_CORS_ORIGINS` 中的前端 Origin 一致。
+3. 管理端与学生端均用 `POST /api/verify` 登录，成功后存 `token`；管理端另判断 `data.role === 'admin'`。可用 `GET /api/auth/me` 做自动登录恢复。
+4. `GET /api/faq`、`GET /api/announcements` 可不带头；`GET /api/auth/me`、`GET /health`、全部 `/api/admin/*` 按 1.0 节携带 `Authorization: Bearer ${token}`。
+5. `POST /api/agent/chat` 须登录；FAQ 快车读 `faq` 表，未命中再走小信向量检索。
+6. 小信 SSE：`POST /api/chat` + `question` 字段，`fetch` 读流解析 `text/event-stream`；需 `EMBED_API_KEY` 与 `documents` 向量；未命中时可引导牧院新生说（`/wall`）；可选 `POST /api/tts` 朗读。
+7. 牧院新生说：列表/详情可匿名 `GET /api/forum/posts*`；发帖/回答须学生 JWT。
+8. 以 `success` 字段区分业务成功与否；HTTP 状态码同时参考 401/403/404/422/503。
 
 ---
 
@@ -640,8 +638,8 @@ Web 详情页已实现 **隐藏**；置顶目前仅 API。
 | GET | `/health` | Bearer（学生或管理员） |
 | POST | `/api/verify` | 无 |
 | GET | `/api/auth/me` | Bearer |
-| POST | `/api/chat` | 无强制（可按需加 Bearer） |
-| POST | `/api/tts` | 无 |
+| POST | `/api/chat` | Bearer（须登录） |
+| POST | `/api/tts` | Bearer（须登录） |
 | POST | `/api/agent/chat` | Bearer（必须） |
 | GET | `/api/faq` | **无强制** Bearer |
 | POST | `/api/admin/faq` | 管理员 |
@@ -662,9 +660,4 @@ Web 详情页已实现 **隐藏**；置顶目前仅 API。
 | POST | `/api/admin/forum/posts/{id}/pin` | 管理员 |
 | POST | `/api/admin/forum/posts/{id}/hide` | 管理员 |
 
----
-
-**文档路径（仓库内）：** `backend/docs/FRONTEND_API.md`  
-**OpenAPI：** 服务端 **`EXPOSE_API_DOCS=true`** 时访问 **`/openapi.json`**
-
-若后端基址或 CORS 变更，请同步修改本文件「联调基址」与第一节说明；接口签名变更请重新导出 OpenAPI 并知会前端。
+若后端基址或 CORS 变更，请同步修改本文「联调基址」与第一节；接口签名变更请重新导出 OpenAPI 并知会前端。

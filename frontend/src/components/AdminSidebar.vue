@@ -93,7 +93,7 @@ function onSwipeTouchMove(e: TouchEvent) {
   const touch = e.touches[0]
   swipeDX.value = Math.min(0, touch.clientX - swipeStartX.value)
   swipeDY.value = touch.clientY - swipeStartY.value
-  if (swipeDX.value < -12 && Math.abs(swipeDX.value) > Math.abs(swipeDY.value)) {
+  if (swipeDX.value < -12 && Math.abs(swipeDX.value) > Math.abs(swipeDY.value) && e.cancelable) {
     e.preventDefault()
   }
 }

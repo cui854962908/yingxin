@@ -404,11 +404,15 @@ onMounted(() => {
   .clubs-toolbar:not(.clubs-toolbar--embed)::before { left: -14px; right: -14px }
   .clubs-grid { grid-template-columns: 1fr; gap: 16px; padding-inline: 12px }
 }
+@media(max-width:768px){
+  .clubs-search { max-width: 100% }
+  .clubs-search-input { height: 44px; font-size: 16px }
+}
 @media(max-width: 480px) {
   .clubs-toolbar:not(.clubs-toolbar--embed) { padding: 6px 12px 8px; margin: 0 -12px }
   .clubs-toolbar:not(.clubs-toolbar--embed)::before { left: -12px; right: -12px }
   .clubs-search { max-width: 100% }
-  .clubs-search-input { height: 38px; font-size: .84rem }
+  .clubs-search-input { height: 44px; font-size: 16px }
   .clubs-grid { grid-template-columns: 1fr; gap: 14px }
 }
 </style>

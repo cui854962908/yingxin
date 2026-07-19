@@ -21,16 +21,26 @@ const showWelcome = ref(false)
 const xinOpen = ref(false)
 const sidebarOpen = ref(typeof window !== 'undefined' ? window.innerWidth > 768 : true)
 
-/** 移动端触控结束后清掉 focus，避免 iOS/微信残留蓝色描边（底栏按钮除外，避免吞点击） */
+const FOCUSABLE_INPUT = 'input, textarea, select, [contenteditable="true"]'
+const TAP_BLUR_TARGETS = 'button, a, [role="button"]'
+
+function isFormField(el: Element | null): boolean {
+  if (!el) return false
+  return el.matches(FOCUSABLE_INPUT) || !!el.closest(FOCUSABLE_INPUT)
+}
+
+/** 移动端触控结束后仅清按钮/链接触控残留焦点，不影响输入框键盘 */
 function blurTouchFocus(ev: Event) {
-  const target = ev.target
-  if (target instanceof Element && target.closest('.bottom-nav')) return
+  const target = ev.target instanceof Element ? ev.target : null
+  if (target?.closest('.bottom-nav')) return
+  if (isFormField(target)) return
 
   requestAnimationFrame(() => {
     const el = document.activeElement
-    if (el instanceof HTMLElement && el !== document.body && !el.closest('.bottom-nav')) {
-      el.blur()
-    }
+    if (!(el instanceof HTMLElement) || el === document.body) return
+    if (el.closest('.bottom-nav')) return
+    if (isFormField(el)) return
+    if (el.matches(TAP_BLUR_TARGETS)) el.blur()
   })
 }
 

@@ -171,6 +171,14 @@ onMounted(() => {
   transition: border-color .2s;
 }
 .pwd-input:focus { border-color: #b5343a }
+
+@media (max-width: 768px) {
+  .pwd-input {
+    height: 48px;
+    font-size: 16px;
+  }
+}
+
 .pwd-error {
   margin: 0;
   font-size: .84rem;

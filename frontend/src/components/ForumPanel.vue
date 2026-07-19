@@ -10,7 +10,6 @@ import ForumWallFilters, { type ForumSort } from './forum-wall/ForumWallFilters.
 import ForumWallHero from './forum-wall/ForumWallHero.vue'
 import ForumWallSidebar from './forum-wall/ForumWallSidebar.vue'
 import '../styles/forum-wall.css'
-import '../styles/forum-mobile.css'
 import '../styles/panel-enter.css'
 
 const router = useRouter()

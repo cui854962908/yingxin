@@ -249,12 +249,12 @@ async function handleSubmit() {
     border-radius:13px;
     background:#fff;
     color:#29313a;
-    font-size:.94rem;
+    font-size:16px;
     box-shadow:inset 0 1px 2px rgba(40,30,20,.03);
   }
   .field-input::placeholder{
     color:#9b9691;
-    font-size:.94rem;
+    font-size:16px;
   }
   .field-input:focus{
     border-color:#a31522;
@@ -302,11 +302,11 @@ async function handleSubmit() {
     border-radius:13px;
     background:#fff;
     color:#29313a;
-    font-size:.98rem;
+    font-size:16px;
   }
   .field-input::placeholder{
     color:#9b9691;
-    font-size:1rem;
+    font-size:16px;
   }
   .field-input:focus{
     border-color:#a31522;

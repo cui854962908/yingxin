@@ -1,6 +1,6 @@
 # 两条智能对话链路：`/api/agent/chat` 与「小信」`/api/chat`
 
-> **说明**：后端**没有**两套互斥的「大模型 Agent 进程」。用户侧可以理解为 **两条产品入口**：一条是 **迎新智能助手（JSON 单行）**，一条是 **小信（SSE 流式）**。第二条在知识生成阶段复用 **`xiaoxin_chat_service`**，与第一条在走完 FAQ 快车等业务后的 **小信聚合**同源。  
+后端没有两套互斥的大模型进程。用户侧可以理解为两条产品入口：迎新智能助手（JSON 单行）和小信（SSE 流式）。小信在知识生成阶段复用 `xiaoxin_chat_service`，与 Agent 在走完 FAQ 快车等业务后的「小信聚合」同源。
 
 ---
 
@@ -119,8 +119,4 @@ done：有 context 则 links 指向 /faq、/announcements；未命中时可含 *
 | `app/crud/document.py` | **`search_similar`**、**`build_documents`** |
 | `app/core/llm.py` | **embed / generate_stream（同步 HTTP） / build_prompt** |
 
-更细的 Agent 分支与 `source` 含义见上文 §2.2～§2.3。
-
----
-
-**文档路径：** `backend/docs/AGENT_AND_XIAOXIN_DUAL_PATH.md`
+更细的 Agent 分支与 `source` 含义见上文 2.2～2.3 节。

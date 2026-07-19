@@ -53,7 +53,7 @@ export function useDrag(open: Ref<boolean>, onOpen: () => void) {
 
   function onPointerDown(e: PointerEvent) {
     if (e.pointerType === 'mouse' && e.button !== 0) return
-    e.preventDefault()
+    if (e.cancelable) e.preventDefault()
     dragging.value = true
     dragMoved = false
     activePointerId = e.pointerId

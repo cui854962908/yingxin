@@ -1,7 +1,6 @@
 """
-种子脚本：向 forums_posts 表插入 15 条测试帖子。
-使用学生账号（张三、李思雨、王浩然、刘子涵）作为作者，
-覆盖 6 个分类，内容贴合新生场景。
+手动开发脚本：向 forum_posts 表插入测试帖子（不随 init_db 执行）。
+用法：cd backend && uv run python scripts/seed_forum_posts.py
 """
 import random
 import sys

@@ -14,9 +14,7 @@
 | 报到指导 | 报到须知、新生攻略、校园导览 |
 | 答疑互助 | FAQ、小信 AI、牧院新生说 |
 
-**边界：** 不是学籍/名册管理系统。学生名单由运维脚本导入；Web 端做身份校验、个人报到信息展示与内容维护。
-
-完整说明见 [CONTEXT.md](CONTEXT.md) §1.1。
+**边界：** 不是学籍或名册管理系统。学生名单由运维脚本导入；Web 端负责身份校验、个人报到信息展示与内容维护。
 
 ## 快速启动
 
@@ -76,9 +74,9 @@ uv run python scripts/init_db.py
 
 ## 运维
 
-- [yunwei.md](yunwei.md) — 部署、公网 VPS 与排障
+- [yunwei.md](yunwei.md) — 部署、公网更新与排障（含 Nginx 静态前端发布流程）
 - [deploy/nginx-yingxin.conf.example](deploy/nginx-yingxin.conf.example) — Nginx 反向代理示例
-- [backend/docs/ADMIN_GUIDE.md](backend/docs/ADMIN_GUIDE.md) — **管理员与内容维护**
+- [backend/docs/ADMIN_GUIDE.md](backend/docs/ADMIN_GUIDE.md) — 管理员与内容维护
 - [backend/docs/FRONTEND_API.md](backend/docs/FRONTEND_API.md) — 前后端接口
 - [CONTEXT.md](CONTEXT.md) — 项目画像与模块说明
 

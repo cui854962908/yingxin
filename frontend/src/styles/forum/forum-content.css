@@ -39,7 +39,9 @@
 .wall-card:hover .wall-del-btn { display: block; }
 .wall-card:has(.wall-del-btn) .wall-status { margin-right: 40px; }
 
-.wall-aside { display: flex; flex-direction: column; gap: 14px; }
+@media (min-width: 769px) {
+  .wall-aside { display: flex; flex-direction: column; gap: 14px; }
+}
 .wall-aside-card { padding: 20px; border: 1px solid #eadfd9; border-radius: 16px; background: rgba(255, 255, 255, .92); box-shadow: 0 8px 24px rgba(91, 48, 37, .055); }
 .wall-aside-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
 .wall-aside-title { display: flex; align-items: center; gap: 9px; margin: 0; color: #3c2b28; font-size: 1rem; font-weight: 700; }

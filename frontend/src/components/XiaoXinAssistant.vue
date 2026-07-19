@@ -9,6 +9,7 @@ import XinChatBubble from './XinChatBubble.vue'
 import { useTTS } from '../composables/useTTS'
 import { useDrag } from '../composables/useDrag'
 import { useXinChat } from '../composables/useXinChat'
+import { useAppNavigate } from '../composables/useAppNavigate'
 
 const { autoSpeak, isSpeaking, speak, speakSynced, enqueueSpeak, stopSpeak, toggleSpeak } = useTTS()
 
@@ -18,8 +19,10 @@ const sidebarOpen = inject<Ref<boolean>>('sidebarOpen', ref(false))
 
 const {
   open, messages, input, sending, chatBody, quickList,
-  send, onKeydown, closeChat, navigateTo, ensureWelcome,
+  send, onKeydown, closeChat, ensureWelcome,
 } = useXinChat(autoSpeak, { speak, speakSynced, enqueueSpeak, stopSpeak }, injectedOpen)
+
+const { appNavigate } = useAppNavigate()
 
 const { lottieRef, x, y, dragging, isMobile, onPointerDown, reclampPosition } = useDrag(
   open,
@@ -37,15 +40,25 @@ function onKeyup(e: KeyboardEvent) { if (e.key === 'Escape') closeChatAndStop() 
 let chatHistoryPushed = false
 let suppressChatPopstate = false
 
+function popChatHistoryIfNeeded() {
+  if (!chatHistoryPushed || !isMobile.value) return
+  chatHistoryPushed = false
+  suppressChatPopstate = true
+  history.back()
+}
+
 function closeChatAndStop() {
-  const syncHistory = chatHistoryPushed && isMobile.value
   closeChat()
   stopSpeak()
-  if (syncHistory) {
-    chatHistoryPushed = false
-    suppressChatPopstate = true
-    history.back()
-  }
+  popChatHistoryIfNeeded()
+}
+
+/** 气泡内跳转：与关闭按钮一致，同步 pop 掉 open 时 push 的历史条目 */
+function navigateFromChat(to: string) {
+  closeChat()
+  stopSpeak()
+  popChatHistoryIfNeeded()
+  appNavigate(to)
 }
 
 function onChatPopstate() {
@@ -163,7 +176,7 @@ onUnmounted(() => {
           v-for="(m, i) in messages" :key="i"
           :msg="m"
           @speak="speak"
-          @navigate="navigateTo"
+          @navigate="navigateFromChat"
         />
         <!-- 正在输入 -->
         <div v-if="showTypingIndicator" class="msg-row xin">
@@ -192,7 +205,7 @@ onUnmounted(() => {
       <div class="panel-footer">
         <div class="input-box">
           <textarea v-model="input" class="chat-input" placeholder="输入消息，Enter 发送…"
-            rows="1" @keydown="onKeydown" :disabled="sending" />
+            rows="1" @keydown="onKeydown" />
           <button class="send-btn" @click="send" :disabled="!input.trim() || sending">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
           </button>
@@ -446,6 +459,7 @@ onUnmounted(() => {
   font-size: .88rem; line-height: 1.45; outline: none;
   max-height: 90px; font-family: inherit; color: #d8e8ff;
   padding: 7px 0;
+  touch-action: manipulation;
 }
 .chat-input::placeholder { color: #3a5080; }
 .send-btn {

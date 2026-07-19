@@ -77,6 +77,15 @@ function linksAfterAgent(
 const QUICK_TAG_MAX = 3
 const QUICK_TAG_LABEL_MAX = 12
 
+/** 非 SSE 打字机：略快于旧版，保留逐字感 */
+function typewriterDelay(ch: string): number {
+  if ('，。！？、；：\n'.includes(ch)) return 12 + Math.random() * 8
+  return 4 + Math.random() * 3
+}
+
+/** SSE 积压超过该阈值时按帧批量吐字，避免网络已到却慢慢打字 */
+const SSE_BACKLOG_BATCH = 4
+
 /** 从 FAQ 排序生成快捷标签（与后台拖拽顺序一致） */
 export function buildQuickTagsFromFaq(
   faqs: { question: string }[],
@@ -154,10 +163,8 @@ export function useXinChat(
     }
     msg.displayText = msg.text.slice(0, i + 1)
     nextTick(() => scrollBottom())
-    let delay = 10 + Math.random() * 10
     const ch = msg.text[i]
-    if ('，。！？、；：\n'.includes(ch)) delay = 40 + Math.random() * 50
-    const timer = setTimeout(() => scheduleNextChar(idx, i + 1, onComplete), delay)
+    const timer = setTimeout(() => scheduleNextChar(idx, i + 1, onComplete), typewriterDelay(ch))
     typeQueue.push({ idx, timer })
   }
 
@@ -339,23 +346,8 @@ export function useXinChat(
         resolve(true)
       }
 
-      function drain() {
-        if (tokenBuffer.length === 0) {
-          if (streamDone) {
-            finishStream()
-            return
-          }
-          setTimeout(drain, 30)
-          return
-        }
-
-        if (sending.value) sending.value = false
-
-        const ch = tokenBuffer.shift()!
+      function appendStreamChar(ch: string) {
         messages.value[idx].text += ch
-        messages.value[idx].displayText = messages.value[idx].text
-        scrollBottom()
-
         if (ttsStream) {
           sentenceBuf += ch
           if (SENTENCE_END.test(ch)) {
@@ -363,9 +355,37 @@ export function useXinChat(
             sentenceBuf = ''
           }
         }
+      }
 
-        const delay = '，。！？、；：\n'.includes(ch) ? 40 + Math.random() * 50 : 10 + Math.random() * 10
-        setTimeout(drain, delay)
+      function drain() {
+        if (tokenBuffer.length === 0) {
+          if (streamDone) {
+            finishStream()
+            return
+          }
+          setTimeout(drain, 16)
+          return
+        }
+
+        if (sending.value) sending.value = false
+
+        const backlog = tokenBuffer.length
+        const take = backlog > 32 ? 12 : backlog > SSE_BACKLOG_BATCH ? 4 : 1
+        for (let n = 0; n < take && tokenBuffer.length > 0; n++) {
+          appendStreamChar(tokenBuffer.shift()!)
+        }
+        messages.value[idx].displayText = messages.value[idx].text
+        scrollBottom()
+
+        if (tokenBuffer.length > 0) {
+          requestAnimationFrame(drain)
+          return
+        }
+        if (streamDone) {
+          finishStream()
+          return
+        }
+        setTimeout(drain, 16)
       }
       drain()
     })

@@ -181,33 +181,71 @@ const edgeSwipe = ref({ startX: 0, startY: 0, active: false, dx: 0, dy: 0 })
 let edgePointerId: number | null = null
 let edgeCaptureEl: HTMLElement | null = null
 
+/** 左缘宽一点，方便唤起菜单；内容区需横向意图明确后再接管 */
+const EDGE_SWIPE_ZONE_PX = 40
+
 function onEdgeDown(e: PointerEvent) {
   if (window.innerWidth > 768 || sidebarOpen.value || e.button !== 0) return
+  // 触摸走 touch 事件链，避免与 touchstart/touchmove 重复跟踪
   if (e.pointerType === 'touch') return
   const target = e.target as HTMLElement
-  if (target.closest('button, a, input, textarea, select, [contenteditable="true"]')) return
+  if (target.closest('button, a, input, textarea, select, [contenteditable="true"], .xin-panel')) return
+  if (e.clientX > EDGE_SWIPE_ZONE_PX) return
   edgeSwipe.value = { startX: e.clientX, startY: e.clientY, active: true, dx: 0, dy: 0 }
   edgePointerId = e.pointerId
   edgeCaptureEl = e.currentTarget as HTMLElement
   edgeCaptureEl.setPointerCapture(e.pointerId)
 }
 
-const touchSwipe = ref({ startX: 0, startY: 0, dx: 0, dy: 0, active: false })
+const touchSwipe = ref({
+  startX: 0,
+  startY: 0,
+  dx: 0,
+  dy: 0,
+  active: false,
+  /** 左缘起手或已判定为横向侧滑 */
+  committed: false,
+})
 
 function onPageTouchStart(e: TouchEvent) {
   if (window.innerWidth > 768 || sidebarOpen.value || e.touches.length !== 1) return
   const target = e.target as HTMLElement
-  if (target.closest('.bottom-nav, button, a, input, textarea, select, [contenteditable="true"]')) return
+  if (target.closest('.bottom-nav, button, a, input, textarea, select, [contenteditable="true"], .xin-panel')) return
   const touch = e.touches[0]
-  touchSwipe.value = { startX: touch.clientX, startY: touch.clientY, dx: 0, dy: 0, active: true }
+  const fromEdge = touch.clientX <= EDGE_SWIPE_ZONE_PX
+  // 内容区横向滚动条（分类 Tab 等）右滑不开菜单，左缘仍保留
+  if (!fromEdge && target.closest('.wall-cats-scroll, .clubs-categories, .intro-tabs')) return
+  touchSwipe.value = {
+    startX: touch.clientX,
+    startY: touch.clientY,
+    dx: 0,
+    dy: 0,
+    active: true,
+    committed: fromEdge,
+  }
 }
 
 function onPageTouchMove(e: TouchEvent) {
   if (!touchSwipe.value.active || e.touches.length !== 1) return
   const touch = e.touches[0]
-  touchSwipe.value.dx = touch.clientX - touchSwipe.value.startX
-  touchSwipe.value.dy = touch.clientY - touchSwipe.value.startY
-  if (touchSwipe.value.dx > 12 && touchSwipe.value.dx > Math.abs(touchSwipe.value.dy)) {
+  const dx = touch.clientX - touchSwipe.value.startX
+  const dy = touch.clientY - touchSwipe.value.startY
+  touchSwipe.value.dx = dx
+  touchSwipe.value.dy = dy
+
+  if (!touchSwipe.value.committed) {
+    if (Math.abs(dy) > Math.abs(dx) + 8) {
+      touchSwipe.value.active = false
+      return
+    }
+    if (dx > 12 && dx > Math.abs(dy)) {
+      touchSwipe.value.committed = true
+    } else {
+      return
+    }
+  }
+
+  if (dx > 12 && dx > Math.abs(dy) && e.cancelable) {
     e.preventDefault()
   }
 }
@@ -215,11 +253,13 @@ function onPageTouchMove(e: TouchEvent) {
 function finishPageTouch() {
   const { dx, dy, active } = touchSwipe.value
   touchSwipe.value.active = false
+  touchSwipe.value.committed = false
   if (active && dx > 70 && dx > Math.abs(dy) * 1.25) sidebarOpen.value = true
 }
 
 function cancelPageTouch() {
   touchSwipe.value.active = false
+  touchSwipe.value.committed = false
 }
 
 function onEdgeMove(e: PointerEvent) {
@@ -817,6 +857,10 @@ onUnmounted(() => {
     height: auto;
   }
 
-  .dashboard { touch-action: pan-y }
+  .main--mobile-tab-shell .mobile-tab-body {
+    touch-action: pan-y pinch-zoom;
+  }
+
+  .dashboard { touch-action: manipulation; }
 }
 </style>
