@@ -3,7 +3,7 @@
 
 返回 (is_authenticated, current_student_id, role)。
 - 无 Bearer：未登录。
-- 非法 / 过期 Bearer：401（由 get_optional_payload 抛出）。
+- 非法 / 过期 Bearer：公开可读接口按未登录（None）；须登录接口仍 401。
 """
 
 from __future__ import annotations

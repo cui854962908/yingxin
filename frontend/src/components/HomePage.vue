@@ -57,13 +57,14 @@ watch(
   { flush: 'sync' },
 )
 
-/** 移动端底栏五 Tab 路由（统一外壳，减少切 Tab 闪屏） */
+/** 移动端底栏 Tab 壳内路由（含从认识牧院进入的社团详情） */
 function isMobileTabRoute(path: string): boolean {
   if (path === '/') return true
   if (path.startsWith('/intro')) return true
   if (path.startsWith('/wall')) return true
   if (path.startsWith('/announcements')) return true
   if (path.startsWith('/faq')) return true
+  if (/^\/clubs\/[^/]+$/.test(path) && path !== '/clubs/add') return true
   return false
 }
 
@@ -86,6 +87,10 @@ watch(
     if (path.startsWith('/intro')) {
       const introBody = mobileTabBodyRef.value?.querySelector('.intro-body')
       if (introBody instanceof HTMLElement) introBody.scrollTop = 0
+      return
+    }
+    if (/^\/clubs\/[^/]+$/.test(path) && path !== '/clubs/add') {
+      if (mobileTabBodyRef.value) mobileTabBodyRef.value.scrollTop = 0
       return
     }
     if (mobileTabBodyRef.value) mobileTabBodyRef.value.scrollTop = 0
@@ -122,6 +127,7 @@ const sidebarOpen = inject<Ref<boolean>>('sidebarOpen', ref(true))
 // 根据当前路由反推侧边栏选中项
 const activeKey = computed(() => {
   if (route.path.startsWith('/intro')) return 'intro'
+  if (/^\/clubs\/[^/]+$/.test(route.path) && route.path !== '/clubs/add') return 'intro'
   if (route.path === '/') return 'home'
   if (route.path.startsWith('/announcements')) return 'announcements'
   if (route.path.startsWith('/faq')) return 'faq'
@@ -784,6 +790,10 @@ onUnmounted(() => {
   .main--mobile-tab-shell .section-card--fullbleed.section-card--wall {
     display: block;
     overflow: visible;
+  }
+
+  .main--mobile-tab-shell .section-card--fullbleed :deep(.club-detail .cd-main) {
+    padding-bottom: calc(14px + var(--yx-mobile-nav, calc(62px + env(safe-area-inset-bottom, 0px))));
   }
 }
 @media(max-width:480px){

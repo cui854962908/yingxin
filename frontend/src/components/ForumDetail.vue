@@ -211,6 +211,22 @@ onMounted(load)
                 <span class="fthread-hero-dot" aria-hidden="true">·</span>
                 <time :datetime="post.created_at">{{ formatRelativeTime(post.created_at) }}</time>
               </div>
+              <div class="fthread-hero-stats">
+                <span class="fthread-hero-stat"><strong>{{ post.view_count }}</strong>浏览</span>
+                <span class="fthread-hero-stat"><strong>{{ post.answer_count }}</strong>回答</span>
+                <span class="fthread-hero-stat"><strong>{{ post.like_count }}</strong>点赞</span>
+                <span class="fthread-hero-stat fthread-hero-stat--status" :class="statusClass">{{ statusLabel }}</span>
+                <button
+                  v-if="!isGuest"
+                  type="button"
+                  class="fthread-like fthread-like--sm fthread-hero-like"
+                  :class="{ 'fthread-like--on': post.liked_by_me }"
+                  @click="togglePostLike"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                  {{ post.liked_by_me ? '已赞' : '点赞' }}
+                </button>
+              </div>
             </div>
             <span class="fthread-hero-mark" aria-hidden="true">问</span>
           </header>

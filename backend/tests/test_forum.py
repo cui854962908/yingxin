@@ -143,6 +143,15 @@ class TestForumPosts:
         resp = client.get("/api/forum/posts", headers=student_headers)
         assert resp.json()["data"]["items"][0]["author"]["name"] == "张三"
 
+    def test_list_treats_invalid_bearer_as_guest(self, client, student_headers):
+        _create_post(client, student_headers)
+        resp = client.get(
+            "/api/forum/posts?page=1&page_size=4&sort=latest",
+            headers={"Authorization": "Bearer invalid.token.here"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["success"] is True
+
     def test_create_and_detail(self, client, student_headers):
         resp = _create_post(client, student_headers)
         assert resp.status_code == 200

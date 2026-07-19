@@ -18,6 +18,7 @@ const tabs = [
 
 const activeKey = computed(() => {
   if (route.path.startsWith('/intro')) return 'intro'
+  if (/^\/clubs\/[^/]+$/.test(route.path) && route.path !== '/clubs/add') return 'intro'
   if (route.path === '/') return 'home'
   if (route.path.startsWith('/announcements')) return 'announcements'
   if (route.path.startsWith('/faq')) return 'faq'

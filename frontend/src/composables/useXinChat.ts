@@ -77,14 +77,16 @@ function linksAfterAgent(
 const QUICK_TAG_MAX = 3
 const QUICK_TAG_LABEL_MAX = 12
 
-/** 非 SSE 打字机：略快于旧版，保留逐字感 */
+/** 非 SSE 打字机：逐字感，速度约为 SSE Drain 同量级 */
 function typewriterDelay(ch: string): number {
-  if ('，。！？、；：\n'.includes(ch)) return 12 + Math.random() * 8
-  return 4 + Math.random() * 3
+  if ('，。！？、；：\n'.includes(ch)) return 24 + Math.random() * 16
+  return 8 + Math.random() * 6
 }
 
-/** SSE 积压超过该阈值时按帧批量吐字，避免网络已到却慢慢打字 */
-const SSE_BACKLOG_BATCH = 4
+/** SSE 积压超过该阈值时按帧批量吐字；数值越小越偏逐字 */
+const SSE_BACKLOG_BATCH = 2
+/** 每帧/轮询间隔（ms）；约为旧版 16ms 的两倍，整体打字约慢一半 */
+const SSE_DRAIN_INTERVAL_MS = 32
 
 /** 从 FAQ 排序生成快捷标签（与后台拖拽顺序一致） */
 export function buildQuickTagsFromFaq(
@@ -363,14 +365,14 @@ export function useXinChat(
             finishStream()
             return
           }
-          setTimeout(drain, 16)
+          setTimeout(drain, SSE_DRAIN_INTERVAL_MS)
           return
         }
 
         if (sending.value) sending.value = false
 
         const backlog = tokenBuffer.length
-        const take = backlog > 32 ? 12 : backlog > SSE_BACKLOG_BATCH ? 4 : 1
+        const take = backlog > 16 ? 6 : backlog > SSE_BACKLOG_BATCH ? 2 : 1
         for (let n = 0; n < take && tokenBuffer.length > 0; n++) {
           appendStreamChar(tokenBuffer.shift()!)
         }
@@ -385,7 +387,7 @@ export function useXinChat(
           finishStream()
           return
         }
-        setTimeout(drain, 16)
+        setTimeout(drain, SSE_DRAIN_INTERVAL_MS)
       }
       drain()
     })

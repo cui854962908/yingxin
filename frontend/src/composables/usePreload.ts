@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { MOBILE_MAX } from './useBreakpoint'
+import { optionalAuthFetch } from './useAuthFetch'
 import type { ForumPostBrief } from '../types/forum'
 
 // 全局缓存：登录后预加载，切换模块时数据已就绪，消除空白闪烁
@@ -18,7 +19,7 @@ let mobileTabsPrefetched = false
 
 async function loadForumPreview() {
   try {
-    const res = await fetch('/api/forum/posts?page=1&page_size=4&sort=latest')
+    const res = await optionalAuthFetch('/api/forum/posts?page=1&page_size=4&sort=latest')
     const data = await res.json()
     if (data.success) {
       forumPosts.value = data.data.items

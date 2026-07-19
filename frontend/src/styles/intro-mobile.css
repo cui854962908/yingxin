@@ -88,6 +88,11 @@
     box-shadow:
       0 1px 0 var(--intro-line, #dedee3),
       0 4px 14px rgba(21, 21, 26, 0.05);
+    padding-bottom: 8px;
+  }
+
+  .intro--clubs .intro-sub {
+    display: none;
   }
 
   .intro-choreo .intro-head::before {
@@ -519,9 +524,28 @@
   .intro-body .clubs--intro-embed {
     margin-inline: -8px;
     width: calc(100% + 16px);
-    padding: 0 var(--intro-wiki-pad, 6px) calc(12px + env(safe-area-inset-bottom, 0px));
-    gap: 0;
-    background: #f3f3f5;
+    padding: 4px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+    gap: 6px;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(181, 31, 45, 0.06), transparent 42%),
+      linear-gradient(180deg, #f7f4f0 0%, #f3f3f5 120px);
+  }
+
+  .intro-body .clubs--intro-embed .intro-org-list {
+    gap: 12px;
+    padding-inline: 0;
+  }
+
+  .intro-body .clubs--intro-embed .intro-org-card {
+    padding: 16px 14px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(21, 21, 26, 0.04);
+  }
+
+  .intro-body .clubs--intro-embed .intro-org-card__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
   }
 
   .intro-body .clubs--intro-embed .clubs-toolbar--embed {
@@ -531,12 +555,11 @@
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin: 0 calc(-1 * var(--intro-wiki-pad, 6px)) 0 !important;
-    padding: 10px var(--intro-wiki-pad, 6px) 12px !important;
-    background: #fff;
-    border-top: 1px solid var(--intro-line, #dedee3);
-    border-bottom: 1px solid var(--intro-line, #dedee3);
+    gap: 6px;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent;
+    border: 0;
     box-shadow: none;
   }
 
@@ -546,8 +569,8 @@
   }
 
   .intro-body .clubs--intro-embed .clubs-main {
-    padding-top: 12px;
-    gap: 12px;
+    padding-top: 4px;
+    gap: 10px;
   }
 
   .intro-body .clubs--intro-embed .intro-subnav {
@@ -590,7 +613,13 @@
 
   .intro-body .clubs--intro-embed .clubs-grid {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 14px;
+    padding-inline: 2px;
+  }
+
+  .intro-body .clubs--intro-embed .club-card {
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(21, 21, 26, 0.06);
   }
 
   /* 社团详情（intro 路由内）· 与大百科同宽 */

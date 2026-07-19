@@ -87,7 +87,7 @@ async def get_optional_payload(
     request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_http_bearer),
 ) -> Optional[Dict[str, Any]]:
-    """无 Authorization 时返回 None；显式提供但非法的 token 仍 401。"""
+    """无 Authorization 或 token 无效/过期时返回 None（公开可读接口按匿名处理）。"""
     t0 = time.perf_counter()
     try:
         if credentials is None or not credentials.credentials:
@@ -95,16 +95,10 @@ async def get_optional_payload(
         try:
             payload = decode_token(credentials.credentials)
             if "sub" not in payload or "role" not in payload:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="令牌内容无效",
-                )
+                return None
             return payload
         except JWTError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="令牌无效或已过期",
-            ) from None
+            return None
     finally:
         perf = getattr(request.state, "agent_perf", None)
         if perf is not None:

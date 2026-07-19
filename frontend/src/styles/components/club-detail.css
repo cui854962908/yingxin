@@ -207,6 +207,12 @@
     background: #f3f3f5;
   }
 
+  /* 底栏 Tab 壳内整页滚动，避免 section-card 内滚导致「从上到下刷出来」 */
+  .main--mobile-tab-shell .club-detail {
+    min-height: auto;
+    background: #f3f3f5;
+  }
+
   .club-detail--editing .cd-main {
     padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   }

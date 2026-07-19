@@ -267,6 +267,19 @@ onMounted(() => {
 <style scoped>
 .clubs { display: flex; flex-direction: column; gap: 16px }
 
+.clubs--intro-embed {
+  gap: 8px;
+}
+.clubs--intro-embed .clubs-main {
+  gap: 14px;
+}
+.clubs--intro-embed .clubs-grid {
+  padding-inline: 0;
+}
+.clubs--intro-embed .intro-org-list {
+  gap: 12px;
+}
+
 .clubs-toolbar {
   display: flex; flex-direction: column; gap: 10px;
   position: sticky; top: 0; z-index: 20;
