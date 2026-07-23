@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Club } from '../types/club'
 import type { IntroClubFilter } from '../constants/intro'
@@ -8,6 +8,7 @@ import {
   resolveIntroClubGroups,
 } from '../constants/intro'
 import { useBreakpoint } from '../composables/useBreakpoint'
+import { useRefreshOnActivate } from '../composables/useRefreshOnActivate'
 import AppSpinner from './AppSpinner.vue'
 import ClubCard from './ClubCard.vue'
 import IntroOrgGroupCard from './IntroOrgGroupCard.vue'
@@ -56,8 +57,8 @@ watch([visible, pageSize], () => {
   if (currentPage.value > totalPages.value) currentPage.value = totalPages.value
 })
 
-async function load() {
-  loading.value = true
+async function load(options: { silent?: boolean } = {}) {
+  if (!options.silent) loading.value = true
   try {
     const res = await fetch('/api/clubs')
     const d = await res.json()
@@ -95,7 +96,10 @@ function nextPage() {
   if (currentPage.value < totalPages.value) currentPage.value += 1
 }
 
-onMounted(load)
+useRefreshOnActivate(
+  () => load(),
+  (opts) => load(opts),
+)
 </script>
 
 <template>

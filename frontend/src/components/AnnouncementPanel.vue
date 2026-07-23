@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { usePreload } from '../composables/usePreload'
+import { useRefreshOnActivate } from '../composables/useRefreshOnActivate'
 import { authHeaders, useAuth } from '../composables/useAuth'
 import AppSpinner from './AppSpinner.vue'
 
@@ -56,12 +57,15 @@ async function saveEdit(id: string) {
   } finally { saving.value = false }
 }
 
-async function load() {
-  loading.value = true
+async function load(options: { silent?: boolean } = {}) {
+  if (!options.silent) loading.value = true
   try {
     const res = await fetch('/api/announcements')
     const d = await res.json()
-    if (d.success) items.value = d.data
+    if (d.success) {
+      items.value = d.data
+      cached.value = d.data
+    }
   } catch { console.warn('加载公告列表失败') }
   finally { loading.value = false }
 }
@@ -73,7 +77,10 @@ async function handleDelete(id: string) {
   } catch { console.warn('删除公告请求失败') }
 }
 
-onMounted(load)
+useRefreshOnActivate(
+  () => load(),
+  (opts) => load(opts),
+)
 </script>
 
 <template>

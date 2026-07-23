@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { authFetch, optionalAuthFetch, useAuth } from '../composables/useAuth'
 import { usePreload } from '../composables/usePreload'
+import { useRefreshOnActivate } from '../composables/useRefreshOnActivate'
 import type { ForumCategory, ForumPostBrief } from '../types/forum'
 import AppSpinner from './AppSpinner.vue'
 import ForumQuestionCard from './forum-wall/ForumQuestionCard.vue'
@@ -129,13 +130,10 @@ watch(searchQ, () => {
   searchTimer = setTimeout(reload, 350)
 })
 
-onMounted(() => {
-  if (cachedPosts.value.length) {
-    load({ silent: true })
-    return
-  }
-  load()
-})
+useRefreshOnActivate(
+  () => (cachedPosts.value.length ? load({ silent: true }) : load()),
+  (opts) => load(opts),
+)
 	</script>
 
 <template>

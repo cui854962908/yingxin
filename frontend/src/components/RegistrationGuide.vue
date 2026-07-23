@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { authHeaders, useAuth } from '../composables/useAuth'
 import { useAppNavigate } from '../composables/useAppNavigate'
+import { useRefreshOnActivate } from '../composables/useRefreshOnActivate'
 import AppSpinner from './AppSpinner.vue'
 
 const props = withDefaults(defineProps<{
@@ -31,8 +32,8 @@ const editForm = ref({ title: '', content: '' })
 const saving = ref(false)
 const saveMsg = ref('')
 
-async function load() {
-  loading.value = true
+async function load(options: { silent?: boolean } = {}) {
+  if (!options.silent) loading.value = true
   try {
     const res = await fetch(`/api/announcements?category=${props.category}`)
     const d = await res.json()
@@ -92,7 +93,10 @@ function contentUsesHtml(text: string): boolean {
   return /<[a-z][\s\S]*>/i.test(text)
 }
 
-onMounted(load)
+useRefreshOnActivate(
+  () => load(),
+  (opts) => load(opts),
+)
 </script>
 
 <template>

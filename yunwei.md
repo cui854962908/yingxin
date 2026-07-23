@@ -123,8 +123,37 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 | 组件 | 方式 |
 |------|------|
 | 前端 | 开发机构建 `frontend/dist`，Nginx 托管静态文件 |
-| 后端 | 本机 `uvicorn` 或 systemd 守护，Nginx 反代 `/api/`、`/static/` |
+| 后端 | systemd 守护 `yingxin-backend`，Nginx 反代 `/api/`、`/static/` |
 | 数据库 | Docker 跑 `welcome-postgres`，或本机 PostgreSQL |
+
+**关键原则（踩坑总结）：**
+
+| 要做 | 不要做 |
+|------|--------|
+| 本机 `npm run build`，上传 `dist` 压缩包 | 在 ≤2GB 服务器上 `npm run build`（易 OOM 卡死） |
+| 解压到 Nginx 的 `dist/` 目录 | 在服务器 `git pull` 指望前端自动更新（`dist/` 在 `.gitignore`，Git 不管打包产物） |
+| `systemctl restart yingxin-backend` | SSH 里裸跑 `uv run`（非交互 shell 常找不到 `uv`） |
+| 更新后用无痕窗口验证 | 普通刷新（浏览器会缓存旧 JS） |
+
+### 4.0 生产路径与 systemd（阿里云示例）
+
+以当前公网机为例（路径因安装而异，以实际为准）：
+
+| 项目 | 路径 / 命令 |
+|------|-------------|
+| 项目源码 | `/var/www/yingxin` |
+| Nginx 静态根 | `/var/www/yingxin/frontend/dist` |
+| 后端工作目录 | `/var/www/yingxin/backend` |
+| systemd 单元 | `yingxin-backend.service` |
+| 启动命令 | `/root/.local/bin/uv run uvicorn app.main:app --host 127.0.0.1 --port 8000` |
+
+查看服务配置：
+
+```bash
+systemctl cat yingxin-backend.service
+systemctl status yingxin-backend --no-pager
+journalctl -u yingxin-backend -n 50 --no-pager
+```
 
 ### 4.1 Nginx 要点
 
@@ -146,36 +175,113 @@ sudo nginx -T 2>/dev/null | grep -E '^\s*root '
 
 ### 4.2 更新前端（只改界面时）
 
-在开发机：
+Nginx 只读 **`frontend/dist/`**，不读 `frontend/src/`。因此必须在本机构建后再上传。
+
+**开发机（Windows PowerShell）：**
 
 ```powershell
+cd C:\path\to\yingxin
+git pull origin master
+git log -1 --oneline
+
 cd frontend
 npm run build
 tar -czf dist.tar.gz -C dist .
-scp dist.tar.gz user@服务器IP:/tmp/yingxin-dist.tar.gz
+scp dist.tar.gz root@服务器IP:/tmp/dist.tar.gz
 ```
 
-在服务器（先确认压缩包存在再解压）：
+`-C dist .` 表示打包 **dist 目录内的内容**（`index.html`、`assets/` 等），不是把整个 `dist` 文件夹再套一层。
+
+也可用 Termius SFTP：本机选 `dist.tar.gz`，拖到服务器 `/tmp/`。
+
+**不要用 7z 压整个 `dist` 文件夹**——解压后易出现 `dist/dist/index.html`，Nginx 读不到正确入口。若必须用 7z，请进入 `dist` **内部**全选文件再压缩。
+
+**服务器：**
 
 ```bash
-ls -lh /tmp/yingxin-dist.tar.gz
+ls -lh /tmp/dist.tar.gz
 sudo rm -rf /var/www/yingxin/frontend/dist/*
-sudo tar -xzf /tmp/yingxin-dist.tar.gz -C /var/www/yingxin/frontend/dist/
-rm /tmp/yingxin-dist.tar.gz
+sudo tar -xzf /tmp/dist.tar.gz -C /var/www/yingxin/frontend/dist/
+rm -f /tmp/dist.tar.gz
+
+# 确认 index.html 直接在 dist 根下（不应有 dist/dist/）
+ls /var/www/yingxin/frontend/dist/index.html
+find /var/www/yingxin/frontend/dist -name index.html
 ```
 
-仅前端变更时不必重启后端。更新后用手机无痕窗口验证，避免浏览器缓存旧资源。
+仅前端变更时**不必**重启后端。更新后用无痕窗口验证，避免浏览器缓存旧资源。
 
 ### 4.3 更新后端
 
+**推荐：systemd 重启（不要用 SSH 里裸跑 `uv run`）**
+
 ```bash
-cd /path/to/yingxin
-git pull
+cd /var/www/yingxin
+git pull origin master
 cd backend && uv sync
-# 按你的进程管理方式重启 uvicorn / systemd
+sudo systemctl restart yingxin-backend
+sleep 2
+systemctl status yingxin-backend --no-pager
+```
+
+验证（论坛公开列表 + 无效 token 应 200，见 security 修复）：
+
+```bash
+curl -s -o /dev/null -w "forum: HTTP %{http_code}\n" \
+  "http://127.0.0.1:8000/api/forum/posts?page=1&page_size=4" \
+  -H "Authorization: Bearer invalid"
 ```
 
 若涉及数据库结构变更，先执行 `uv run alembic upgrade head`。
+
+**服务器 `git pull` / `git fetch` 卡住时（国内 ECS 连 GitHub 常见）**
+
+不要在卡住的终端里等。可改用本机 scp 传改动的 `.py` 文件，再 restart：
+
+```powershell
+scp C:\path\to\yingxin\backend\app\core\security.py root@服务器IP:/var/www/yingxin/backend/app/core/security.py
+```
+
+```bash
+sudo systemctl restart yingxin-backend
+```
+
+或换镜像后再 pull（用完可改回官方地址）：
+
+```bash
+cd /var/www/yingxin
+git remote set-url origin https://mirror.ghproxy.com/https://github.com/cui854962908/yingxin.git
+git fetch origin && git reset --hard origin/master
+cd backend && uv sync
+sudo systemctl restart yingxin-backend
+```
+
+### 4.4 完整发布（前后端都有改动）
+
+```powershell
+# === 本机 ===
+cd C:\path\to\yingxin
+git pull origin master
+cd frontend && npm run build && tar -czf dist.tar.gz -C dist .
+scp dist.tar.gz root@服务器IP:/tmp/dist.tar.gz
+```
+
+```bash
+# === 服务器 ===
+sudo rm -rf /var/www/yingxin/frontend/dist/*
+sudo tar -xzf /tmp/dist.tar.gz -C /var/www/yingxin/frontend/dist/
+rm -f /tmp/dist.tar.gz
+
+cd /var/www/yingxin && git pull origin master
+cd backend && uv sync
+sudo systemctl restart yingxin-backend
+
+curl -s -o /dev/null -w "forum: HTTP %{http_code}\n" \
+  "http://127.0.0.1:8000/api/forum/posts?page=1&page_size=4" \
+  -H "Authorization: Bearer invalid"
+```
+
+浏览器无痕打开站点，重新登录验证。
 
 ---
 
@@ -211,8 +317,11 @@ Web 端不提供名册管理。首次部署或演示环境执行 `init_db.py`；
 
 ### 6.4 健康检查
 
+`GET /health` 须携带有效 Bearer（见 `backend/docs/FRONTEND_API.md`），无 token 会 401。可用论坛公开接口侧面验证后端存活：
+
 ```bash
-curl http://127.0.0.1:8000/health
+curl -s -o /dev/null -w "forum: HTTP %{http_code}\n" \
+  "http://127.0.0.1:8000/api/forum/posts?page=1&page_size=1"
 ```
 
 ### 6.5 日志
@@ -278,5 +387,10 @@ DeepSeek 对话与嵌入在云端，不占本地 GPU 或大模型内存。
 | 小信 503 | `XIAOXIN_CHAT_ENABLED`、`DEEPSEEK_API_KEY` |
 | 小信答不上 / 无 RAG | `EMBED_API_KEY`、`documents` 是否为空；跑向量重建；可引导至牧院新生说 |
 | 前端连不上 API | `BACKEND_CORS_ORIGINS`、Nginx 反代是否指向 `127.0.0.1:8000` |
-| 页面仍是旧版 | 强刷或无痕窗口；确认 `dist/` 已更新 |
+| 页面仍是旧版 | 无痕窗口；确认 `dist/index.html` 时间为刚上传；**不是**只做了 `git pull` |
+| `git fetch` 卡住 / 终端假死 | 国内 ECS 连 GitHub 慢；`Ctrl+C` 中断；改用 scp 传文件或 ghproxy 镜像 |
+| 手动 `uv run` 报 Exit 127 | 非交互 shell 无 `uv` PATH；用 `systemctl restart yingxin-backend` |
+| 改了后端代码不生效 | 确认改在 `/var/www/yingxin/backend`；restart systemd，不要另起 `nohup uvicorn` |
+| 上传后样式乱 / 白屏 | 压缩包目录多一层（7z 压了整个 `dist` 文件夹）；见 4.2 解压检查 |
+| 本地正常、线上登录后 401 多 | 后端未更新或未 restart；论坛列表应对无效 token 返回 200 |
 | Docker backend 连不上 DB | `.env` 中 `DATABASE_URL` 主机名是否为 `db`（非 127.0.0.1） |

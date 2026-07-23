@@ -44,15 +44,26 @@ function isFullBleedPath(path: string): boolean {
   return path.startsWith('/clubs') || path.startsWith('/wall') || path.startsWith('/account')
 }
 
-const isIntroModule = computed(() => route.path.startsWith('/intro'))
-const isWallModule = computed(() => route.path.startsWith('/wall'))
+/** 布局敏感路径：离开这些路径到非敏感路径时，冻结布局态避免内容区闪移 */
+function isLayoutSensitivePath(path: string): boolean {
+  return isFullBleedPath(path) || path.startsWith('/intro')
+}
+
+/** 模块切换离开动画期间，暂用旧路径的布局态，动画完成后再切回新路径 */
+const leavingLayoutPath = ref<string | null>(null)
+const layoutPath = computed(() => leavingLayoutPath.value ?? route.path)
+
+const isFullBleedModule = computed(() => isFullBleedPath(layoutPath.value))
+const isIntroModule = computed(() => layoutPath.value.startsWith('/intro'))
+const isWallModule = computed(() => layoutPath.value.startsWith('/wall'))
 const isMotionModule = computed(() => isIntroModule.value || isWallModule.value)
 
-const isFullBleedModule = ref(isFullBleedPath(route.path))
 watch(
   () => route.path,
-  (path) => {
-    isFullBleedModule.value = isFullBleedPath(path)
+  (_path, oldPath) => {
+    if (!isMobile.value && oldPath && isLayoutSensitivePath(oldPath as string)) {
+      leavingLayoutPath.value = oldPath as string
+    }
   },
   { flush: 'sync' },
 )
@@ -287,6 +298,11 @@ function finishEdge(e: PointerEvent) {
   }
 }
 
+/** 模块离开动画完成后，释放布局冻结 */
+function onAfterModuleLeave() {
+  leavingLayoutPath.value = null
+}
+
 onMounted(() => {
   if (isMobile.value) prefetchMobileTabChunks()
   window.addEventListener('resize', onResize)
@@ -353,7 +369,7 @@ onUnmounted(() => {
               <KeepAlive v-if="isMobile" :max="6">
                 <component :is="Component" v-if="Component" :key="mobileViewKey(childRoute)" />
               </KeepAlive>
-              <Transition v-else name="module" mode="out-in">
+              <Transition v-else name="module" mode="out-in" @after-leave="onAfterModuleLeave">
                 <component :is="Component" v-if="Component" :key="childRoute.fullPath" />
               </Transition>
             </router-view>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, watch } from 'vue'
+import { ref, computed, reactive, watch } from 'vue'
 import { usePreload } from '../composables/usePreload'
+import { useRefreshOnActivate } from '../composables/useRefreshOnActivate'
 import { authHeaders, useAuth } from '../composables/useAuth'
 import { useFaqSort } from '../composables/useFaqSort'
 import { faqMatchesSearch } from '../utils/faqSearch'
@@ -71,8 +72,6 @@ function exitEditMode() {
   saveMsg.value = ''
 }
 
-onMounted(() => { loadAllFaq() })
-
 function startEdit(item: FaqItem) {
   editingId.value = item.id
   expanded[item.id] = true // 编辑时自动展开
@@ -123,17 +122,23 @@ async function saveEdit(id: string) {
   } finally { saving.value = false }
 }
 
-async function loadAllFaq() {
-  loading.value = true
+async function loadAllFaq(options: { silent?: boolean } = {}) {
+  if (!options.silent) loading.value = true
   try {
     const res = await fetch('/api/faq?page=1&page_size=200')
     const d = await res.json()
     if (d.success) {
       allItems.value = d.data.items
+      cached.value = d.data.items
     }
   } catch { console.warn('加载FAQ失败') }
   finally { loading.value = false }
 }
+
+useRefreshOnActivate(
+  () => loadAllFaq(),
+  (opts) => loadAllFaq(opts),
+)
 
 function goPage(p: number) {
   if (p < 1 || p > totalPages.value) return

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { Club } from '../types/club'
 import { resolveIntroTabGroups, filterClubsByIntroGroupId } from '../constants/intro'
@@ -8,6 +8,7 @@ import { authHeaders, useAuth } from '../composables/useAuth'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import { usePanelReveal } from '../composables/usePanelReveal'
 import { usePreload } from '../composables/usePreload'
+import { useRefreshOnActivate } from '../composables/useRefreshOnActivate'
 import AppSpinner from './AppSpinner.vue'
 import ClubCard from './ClubCard.vue'
 import IntroOrgGroupCard from './IntroOrgGroupCard.vue'
@@ -155,13 +156,10 @@ async function handleDelete(id: string) {
   } catch { console.warn('删除社团失败') }
 }
 
-onMounted(() => {
-  if (cachedClubs.value.length) {
-    loadClubs({ silent: true })
-    return
-  }
-  loadClubs()
-})
+useRefreshOnActivate(
+  () => (cachedClubs.value.length ? loadClubs({ silent: true }) : loadClubs()),
+  (opts) => loadClubs(opts),
+)
 </script>
 
 <template>
